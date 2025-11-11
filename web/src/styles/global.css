@@ -1,0 +1,11 @@
+/* 逐行讲解版 global.css */
+/* 1) 让 body、#root 占满高度，配合 antd Layout 的 100vh 更稳定 */
+html, body, #root { height: 100%; }
+
+
+/* 2) 页面背景与滚动条小优化（可选） */
+body { background: #f5f7fa; }
+
+
+/* 3) 内容区卡片常见间距（可按需微调） */
+.ant-layout-content { min-height: 0; }
