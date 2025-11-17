@@ -10,6 +10,9 @@ import {
 	PlayCircleOutlined,
 	SettingOutlined,
 	WifiOutlined,
+	BellOutlined,
+	FileTextOutlined,
+	LineChartOutlined,
 } from '@ant-design/icons'; // 一些图标做区分
 
 
@@ -32,7 +35,7 @@ function item(
 
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPath, section, onSelect }) => {
-	// 根据主分区生成对应的侧栏菜单
+	// 根据主分区生成对应的侧栏菜单, 当 section 改变时才重算菜单项。这样避免每次渲染都重新分配数组（小优化）。
 	const items = useMemo(() => {
 			if (section === 'settings') {
 				return [
@@ -44,13 +47,18 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, section, onSelect }) => 
 			}
 			if (section === 'devices') {
 				return [
-					item('All devices', '/devices', <AppstoreOutlined />),
 					item('Add device', '/devices/add', <PlusCircleOutlined />),
-					item('Rules & control', '/devices/rules', <PlayCircleOutlined />),
 				];
 		}
 		// 默认 Home 的子菜单（可按需扩展）
-		return [item('Overview', '/', <HomeOutlined />)];
+		return [
+			item('Overview', '/', <HomeOutlined />),
+			item('All Devices', '/devices', <AppstoreOutlined />),
+			item('Analysis', '/analysis', <LineChartOutlined />),
+			item('Alarms', '/alarms', <BellOutlined />),
+			item('Log', '/log', <FileTextOutlined />),
+			item('Rules', '/rules', <PlayCircleOutlined />),
+		];
 	}, [section]);	// 当访问 /settings 时，将默认高亮 network（因为路由会重定向到 /settings/network）
 	const selectedKey = currentPath === '/settings' ? '/settings/network' : currentPath;
 

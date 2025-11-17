@@ -2,9 +2,15 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import RootLayout from './layouts/RootLayout';
 import Home from "./pages/Home";
-import Devices from "./pages/Devices";
+import Alarms from "./pages/Alarms";
+import Log from "./pages/Log";
+import Analysis from "./pages/Analysis";
+import Devices from "./pages/devices";
 import DeviceAdd from "./pages/DeviceAdd";
 import DeviceRules from "./pages/DeviceRules";
+import AddModel from "./pages/AddModel";
+import AddParameter from "./pages/AddParameter";
+import AddAlarmRule from "./pages/AddAlarm";
 import Settings from "./pages/Settings";
 import SettingsNetwork from "./pages/settings/Network";
 import SettingsMqtt from "./pages/settings/Mqtt";
@@ -18,11 +24,19 @@ return (
 	<Route path="/" element={<RootLayout />}>
 		{/* index 表示与父路径相同（/）时渲染的默认子页面 */}
 		<Route index element={<Home />} />
+		<Route path="alarms" element={<Alarms />} />
+		<Route path="log" element={<Log />} />
+		<Route path="analysis" element={<Analysis />} />
+		<Route path="rules" element={<DeviceRules />} />
 
 		{/* Devices 区域，可拓展子页面 */}
 		<Route path="devices" element={<Devices />} />
 		<Route path="devices/add" element={<DeviceAdd />} />
-		<Route path="devices/rules" element={<DeviceRules />} />
+
+		{/* Configuration 区域 */}
+		<Route path="configuration/add-model" element={<AddModel />} />
+		<Route path="configuration/add-parameter" element={<AddParameter />} />
+		<Route path="configuration/add-alarm" element={<AddAlarmRule />} />
 
 		{/* Settings 区域：嵌套路由 */}
 			<Route path="settings" element={<Settings />}>
