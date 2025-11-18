@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Home.css';
 import {
 	Badge,
 	Card,
@@ -112,15 +113,17 @@ const deviceColumns = [
 		title: 'Status',
 		dataIndex: 'status',
 		key: 'status',
-		render: (_: string, row: DeviceRow) => (
-			<Badge status={row.status === 'online' ? 'success' : 'default'} text={row.status} />
-		),
+		render: (_: string, row: DeviceRow) => {
+			const statusText = row.status === 'online' ? 'Online' : 'Offline';
+			const statusColor = row.status === 'online' ? 'success' : 'error';
+			return <Badge status={statusColor} text={statusText} />;
+		},
 	},
 	{
 		title: 'Last seen',
 		dataIndex: 'lastSeen',
 		key: 'lastSeen',
-			render: (text: string) => <Typography.Text type="secondary">{text}</Typography.Text>,
+			render: (text: string) => <Typography.Text>{text}</Typography.Text>,
 	},
 ];
 
@@ -233,23 +236,44 @@ const Home: React.FC = () => {
 	// Render notification item
 	const renderNotificationItem = (item: NotificationItem) => {
 		const iconMap = {
-			alarm: <FireOutlined style={{ color: '#ff4d4f' }} />,
-			offline: <DisconnectOutlined style={{ color: '#ff4d4f' }} />,
+			alarm: <FireOutlined style={{ color: '#D9534F' }} />,
+			offline: <DisconnectOutlined style={{ color: '#D9534F' }} />,
 			warning: <WarningOutlined style={{ color: '#faad14' }} />,
-			info: <CheckCircleOutlined style={{ color: '#52c41a' }} />
+			info: <CheckCircleOutlined style={{ color: '#8CC63F' }} />
 		};
 		
-		const colorMap = {
-			critical: '#fff1f0',
-			warning: '#fffbe6',
-			info: '#f6ffed'
+		// 所有通知使用白色背景 + 左侧彩色边条
+		const getBorderStyle = (severity: string) => {
+			if (severity === 'critical') {
+				return '3px solid #D9534F';
+			} else if (severity === 'warning') {
+				return '3px solid #faad14';
+			} else {
+				return '3px solid #8CC63F';
+			}
+		};
+		
+		const getLabelColor = (severity: string) => {
+			if (severity === 'critical') {
+				return '#D9534F';
+			} else if (severity === 'warning') {
+				return '#faad14';
+			} else {
+				return '#8CC63F';
+			}
+		};
+		
+		const getLabelText = (severity: string) => {
+			// 首字母大写
+			return severity.charAt(0).toUpperCase() + severity.slice(1);
 		};
 		
 		return (
 			<List.Item
 				style={{
 					padding: '12px 16px',
-					background: colorMap[item.severity],
+					background: '#ffffff',
+					borderLeft: getBorderStyle(item.severity),
 					borderBottom: '1px solid #f0f0f0',
 					transition: 'all 0.3s',
 					cursor: 'pointer'
@@ -258,13 +282,16 @@ const Home: React.FC = () => {
 					e.currentTarget.style.background = '#fafafa';
 				}}
 				onMouseLeave={(e) => {
-					e.currentTarget.style.background = colorMap[item.severity];
+					e.currentTarget.style.background = '#ffffff';
 				}}
 			>
 				<List.Item.Meta
 					avatar={<Avatar icon={iconMap[item.type]} style={{ background: 'transparent' }} />}
 					title={
 						<Space>
+							<Typography.Text strong style={{ fontSize: 13, color: getLabelColor(item.severity) }}>
+								{getLabelText(item.severity)}
+							</Typography.Text>
 							<Typography.Text strong style={{ fontSize: 13 }}>{item.title}</Typography.Text>
 							<Typography.Text type="secondary" style={{ fontSize: 11 }}>{item.time}</Typography.Text>
 						</Space>
@@ -281,26 +308,26 @@ const Home: React.FC = () => {
 		<div style={{ height: 'calc(100vh - 56px - 32px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 			{/* Top Row: Device Info (Left) + Quick Actions (Right) */}
 			<Row gutter={16} style={{ marginBottom: 16, flexShrink: 0 }}>
-				{/* Left: Compact device info with Refresh button */}
-				<Col xs={24} lg={12}>
-					<Card bordered bodyStyle={{ padding: 16 }} style={{ height: '100%' }}>
-						<Row gutter={16} align="middle">
+			{/* Left: Compact device info with Refresh button */}
+			<Col xs={24} lg={12}>
+				<Card title="Device Information" bordered headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }} bodyStyle={{ padding: 16, backgroundColor: '#FFFFFF' }} style={{ height: '100%', backgroundColor: '#FFFFFF', borderColor: '#E1E8ED' }}>
+					<Row gutter={16} align="middle">
 							{/* Device Icon */}
 							<Col flex="none">
-								<div
-									style={{
-										width: 64,
-										height: 64,
-										borderRadius: 8,
-										background: 'linear-gradient(135deg, rgba(22,119,255,0.12) 0%, rgba(22,119,255,0.05) 100%)',
-										display: 'flex',
-										alignItems: 'center',
-										justifyContent: 'center',
-										border: '1px solid rgba(22,119,255,0.2)',
-									}}
-								>
-									<LaptopOutlined style={{ fontSize: 32, color: '#1677ff' }} />
-								</div>
+							<div
+								style={{
+									width: 64,
+									height: 64,
+									borderRadius: 8,
+									background: 'linear-gradient(135deg, rgba(0,58,112,0.12) 0%, rgba(0,58,112,0.05) 100%)',
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'center',
+									border: '1px solid rgba(0,58,112,0.2)',
+								}}
+							>
+								<LaptopOutlined style={{ fontSize: 32, color: '#003A70' }} />
+							</div>
 							</Col>
 							
 							{/* Device Info */}
@@ -322,7 +349,7 @@ const Home: React.FC = () => {
 									</Space>
 									
 									<Space size={6} wrap>
-										<Badge status={systemRunning ? 'processing' : 'default'} text={<span style={{ fontSize: 11 }}>{systemRunning ? 'Running' : 'Stopped'}</span>} />
+										<Badge color="#003A70" text={<span style={{ fontSize: 11 }}>{systemRunning ? 'Running' : 'Stopped'}</span>} />
 										<Badge status={mqttOk ? 'success' : 'error'} text={<span style={{ fontSize: 11 }}><ApiOutlined /> MQTT {mqttOk ? 'OK' : 'Down'}</span>} />
 										<Badge status={networkOk ? 'success' : 'error'} text={<span style={{ fontSize: 11 }}><WifiOutlined /> Network {networkOk ? 'Online' : 'Offline'}</span>} />
 										<Tag icon={<FieldTimeOutlined />} style={{ fontSize: 11 }}>{device.lastCommunication}</Tag>
@@ -338,6 +365,7 @@ const Home: React.FC = () => {
 									icon={<ReloadOutlined spin={refreshing} />}
 									onClick={handleRefresh}
 									loading={refreshing}
+									style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
 								>
 									Refresh
 								</Button>
@@ -348,7 +376,7 @@ const Home: React.FC = () => {
 				
 				{/* Right: Quick Actions */}
 				<Col xs={24} lg={12}>
-					<Card title="Quick Actions" bordered bodyStyle={{ padding: 16 }} style={{ height: '100%' }}>
+					<Card title="Quick Actions" bordered headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }} bodyStyle={{ padding: 16, backgroundColor: '#FFFFFF' }} style={{ height: '100%', backgroundColor: '#FFFFFF', borderColor: '#E1E8ED' }}>
 						<Space size={8} wrap>
 							<Button icon={<RedoOutlined />} onClick={handleRestartT8000} danger>
 								Restart T8000
@@ -378,18 +406,37 @@ const Home: React.FC = () => {
 						title={
 							<Space>
 								<span>System Notifications</span>
-								<Badge count={criticalNotifications.length} style={{ backgroundColor: '#ff4d4f' }} />
+								<Badge count={criticalNotifications.length} style={{ backgroundColor: '#003A70' }} />
 							</Space>
 						}
 						bordered 
-						bodyStyle={{ padding: 0 }}
-						style={{ height: 320 }}
+						headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }}
+						bodyStyle={{ padding: 0, backgroundColor: '#FFFFFF' }}
+						style={{ height: 340, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
 					>
 						<div style={{ 
 							height: 268, 
 							overflowY: 'auto',
-							overflowX: 'hidden'
+							overflowX: 'hidden',
+							borderRadius: '0 0 8px 8px',
+							paddingRight: 4
 						}}>
+							<style>{`
+								div::-webkit-scrollbar {
+									width: 6px;
+								}
+								div::-webkit-scrollbar-track {
+									background: transparent;
+									margin-bottom: 8px;
+								}
+								div::-webkit-scrollbar-thumb {
+									background: #d0d0d0;
+									border-radius: 3px;
+								}
+								div::-webkit-scrollbar-thumb:hover {
+									background: #b0b0b0;
+								}
+							`}</style>
 							<Collapse 
 								defaultActiveKey={['critical']} 
 								ghost
@@ -397,15 +444,15 @@ const Home: React.FC = () => {
 								items={[
 									{
 										key: 'critical',
-										label: (
-											<Space style={{ width: '100%', justifyContent: 'space-between' }}>
-												<Space>
-													<FireOutlined style={{ color: '#ff4d4f' }} />
-													<Typography.Text strong>Critical</Typography.Text>
-													<Badge count={criticalNotifications.length} style={{ backgroundColor: '#ff4d4f' }} />
-												</Space>
+									label: (
+										<Space style={{ width: '100%', justifyContent: 'space-between' }}>
+											<Space>
+												<FireOutlined style={{ color: '#D9534F' }} />
+												<Typography.Text strong>Critical</Typography.Text>
+												<Badge count={criticalNotifications.length} style={{ backgroundColor: '#D9534F' }} />
 											</Space>
-										),
+										</Space>
+									),
 										children: (
 											<List
 												dataSource={criticalNotifications}
@@ -441,9 +488,9 @@ const Home: React.FC = () => {
 										label: (
 											<Space style={{ width: '100%', justifyContent: 'space-between' }}>
 												<Space>
-													<InfoCircleOutlined style={{ color: '#52c41a' }} />
+													<InfoCircleOutlined style={{ color: '#8CC63F' }} />
 													<Typography.Text strong>Info</Typography.Text>
-													<Badge count={infoNotifications.length} style={{ backgroundColor: '#52c41a' }} />
+													<Badge count={infoNotifications.length} style={{ backgroundColor: '#8CC63F' }} />
 												</Space>
 											</Space>
 										),
@@ -463,27 +510,27 @@ const Home: React.FC = () => {
 				
 				{/* Right: Two Pie Charts */}
 				<Col xs={24} lg={12}>
-					<Row gutter={16}>
+					<Row gutter={16} style={{ marginBottom: 16 }}>
 						{/* Device Status */}
 						<Col span={12}>
 							<Card 
-								title="Device Status" 
+								title="Device Status" headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }} 
 								bordered 
-								bodyStyle={{ padding: 16 }} 
-								style={{ height: 320 }}
+								bodyStyle={{ padding: 16, backgroundColor: '#FFFFFF' }} 
+								style={{ height: 320, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
 							>
-								{deviceRows.filter(d => d.status === 'offline').length > 0 && (
-									<div style={{ 
-										marginBottom: 12, 
-										padding: '6px 10px', 
-										backgroundColor: '#fff2e8', 
-										border: '1px solid #ffbb96',
+							{deviceRows.filter(d => d.status === 'offline').length > 0 && (
+								<div style={{ 
+									marginBottom: 12, 
+									padding: '6px 10px', 
+									backgroundColor: '#003A70', 
+									border: '1px solid #003A70',
 										borderRadius: 4,
 										display: 'flex',
 										alignItems: 'center'
 									}}>
-										<WarningOutlined style={{ color: '#ff7a45', marginRight: 6, fontSize: 14 }} />
-										<Typography.Text style={{ color: '#ad4e00', fontSize: 11 }}>
+										<WarningOutlined style={{ color: '#ffffff', marginRight: 6, fontSize: 14 }} />
+										<Typography.Text style={{ color: '#ffffff', fontSize: 11 }}>
 											<strong>{deviceRows.filter(d => d.status === 'offline').length}</strong> device(s) offline
 										</Typography.Text>
 									</div>
@@ -493,11 +540,11 @@ const Home: React.FC = () => {
 										type="circle"
 										percent={Math.round((deviceRows.filter(d => d.status === 'online').length / deviceRows.length) * 100)}
 										size={150}
-										strokeColor="#52c41a"
-										trailColor="#ff4d4f"
+										strokeColor="#8CC63F"
+										trailColor="#D9534F"
 										format={() => (
 											<div style={{ textAlign: 'center' }}>
-												<div style={{ fontSize: 26, fontWeight: 'bold', color: '#52c41a' }}>
+												<div style={{ fontSize: 26, fontWeight: 'bold', color: '#8CC63F' }}>
 													{deviceRows.filter(d => d.status === 'online').length}
 												</div>
 												<div style={{ fontSize: 12, color: '#999' }}>Online</div>
@@ -514,16 +561,16 @@ const Home: React.FC = () => {
 									borderTop: '1px solid #f0f0f0'
 								}}>
 									<div style={{ display: 'flex', alignItems: 'center' }}>
-										<CheckCircleOutlined style={{ fontSize: 16, color: '#52c41a', marginRight: 6 }} />
+										<CheckCircleOutlined style={{ fontSize: 16, color: '#8CC63F', marginRight: 6 }} />
 										<Typography.Text strong style={{ fontSize: 12, marginRight: 4 }}>Online:</Typography.Text>
-										<Typography.Text style={{ fontSize: 16, fontWeight: 'bold', color: '#52c41a' }}>
+										<Typography.Text style={{ fontSize: 16, fontWeight: 'bold', color: '#8CC63F' }}>
 											{deviceRows.filter(d => d.status === 'online').length}
 										</Typography.Text>
 									</div>
 									<div style={{ display: 'flex', alignItems: 'center' }}>
-										<DisconnectOutlined style={{ fontSize: 16, color: '#ff4d4f', marginRight: 6 }} />
+										<DisconnectOutlined style={{ fontSize: 16, color: '#D9534F', marginRight: 6 }} />
 										<Typography.Text strong style={{ fontSize: 12, marginRight: 4 }}>Offline:</Typography.Text>
-										<Typography.Text style={{ fontSize: 16, fontWeight: 'bold', color: '#ff4d4f' }}>
+										<Typography.Text style={{ fontSize: 16, fontWeight: 'bold', color: '#D9534F' }}>
 											{deviceRows.filter(d => d.status === 'offline').length}
 										</Typography.Text>
 									</div>
@@ -534,43 +581,43 @@ const Home: React.FC = () => {
 						{/* Alarm Types */}
 						<Col span={12}>
 							<Card 
-								title="Alarm Types" 
+								title="Alarm Types" headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }} 
 								bordered 
-								bodyStyle={{ padding: 16 }} 
-								style={{ height: 320 }}
+								bodyStyle={{ padding: 16, backgroundColor: '#FFFFFF' }} 
+								style={{ height: 320, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
 							>
-								{criticalNotifications.length > 0 && (
-									<div style={{ 
-										marginBottom: 12, 
-										padding: '6px 10px', 
-										backgroundColor: '#fff1f0', 
-										border: '1px solid #ffccc7',
-										borderRadius: 4,
-										display: 'flex',
-										alignItems: 'center'
-									}}>
-										<FireOutlined style={{ color: '#ff4d4f', marginRight: 6, fontSize: 14 }} />
-										<Typography.Text style={{ color: '#cf1322', fontSize: 11 }}>
-											<strong>{criticalNotifications.length}</strong> critical alarm(s) triggered
-										</Typography.Text>
-									</div>
-								)}
+							{criticalNotifications.length > 0 && (
+								<div style={{ 
+									marginBottom: 12, 
+									padding: '6px 10px', 
+									backgroundColor: '#003A70', 
+									border: '1px solid #003A70',
+									borderRadius: 4,
+									display: 'flex',
+									alignItems: 'center'
+								}}>
+									<FireOutlined style={{ color: '#ffffff', marginRight: 6, fontSize: 14 }} />
+									<Typography.Text style={{ color: '#ffffff', fontSize: 11 }}>
+										<strong>{criticalNotifications.length}</strong> critical alarm(s) triggered
+									</Typography.Text>
+								</div>
+							)}
 								<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 8, marginBottom: 16 }}>
 									<Progress
 										type="circle"
 										percent={100}
 										size={150}
 										strokeColor={{
-											'0%': '#ff4d4f',
-											[`${(criticalNotifications.length / notifications.length) * 100}%`]: '#ff4d4f',
+											'0%': '#D9534F',
+											[`${(criticalNotifications.length / notifications.length) * 100}%`]: '#D9534F',
 											[`${(criticalNotifications.length / notifications.length) * 100}%`]: '#faad14',
 											[`${((criticalNotifications.length + warningNotifications.length) / notifications.length) * 100}%`]: '#faad14',
-											[`${((criticalNotifications.length + warningNotifications.length) / notifications.length) * 100}%`]: '#52c41a',
-											'100%': '#52c41a'
+											[`${((criticalNotifications.length + warningNotifications.length) / notifications.length) * 100}%`]: '#8CC63F',
+											'100%': '#8CC63F'
 										}}
 										format={() => (
 											<div style={{ textAlign: 'center' }}>
-												<div style={{ fontSize: 26, fontWeight: 'bold', color: '#ff4d4f' }}>
+												<div style={{ fontSize: 26, fontWeight: 'bold', color: '#D9534F' }}>
 													{notifications.length}
 												</div>
 												<div style={{ fontSize: 12, color: '#999' }}>Total</div>
@@ -587,9 +634,9 @@ const Home: React.FC = () => {
 									borderTop: '1px solid #f0f0f0'
 								}}>
 									<div style={{ display: 'flex', alignItems: 'center' }}>
-										<FireOutlined style={{ fontSize: 14, color: '#ff4d4f', marginRight: 4 }} />
+										<FireOutlined style={{ fontSize: 14, color: '#D9534F', marginRight: 4 }} />
 										<Typography.Text strong style={{ fontSize: 11, marginRight: 3 }}>Critical:</Typography.Text>
-										<Typography.Text style={{ fontSize: 15, fontWeight: 'bold', color: '#ff4d4f' }}>
+										<Typography.Text style={{ fontSize: 15, fontWeight: 'bold', color: '#D9534F' }}>
 											{criticalNotifications.length}
 										</Typography.Text>
 									</div>
@@ -601,9 +648,9 @@ const Home: React.FC = () => {
 										</Typography.Text>
 									</div>
 									<div style={{ display: 'flex', alignItems: 'center' }}>
-										<InfoCircleOutlined style={{ fontSize: 14, color: '#52c41a', marginRight: 4 }} />
+										<InfoCircleOutlined style={{ fontSize: 14, color: '#8CC63F', marginRight: 4 }} />
 										<Typography.Text strong style={{ fontSize: 11, marginRight: 3 }}>Info:</Typography.Text>
-										<Typography.Text style={{ fontSize: 15, fontWeight: 'bold', color: '#52c41a' }}>
+										<Typography.Text style={{ fontSize: 15, fontWeight: 'bold', color: '#8CC63F' }}>
 											{infoNotifications.length}
 										</Typography.Text>
 									</div>
@@ -620,12 +667,13 @@ const Home: React.FC = () => {
 					title={
 						<Space>
 							<span>Devices List</span>
-							<Badge count={filteredAndSortedDevices.length} style={{ backgroundColor: '#1677ff' }} />
+							<Badge count={filteredAndSortedDevices.length} style={{ backgroundColor: '#003A70' }} />
 						</Space>
 					}
 					bordered 
-					bodyStyle={{ padding: 0, height: 'calc(100% - 57px)' }}
-					style={{ height: '100%' }}
+			headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }}
+	bodyStyle={{ padding: 0, height: 'calc(100% - 57px)' }}
+					style={{ height: '100%', backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
 					extra={
 						<Space size={8}>
 							<Input
@@ -679,11 +727,11 @@ const Home: React.FC = () => {
 					</div>
 					<style>{`
 						.offline-row {
-							background-color: #fff1f0 !important;
-							border-left: 3px solid #ff4d4f;
+							background-color: #ffffff !important;
+							border-left: 3px solid #D9534F;
 						}
 						.offline-row:hover td {
-							background-color: #ffccc7 !important;
+							background-color: #fafafa !important;
 						}
 					`}</style>
 				</Card>
@@ -693,3 +741,6 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
+
+

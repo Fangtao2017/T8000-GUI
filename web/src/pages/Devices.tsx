@@ -7,28 +7,6 @@ import dayjs from 'dayjs';
 const { Search } = Input;
 const { RangePicker } = DatePicker;
 
-// Add custom styles for offline devices - matching Overview page style
-const offlineRowStyle = `
-	.offline-device-row {
-		background-color: #fff1f0 !important;
-		border-left: 3px solid #ff4d4f;
-	}
-	.offline-device-row:hover td {
-		background-color: #ffccc7 !important;
-	}
-`;
-
-// Inject styles
-if (typeof document !== 'undefined') {
-	const styleId = 'offline-device-styles';
-	if (!document.getElementById(styleId)) {
-		const style = document.createElement('style');
-		style.id = styleId;
-		style.textContent = offlineRowStyle;
-		document.head.appendChild(style);
-	}
-}
-
 // Parameter unit mapping
 const parameterUnits: Record<string, string> = {
 	voltage: 'V',
@@ -444,7 +422,7 @@ const Devices: React.FC = () => {
 			render: (_: unknown, record: DeviceData) => (
 				<Space size="small">
 					<Button size="small" icon={<EyeOutlined />} onClick={() => handleViewDevice(record)}>View Data</Button>
-					<Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditDevice(record)}>Edit</Button>
+					<Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditDevice(record)} style={{ color: '#003A70' }}>Edit</Button>
 					<Button type="link" size="small" danger icon={<DeleteOutlined />}>Delete</Button>
 				</Space>
 			),
@@ -460,7 +438,7 @@ const Devices: React.FC = () => {
 						<Space direction="vertical" size={4} style={{ width: '100%' }}>
 							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Total Devices</Typography.Text>
 							<Typography.Title level={2} style={{ margin: 0 }}>{totalDevices}</Typography.Title>
-							<Progress percent={100} showInfo={false} strokeColor="#1890ff" />
+							<Progress percent={100} showInfo={false} strokeColor="#003A70" />
 						</Space>
 					</Card>
 				</Col>
@@ -560,7 +538,7 @@ const Devices: React.FC = () => {
 							setFilterModel('all');
 							setFilterLocation('all');
 						}}>Reset All Filters</Button>
-						<Button type="primary" icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
+						<Button type="primary" icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>
 							Refresh Data
 						</Button>
 					</Space>
@@ -581,7 +559,6 @@ const Devices: React.FC = () => {
 						pagination={false}
 						scroll={{ x: 1400 }}
 						size="small"
-						rowClassName={(record) => record.status === 'offline' ? 'offline-device-row' : ''}
 					/>
 				</div>
 			</Card>
@@ -594,7 +571,7 @@ const Devices: React.FC = () => {
 				footer={null}
 				width="90%"
 				style={{ top: 20 }}
-				bodyStyle={{ padding: 0 }}
+				bodyStyle={{ padding: 0, backgroundColor: '#E8EDF2' }}
 				zIndex={1050}
 			>
 				{selectedDevice && (
@@ -643,13 +620,13 @@ const Devices: React.FC = () => {
 								<Card 
 									title="Device Parameters" 
 									bordered
-									style={{ height: '600px', backgroundColor: '#000', color: '#fff' }}
-									headStyle={{ backgroundColor: '#1a1a1a', color: '#fff', borderBottom: '1px solid #333' }}
+									style={{ height: '600px', backgroundColor: '#FFFFFF', color: '#000' }}
+									headStyle={{ backgroundColor: '#fafafa', color: '#000', borderBottom: '1px solid #333' }}
 									bodyStyle={{ 
 										padding: '16px',
 										height: 'calc(100% - 57px)',
 										overflow: 'auto',
-										backgroundColor: '#000'
+										backgroundColor: '#ffffffff'
 									}}
 								>
 									<Row gutter={[16, 16]}>
@@ -658,8 +635,8 @@ const Devices: React.FC = () => {
 												<Card
 													size="small"
 													style={{ 
-														backgroundColor: '#1a1a1a',
-														border: '1px solid #333',
+														backgroundColor: '#fafafa',
+														border: '1px solid #d9d9d9',
 														cursor: 'pointer',
 														transition: 'all 0.3s'
 													}}
@@ -678,7 +655,7 @@ const Devices: React.FC = () => {
 															{key.replace(/([A-Z])/g, ' $1').trim()}
 															{parameterUnits[key] ? ` (${parameterUnits[key]})` : ''}
 														</Typography.Text>
-														<Typography.Text strong style={{ color: '#fff', fontSize: 18 }}>
+														<Typography.Text strong style={{ color: '#000', fontSize: 18 }}>
 															{typeof value === 'number' ? value.toFixed(2) : value}
 														</Typography.Text>
 													</Space>
@@ -703,7 +680,7 @@ const Devices: React.FC = () => {
 													size="small"
 													icon={<DownloadOutlined />}
 													onClick={handleExportChart1}
-													style={{ marginLeft: 8 }}
+													style={{ marginLeft: 8, backgroundColor: '#003A70', borderColor: '#003A70' }}
 												>
 													Export Data
 												</Button>
@@ -763,7 +740,7 @@ const Devices: React.FC = () => {
 													size="small"
 													icon={<DownloadOutlined />}
 													onClick={handleExportChart2}
-													style={{ marginLeft: 8 }}
+													style={{ marginLeft: 8, backgroundColor: '#003A70', borderColor: '#003A70' }}
 												>
 													Export Data
 												</Button>
@@ -825,13 +802,13 @@ const Devices: React.FC = () => {
 				onCancel={() => setIsEditModalVisible(false)}
 				width="60%"
 				style={{ top: 20 }}
-				bodyStyle={{ padding: 0 }}
+				bodyStyle={{ padding: 0, backgroundColor: '#E8EDF2' }}
 				zIndex={1050}
 				footer={[
 					<Button key="cancel" size="large" onClick={() => setIsEditModalVisible(false)}>
 						Cancel
 					</Button>,
-					<Button key="save" type="primary" size="large" icon={<SaveOutlined />} onClick={handleSaveEdit}>
+					<Button key="save" type="primary" size="large" icon={<SaveOutlined />} onClick={handleSaveEdit} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>
 						Save Changes
 					</Button>,
 				]}
@@ -839,7 +816,7 @@ const Devices: React.FC = () => {
 				{editingDevice && (
 					<div style={{ height: '70vh', overflow: 'auto', padding: '24px' }}>
 						{/* Device Configuration Section */}
-						<Typography.Title level={5} style={{ marginBottom: 16, color: '#1890ff' }}>
+						<Typography.Title level={5} style={{ marginBottom: 16, color: '#003A70' }}>
 							Device Configuration
 						</Typography.Title>
 						
@@ -985,7 +962,7 @@ const Devices: React.FC = () => {
 						</Space>
 
 						{/* Location Information Section */}
-						<Typography.Title level={5} style={{ marginBottom: 16, color: '#1890ff' }}>
+						<Typography.Title level={5} style={{ marginBottom: 16, color: '#003A70' }}>
 							Location Information
 						</Typography.Title>
 						
@@ -1107,7 +1084,7 @@ const Devices: React.FC = () => {
 						</Space>
 
 						{/* Parameter Binding Section */}
-						<Typography.Title level={5} style={{ marginBottom: 16, marginTop: 32, color: '#1890ff' }}>
+						<Typography.Title level={5} style={{ marginBottom: 16, marginTop: 32, color: '#003A70' }}>
 							Parameter Bindings
 						</Typography.Title>
 						
@@ -1190,7 +1167,7 @@ const Devices: React.FC = () => {
 										<Card 
 											size="small" 
 											style={{ maxHeight: '300px', overflow: 'auto' }}
-											bodyStyle={{ padding: 0 }}
+											bodyStyle={{ padding: 0, backgroundColor: '#E8EDF2' }}
 										>
 											{filteredAvailableParameters.length === 0 ? (
 												<div style={{ padding: '20px', textAlign: 'center' }}>
@@ -1281,7 +1258,7 @@ const Devices: React.FC = () => {
 				}}
 				okText="Yes, Bind"
 				cancelText="Cancel"
-				okButtonProps={{ type: 'primary' }}
+				okButtonProps={{ type: 'primary', style: { backgroundColor: '#FFFFFF', borderColor: '#003A70' } }}
 				zIndex={1100}
 			>
 				<Typography.Paragraph>
@@ -1303,3 +1280,18 @@ const Devices: React.FC = () => {
 };
 
 export default Devices;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

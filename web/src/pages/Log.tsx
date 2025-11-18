@@ -149,12 +149,12 @@ const Log: React.FC = () => {
 							value={dateRange}
 							onChange={(dates) => setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null])}
 						/>
-					</Space>
-					<Space size={8}>
-						<Button onClick={handleReset}>Reset</Button>
-						<Button type="primary" onClick={() => {/* Query logic */}}>Query</Button>
-						<Button icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
-					</Space>
+				</Space>
+				<Space size={8}>
+					<Button onClick={handleReset}>Reset</Button>
+					<Button type="primary" onClick={() => {/* Query logic */}} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>Query</Button>
+					<Button icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
+				</Space>
 				</Space>
 			</Card>
 

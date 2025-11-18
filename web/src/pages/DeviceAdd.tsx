@@ -261,7 +261,7 @@ const DeviceAdd: React.FC = () => {
 						type="link"
 						size="small"
 						onClick={() => toggleParameterLink(record.name)}
-						style={{ padding: 0, minWidth: 60 }}
+						style={{ padding: 0, minWidth: 60, color: '#003A70' }}
 					>
 						{isUnlinked ? 'Re-link' : 'Unlink'}
 					</Button>
@@ -316,15 +316,15 @@ const DeviceAdd: React.FC = () => {
 						}}>
 							<Space direction="vertical" size={8} style={{ width: '100%' }}>
 								{Object.entries(deviceTemplates).map(([key, template]) => (
-									<Card
-										key={key}
-										hoverable
-										style={{
-											border: selectedModel === key ? '2px solid #1890ff' : '1px solid #d9d9d9',
-											cursor: 'pointer',
-										padding: '8px 16px',
-									}}
-									bodyStyle={{ padding: 0 }}
+								<Card
+									key={key}
+									hoverable
+									style={{
+										border: selectedModel === key ? '2px solid #003A70' : '1px solid #d9d9d9',
+										cursor: 'pointer',
+									padding: '8px 16px',
+								}}
+								bodyStyle={{ padding: 0 }}
 									onClick={() => {
 										setSelectedModel(key);
 										handleModelChange(key);
@@ -348,26 +348,25 @@ const DeviceAdd: React.FC = () => {
 							</Space>
 						</div>
 
-						<div style={{ marginTop: 24, textAlign: 'right' }}>
-							<Button
-								type="primary"
-								size="large"
-								disabled={!selectedModel}
-								onClick={() => setCurrentStep(1)}
-							>
-								Next: Configure Device
-							</Button>
-						</div>
+					<div style={{ marginTop: 24, textAlign: 'right' }}>
+						<Button
+							type="primary"
+							size="large"
+							disabled={!selectedModel}
+							onClick={() => setCurrentStep(1)}
+							style={selectedModel ? { backgroundColor: '#003A70', borderColor: '#003A70' } : {}}
+						>
+							Next: Configure Device
+						</Button>
+					</div>
 					</>
 				)}
 
 				{currentStep === 1 && (
 					<>
-						<Button type="link" onClick={() => setCurrentStep(0)} style={{ padding: 0, marginBottom: 16 }}>
-							← Back to Model Selection
-						</Button>
-
-						<Row gutter={24}>
+					<Button type="link" onClick={() => setCurrentStep(0)} style={{ padding: 0, marginBottom: 16, color: '#003A70' }}>
+						← Back to Model Selection
+					</Button>						<Row gutter={24}>
 							<Col xs={24} md={14}>
 								<Title level={4}>Step 2: Device Information</Title>
 								<Form
@@ -467,8 +466,8 @@ const DeviceAdd: React.FC = () => {
 									type="primary"
 									size="large"
 									loading={loading}
-									onClick={handleSubmit}
-								>
+									onClick={handleSubmit} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>
+
 									Create Device & Auto-Link Parameters
 								</Button>
 							</Space>
@@ -487,7 +486,7 @@ const DeviceAdd: React.FC = () => {
 						<Button size="large" onClick={() => setCurrentStep(0)}>
 							Add Another Device
 						</Button>
-						<Button type="primary" size="large" onClick={() => window.location.href = '/devices'}>
+						<Button type="primary" size="large" onClick={() => window.location.href = '/devices'} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>
 							View All Devices
 						</Button>
 					</Space>
@@ -498,4 +497,8 @@ const DeviceAdd: React.FC = () => {
 		</div>
 	);
 };export default DeviceAdd;
+
+
+
+
 

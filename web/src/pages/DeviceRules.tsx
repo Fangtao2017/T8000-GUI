@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Table, Button, Space, Badge, Row, Col, Typography, Progress, Input, Select, Switch } from 'antd';
 import { EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnType } from 'antd/es/table';
+import RuleViewData from './RuleViewData';
 
 interface RuleData {
 	key: string;
@@ -12,16 +13,65 @@ interface RuleData {
 	createTime: string;
 	status: 'enabled' | 'disabled';
 	enabled: boolean;
+	// Additional fields for view data
+	conditions?: Array<{
+		name: string;
+		type: string;
+		device: string;
+		parameter: string;
+		operator: string;
+		value: number;
+	}>;
+	controls?: Array<{
+		name: string;
+		type: string;
+		device: string;
+		parameter: string;
+		value: number | string;
+	}>;
 }
 
 const DeviceRules: React.FC = () => {
 	const [searchText, setSearchText] = useState('');
 	const [filterStatus, setFilterStatus] = useState<string>('all');
+	const [isViewDataModalVisible, setIsViewDataModalVisible] = useState(false);
+	const [selectedRule, setSelectedRule] = useState<RuleData | null>(null);
 
-	// Mock data based on the screenshot
+	// Mock data based on the screenshot with additional condition/control data
 	const allRules: RuleData[] = [
-		{ key: '1', ruleName: 'Occupancy Absence Detection and Auto Light Control', deviceType: 'Occupancy + Lux Sensor', targetDevice: 'AR-OL-0005', triggerSetting: 'Inactive', createTime: 'Nov 05 2024 18:13', status: 'enabled', enabled: true },
-		{ key: '2', ruleName: 'Brightness Level 1', deviceType: 'Occupancy + Lux Sensor', targetDevice: 'AR-OL-0005', triggerSetting: 'Inactive', createTime: 'Nov 05 2024 18:12', status: 'enabled', enabled: true },
+		{ 
+			key: '1', 
+			ruleName: 'Occupancy Absence Detection and Auto Light Control', 
+			deviceType: 'Occupancy + Lux Sensor', 
+			targetDevice: 'AR-OL-0005', 
+			triggerSetting: 'Inactive', 
+			createTime: 'Nov 05 2024 18:13', 
+			status: 'enabled', 
+			enabled: true,
+			conditions: [
+				{ name: 'Occupancy Check', type: 'Digital', device: 'AR-OL-0005', parameter: 'Occupancy', operator: '==', value: 0 },
+				{ name: 'Lux Level Check', type: 'Analog', device: 'AR-OL-0005', parameter: 'Light Level', operator: '<', value: 100 }
+			],
+			controls: [
+				{ name: 'Turn Off Lights', type: 'Digital Output', device: 'AR-DM-0003', parameter: 'Light Switch', value: 'OFF' }
+			]
+		},
+		{ 
+			key: '2', 
+			ruleName: 'Brightness Level 1', 
+			deviceType: 'Occupancy + Lux Sensor', 
+			targetDevice: 'AR-OL-0005', 
+			triggerSetting: 'Inactive', 
+			createTime: 'Nov 05 2024 18:12', 
+			status: 'enabled', 
+			enabled: true,
+			conditions: [
+				{ name: 'Lux Threshold', type: 'Analog', device: 'AR-OL-0005', parameter: 'Ambient Light', operator: '<', value: 50 }
+			],
+			controls: [
+				{ name: 'Set Brightness', type: 'Analog Output', device: 'AR-DM-0003', parameter: 'Brightness', value: 10 }
+			]
+		},
 		{ key: '3', ruleName: 'Brightness Level 9 With Extended Configuration Parameters', deviceType: 'Occupancy + Lux Sensor', targetDevice: 'AR-OL-0005', triggerSetting: 'Inactive', createTime: 'Nov 05 2024 18:12', status: 'enabled', enabled: true },
 		{ key: '4', ruleName: 'Brightness Level 8', deviceType: 'Occupancy + Lux Sensor', targetDevice: 'AR-OL-0005', triggerSetting: 'Inactive', createTime: 'Nov 05 2024 18:11', status: 'enabled', enabled: true },
 		{ key: '5', ruleName: 'Brightness Level 7 Advanced Settings for Multiple Zones', deviceType: 'Occupancy + Lux Sensor', targetDevice: 'AR-OL-0005', triggerSetting: 'Inactive', createTime: 'Nov 05 2024 18:11', status: 'enabled', enabled: true },
@@ -73,6 +123,11 @@ const DeviceRules: React.FC = () => {
 		// Implement toggle logic here
 	};
 
+	const handleViewRule = (rule: RuleData) => {
+		setSelectedRule(rule);
+		setIsViewDataModalVisible(true);
+	};
+
 	const columns: ColumnType<RuleData>[] = [
 		{
 			title: 'Rule Name',
@@ -80,7 +135,7 @@ const DeviceRules: React.FC = () => {
 			key: 'ruleName',
 			width: 400,
 			ellipsis: true,
-			render: (text: string) => <strong style={{ color: '#1890ff' }}>{text}</strong>,
+			render: (text: string) => <strong style={{ color: '#000' }}>{text}</strong>,
 		},
 		{
 			title: 'Trigger Setting',
@@ -112,6 +167,7 @@ const DeviceRules: React.FC = () => {
 						checked={enabled} 
 						size="small"
 						onChange={() => handleToggleStatus(record.key)}
+						style={{ backgroundColor: enabled ? '#003A70' : undefined }}
 					/>
 					<span style={{ color: enabled ? '#52c41a' : '#999' }}>
 						{enabled ? 'Enabled' : 'Disabled'}
@@ -122,11 +178,11 @@ const DeviceRules: React.FC = () => {
 		{
 			title: 'Actions',
 			key: 'actions',
-			width: 180,
-			render: () => (
+			width: 200,
+			render: (_: unknown, record: RuleData) => (
 				<Space size="small">
-					<Button type="link" size="small" icon={<EyeOutlined />}>View</Button>
-					<Button type="link" size="small" icon={<EditOutlined />}>Edit</Button>
+					<Button size="small" icon={<EyeOutlined />} onClick={() => handleViewRule(record)} style={{ backgroundColor: '#003A70', borderColor: '#003A70', color: '#fff' }}>View Data</Button>
+					<Button type="link" size="small" icon={<EditOutlined />} style={{ color: '#003A70' }}>Edit</Button>
 					<Button type="link" size="small" danger icon={<DeleteOutlined />}>Delete</Button>
 				</Space>
 			),
@@ -140,9 +196,9 @@ const DeviceRules: React.FC = () => {
 				<Col span={6}>
 					<Card bordered bodyStyle={{ padding: '16px' }}>
 						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Total Rules</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0 }}>{totalRules}</Typography.Title>
-							<Progress percent={100} showInfo={false} strokeColor="#1890ff" />
+					<Typography.Text type="secondary" style={{ fontSize: 12 }}>Total Rules</Typography.Text>
+					<Typography.Title level={2} style={{ margin: 0 }}>{totalRules}</Typography.Title>
+					<Progress percent={100} showInfo={false} strokeColor="#003A70" />
 						</Space>
 					</Card>
 				</Col>
@@ -200,7 +256,7 @@ const DeviceRules: React.FC = () => {
 							setSearchText('');
 							setFilterStatus('all');
 						}}>Reset</Button>
-						<Button type="primary">Query</Button>
+						<Button type="primary" style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>Query</Button>
 					</Space>
 				</Space>
 			</Card>
@@ -220,6 +276,16 @@ const DeviceRules: React.FC = () => {
 					size="small"
 				/>
 			</Card>
+
+			{/* Rule View Data Modal */}
+			<RuleViewData
+				visible={isViewDataModalVisible}
+				ruleData={selectedRule}
+				onClose={() => {
+					setIsViewDataModalVisible(false);
+					setSelectedRule(null);
+				}}
+			/>
 		</div>
 	);
 };

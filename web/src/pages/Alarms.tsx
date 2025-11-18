@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Card, Table, Button, Space, Tag, Row, Col, Typography, Input, Select, Progress, message, Modal, Badge } from 'antd';
-import { EyeOutlined, ReloadOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { EyeOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnType } from 'antd/es/table';
 
 const { Search } = Input;
@@ -133,7 +133,7 @@ const Alarms: React.FC = () => {
 			dataIndex: 'deviceType',
 			key: 'deviceType',
 			width: 150,
-			render: (type: string) => <Tag color="blue">{type}</Tag>,
+			render: (type: string) => <Tag color="default">{type}</Tag>,
 		},
 		{
 			title: 'Alarm Name',
@@ -147,7 +147,7 @@ const Alarms: React.FC = () => {
 			width: 120,
 			fixed: 'right',
 			render: (_, record) => (
-				<Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDetails(record)}>
+				<Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDetails(record)} style={{ color: '#003A70' }}>
 					Details
 				</Button>
 			),
@@ -163,7 +163,7 @@ const Alarms: React.FC = () => {
 						<Space direction="vertical" size={4} style={{ width: '100%' }}>
 							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Total Alarms</Typography.Text>
 							<Typography.Title level={2} style={{ margin: 0 }}>{totalAlarms}</Typography.Title>
-							<Progress percent={100} showInfo={false} strokeColor="#1890ff" />
+							<Progress percent={100} showInfo={false} strokeColor="#003A70" />
 						</Space>
 					</Card>
 				</Col>
@@ -171,8 +171,8 @@ const Alarms: React.FC = () => {
 					<Card bordered bodyStyle={{ padding: '16px' }}>
 						<Space direction="vertical" size={4} style={{ width: '100%' }}>
 							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Pending</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#1890ff' }}>{pendingAlarms}</Typography.Title>
-							<Progress percent={(pendingAlarms / totalAlarms) * 100} showInfo={false} strokeColor="#1890ff" />
+							<Typography.Title level={2} style={{ margin: 0, color: '#003A70' }}>{pendingAlarms}</Typography.Title>
+							<Progress percent={(pendingAlarms / totalAlarms) * 100} showInfo={false} strokeColor="#003A70" />
 						</Space>
 					</Card>
 				</Col>
@@ -232,9 +232,9 @@ const Alarms: React.FC = () => {
 						>
 							Reset Filters
 						</Button>
-						<Button type="primary" icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
-							Refresh Data
-						</Button>
+					<Button type="primary" icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>
+						Refresh Data
+					</Button>
 					</Space>
 				</Space>
 			</Card>
@@ -309,36 +309,33 @@ const Alarms: React.FC = () => {
 
 						{/* Main Content - Log Parameters and History */}
 						<Row gutter={16}>
-							{/* Left: Log Parameters Panel (Black Background) */}
-							<Col span={8}>
-								<Card 
-									title="Log Parameters" 
-									bordered
-									style={{ height: '500px', backgroundColor: '#000', color: '#fff' }}
-									headStyle={{ backgroundColor: '#1a1a1a', color: '#fff', borderBottom: '1px solid #333' }}
-									bodyStyle={{ 
-										padding: '16px',
-										height: 'calc(100% - 57px)',
-										overflow: 'auto',
-										backgroundColor: '#000'
-									}}
-								>
+						{/* Left: Log Parameters Panel */}
+						<Col span={8}>
+							<Card 
+								title="Log Parameters" 
+								bordered
+								style={{ height: '500px' }}
+								bodyStyle={{ 
+									padding: '16px',
+									height: 'calc(100% - 57px)',
+									overflow: 'auto'
+								}}
+							>
 									<Row gutter={[16, 16]}>
 										{/* ID */}
 										<Col span={12}>
 											<Card
 												size="small"
 												style={{ 
-													backgroundColor: '#1a1a1a',
-													border: '1px solid #333'
+													backgroundColor: '#FFFFFF', border: '1px solid #d9d9d9'
 												}}
 												bodyStyle={{ padding: '12px' }}
 											>
 												<Space direction="vertical" size={4} style={{ width: '100%' }}>
-													<Typography.Text style={{ color: '#888', fontSize: 11, textTransform: 'uppercase' }}>
+													<Typography.Text style={{ color: '#8c8c8c', fontSize: 11, textTransform: 'uppercase' }}>
 														LOG ID (4 bytes)
 													</Typography.Text>
-													<Typography.Text strong style={{ color: '#fff', fontSize: 18 }}>
+													<Typography.Text strong style={{ color: '#000', fontSize: 18 }}>
 														{selectedAlarm.logId || 1}
 													</Typography.Text>
 												</Space>
@@ -350,16 +347,15 @@ const Alarms: React.FC = () => {
 											<Card
 												size="small"
 												style={{ 
-													backgroundColor: '#1a1a1a',
-													border: '1px solid #333'
+													backgroundColor: '#FFFFFF', border: '1px solid #d9d9d9'
 												}}
 												bodyStyle={{ padding: '12px' }}
 											>
 												<Space direction="vertical" size={4} style={{ width: '100%' }}>
-													<Typography.Text style={{ color: '#888', fontSize: 11, textTransform: 'uppercase' }}>
+													<Typography.Text style={{ color: '#8c8c8c', fontSize: 11, textTransform: 'uppercase' }}>
 														TIME (sec, 4 bytes)
 													</Typography.Text>
-													<Typography.Text strong style={{ color: '#fff', fontSize: 18 }}>
+													<Typography.Text strong style={{ color: '#000', fontSize: 18 }}>
 														{Math.floor(new Date(selectedAlarm.alarmTime).getTime() / 1000)}
 													</Typography.Text>
 												</Space>
@@ -371,16 +367,15 @@ const Alarms: React.FC = () => {
 											<Card
 												size="small"
 												style={{ 
-													backgroundColor: '#1a1a1a',
-													border: '1px solid #333'
+													backgroundColor: '#FFFFFF', border: '1px solid #d9d9d9'
 												}}
 												bodyStyle={{ padding: '12px' }}
 											>
 												<Space direction="vertical" size={4} style={{ width: '100%' }}>
-													<Typography.Text style={{ color: '#888', fontSize: 11, textTransform: 'uppercase' }}>
+													<Typography.Text style={{ color: '#8c8c8c', fontSize: 11, textTransform: 'uppercase' }}>
 														DEVICE ID (2 bytes)
 													</Typography.Text>
-													<Typography.Text strong style={{ color: '#fff', fontSize: 18 }}>
+													<Typography.Text strong style={{ color: '#000', fontSize: 18 }}>
 														{selectedAlarm.deviceId || 1}
 													</Typography.Text>
 												</Space>
@@ -392,16 +387,15 @@ const Alarms: React.FC = () => {
 											<Card
 												size="small"
 												style={{ 
-													backgroundColor: '#1a1a1a',
-													border: '1px solid #333'
+													backgroundColor: '#FFFFFF', border: '1px solid #d9d9d9'
 												}}
 												bodyStyle={{ padding: '12px' }}
 											>
 												<Space direction="vertical" size={4} style={{ width: '100%' }}>
-													<Typography.Text style={{ color: '#888', fontSize: 11, textTransform: 'uppercase' }}>
+													<Typography.Text style={{ color: '#8c8c8c', fontSize: 11, textTransform: 'uppercase' }}>
 														PARAMETER ID (2 bytes)
 													</Typography.Text>
-													<Typography.Text strong style={{ color: '#fff', fontSize: 18 }}>
+													<Typography.Text strong style={{ color: '#000', fontSize: 18 }}>
 														{selectedAlarm.parameterId || 10}
 													</Typography.Text>
 												</Space>
@@ -413,16 +407,15 @@ const Alarms: React.FC = () => {
 											<Card
 												size="small"
 												style={{ 
-													backgroundColor: '#1a1a1a',
-													border: '1px solid #333'
+													backgroundColor: '#FFFFFF', border: '1px solid #d9d9d9'
 												}}
 												bodyStyle={{ padding: '12px' }}
 											>
 												<Space direction="vertical" size={4} style={{ width: '100%' }}>
-													<Typography.Text style={{ color: '#888', fontSize: 11, textTransform: 'uppercase' }}>
+													<Typography.Text style={{ color: '#8c8c8c', fontSize: 11, textTransform: 'uppercase' }}>
 														VALUE (float, 4 bytes)
 													</Typography.Text>
-													<Typography.Text strong style={{ color: '#fff', fontSize: 18 }}>
+													<Typography.Text strong style={{ color: '#000', fontSize: 18 }}>
 														{selectedAlarm.value !== undefined ? selectedAlarm.value : 10}
 													</Typography.Text>
 												</Space>
@@ -434,16 +427,15 @@ const Alarms: React.FC = () => {
 											<Card
 												size="small"
 												style={{ 
-													backgroundColor: '#1a1a1a',
-													border: '1px solid #333'
+													backgroundColor: '#FFFFFF', border: '1px solid #d9d9d9'
 												}}
 												bodyStyle={{ padding: '12px' }}
 											>
 												<Space direction="vertical" size={4} style={{ width: '100%' }}>
-													<Typography.Text style={{ color: '#888', fontSize: 11, textTransform: 'uppercase' }}>
+													<Typography.Text style={{ color: '#8c8c8c', fontSize: 11, textTransform: 'uppercase' }}>
 														ALARM ID (2 bytes)
 													</Typography.Text>
-													<Typography.Text strong style={{ color: '#fff', fontSize: 18 }}>
+													<Typography.Text strong style={{ color: '#000', fontSize: 18 }}>
 														{selectedAlarm.alarmId || 1}
 													</Typography.Text>
 												</Space>
@@ -455,21 +447,20 @@ const Alarms: React.FC = () => {
 											<Card
 												size="small"
 												style={{ 
-													backgroundColor: '#1a1a1a',
-													border: '1px solid #333'
+													backgroundColor: '#FFFFFF', border: '1px solid #d9d9d9'
 												}}
 												bodyStyle={{ padding: '12px' }}
 											>
 												<Space direction="vertical" size={4} style={{ width: '100%' }}>
-													<Typography.Text style={{ color: '#888', fontSize: 11, textTransform: 'uppercase' }}>
+													<Typography.Text style={{ color: '#8c8c8c', fontSize: 11, textTransform: 'uppercase' }}>
 														ALARM STATE (1 byte)
 													</Typography.Text>
 													<Space>
-														<Typography.Text strong style={{ color: '#fff', fontSize: 18 }}>
+														<Typography.Text strong style={{ color: '#000', fontSize: 18 }}>
 															{selectedAlarm.alarmState !== undefined ? selectedAlarm.alarmState : 1}
 														</Typography.Text>
 														<Tag color={selectedAlarm.alarmState === 1 ? 'red' : 'green'}>
-															{selectedAlarm.alarmState === 1 ? '1: Triggered' : '0: Normalized'}
+															{selectedAlarm.alarmState === 1 ? 'Triggered' : 'Normalized'}
 														</Tag>
 													</Space>
 												</Space>
@@ -512,8 +503,8 @@ const Alarms: React.FC = () => {
 												key: 'status',
 												width: 150,
 												render: (status: string) => (
-													<Tag color={status === 'triggered' ? 'red' : 'green'} icon={status === 'triggered' ? <CloseCircleOutlined /> : undefined}>
-														{status === 'triggered' ? '1: Triggered' : '0: Normalized'}
+													<Tag color={status === 'triggered' ? 'red' : 'green'}>
+														{status === 'triggered' ? 'Triggered' : 'Normalized'}
 													</Tag>
 												),
 											},
@@ -551,3 +542,8 @@ const Alarms: React.FC = () => {
 };
 
 export default Alarms;
+
+
+
+
+

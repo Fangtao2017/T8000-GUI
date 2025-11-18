@@ -159,14 +159,15 @@ const AddModel: React.FC = () => {
 											<Button size="large" onClick={handleReset}>
 												Reset
 											</Button>
-											<Button
-												type="primary"
-												size="large"
-												loading={loading}
-												onClick={handleSubmit}
-											>
-												Create Model
-											</Button>
+										<Button
+											type="primary"
+											size="large"
+											loading={loading}
+											onClick={handleSubmit}
+											style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+										>
+											Create Model
+										</Button>
 										</Space>
 									</div>
 								</Form>
