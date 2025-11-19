@@ -13,10 +13,9 @@ import {
 	BellOutlined,
 	FileTextOutlined,
 	LineChartOutlined,
-} from '@ant-design/icons'; // 一些图标做区分
+} from '@ant-design/icons'; 
 
 
-// 组件 props：告诉我当前路径（高亮），以及点击要跳转到哪里
 interface SidebarProps {
 	currentPath: string;
 	section: 'home' | 'devices' | 'settings';
@@ -24,7 +23,6 @@ interface SidebarProps {
 }
 
 
-// 抽离一个生成菜单项的小工具，保证类型推断更友好
 function item(
 	label: React.ReactNode,
 	key: string,
@@ -35,7 +33,6 @@ function item(
 
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPath, section, onSelect }) => {
-	// 根据主分区生成对应的侧栏菜单, 当 section 改变时才重算菜单项。这样避免每次渲染都重新分配数组（小优化）。
 	const items = useMemo(() => {
 			if (section === 'settings') {
 				return [
@@ -50,7 +47,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, section, onSelect }) => 
 					item('Add device', '/devices/add', <PlusCircleOutlined />),
 				];
 		}
-		// 默认 Home 的子菜单（可按需扩展）
 		return [
 			item('Overview', '/', <HomeOutlined />),
 			item('All Devices', '/devices', <AppstoreOutlined />),
@@ -59,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, section, onSelect }) => 
 			item('Log', '/log', <FileTextOutlined />),
 			item('Rules', '/rules', <PlayCircleOutlined />),
 		];
-	}, [section]);	// 当访问 /settings 时，将默认高亮 network（因为路由会重定向到 /settings/network）
+	}, [section]);
 	const selectedKey = currentPath === '/settings' ? '/settings/network' : currentPath;
 
 	return (

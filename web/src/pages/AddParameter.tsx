@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Row, Col, Typography, message, Select, Divider, InputNumber, Modal } from 'antd';
-import { PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, Space, Row, Col, Typography, message, Select, InputNumber, Divider, Steps } from 'antd';
+import { PlusOutlined, SettingOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
+const { Option } = Select;
 
 // Mock model data for searchable dropdown
 const mockModels = [
@@ -26,137 +27,336 @@ const mockModels = [
 	{ id: 18, name: 'T-MIU-001', brand: 'TMAS', type: 'multi_interface_unit' },
 ];
 
-// Options based on the data specifications
-const dataTypeOptions = [
-	{ label: 'Discrete (0)', value: 0 },
-	{ label: 'Integer (1)', value: 1 },
-	{ label: 'Float (2)', value: 2 },
+const unitOptions = [
+	{ label: 'None', value: '' },
+	{ label: '°C', value: '°C' },
+	{ label: '°F', value: '°F' },
+	{ label: '%', value: '%' },
+	{ label: 'V', value: 'V' },
+	{ label: 'A', value: 'A' },
+	{ label: 'W', value: 'W' },
+	{ label: 'kW', value: 'kW' },
+	{ label: 'kWh', value: 'kWh' },
+	{ label: 'Hz', value: 'Hz' },
+	{ label: 'RPM', value: 'RPM' },
+	{ label: 'bar', value: 'bar' },
+	{ label: 'psi', value: 'psi' },
+	{ label: 'm/s', value: 'm/s' },
 ];
 
-const rwAccessOptions = [
-	{ label: 'Read Only (0)', value: 0 },
-	{ label: 'Read & Write (1)', value: 1 },
+const bitOptions = [
+	...Array.from({ length: 32 }, (_, i) => ({ label: i.toString(), value: i })),
+	{ label: '99 (NA)', value: 99 },
+];
+
+const dataTypeOptions = [
+	{ label: 'Discrete', value: 'discrete' },
+	{ label: 'Integer', value: 'integer' },
+	{ label: 'Float', value: 'float' },
+];
+
+const rwOptions = [
+	{ label: 'Read Only', value: 'r' },
+	{ label: 'Read & Write', value: 'rw' },
 ];
 
 const sourceOptions = [
-	{ label: 'DI (0)', value: 0 },
-	{ label: 'AI (1)', value: 1 },
-	{ label: 'DO (2)', value: 2 },
-	{ label: 'Modbus (3)', value: 3 },
-	{ label: 'Zigbee (4)', value: 4 },
-	{ label: 'T8000 Internal System (5)', value: 5 },
+	{ label: 'DI', value: 'DI' },
+	{ label: 'DO', value: 'DO' },
+	{ label: 'AI', value: 'AI' },
+	{ label: 'Modbus', value: 'modbus' },
+	{ label: 'Zigbee', value: 'zigbee' },
 ];
 
-const runtimeOptions = [
-	{ label: 'No (0) - Static parameter', value: 0 },
-	{ label: 'Yes (1) - Defines device runtime', value: 1 },
+const pinOptions = [
+	'P8_07', 'P8_08', 'P8_09', 'P8_10', 'P8_11', 'P8_12', 'P8_13', 'P8_14', 'P8_15', 'P8_16',
+	'P8_17', 'P8_18', 'P8_19', 'P8_26',
+	'P9_11', 'P9_12', 'P9_13', 'P9_14', 'P9_15', 'P9_16', 'P9_39', 'P9_40', 'P9_41', 'P9_42'
+].map(p => ({ label: p, value: p }));
+
+const invertOptions = [
+	{ label: '0: Normally Open', value: 0 },
+	{ label: '1: Normally Close', value: 1 },
+];
+
+const enableOptions = [
+	{ label: '0: Disable channel', value: 0 },
+	{ label: '1: Enable channel', value: 1 },
+];
+
+const doDefaultOptions = [
+	{ label: '0: Normally Open (low)', value: 0 },
+	{ label: '1: Normally Close (high)', value: 1 },
 ];
 
 const AddParameter: React.FC = () => {
 	const [form] = Form.useForm();
 	const [loading, setLoading] = useState(false);
-	const [dataType, setDataType] = useState<number>(1);
+	const [currentStep, setCurrentStep] = useState(0);
+	const sourceType = Form.useWatch('sourceType', form);
+	const rw = Form.useWatch('rw', form);
 
-	// Bit position options: 0-31 and 99 (NA)
-	const bitOptions = [
-		...Array.from({ length: 32 }, (_, i) => ({ value: i, label: `${i}` })),
-		{ value: 99, label: '99 (NA)' },
-	];
+	const handleNext = async () => {
+		try {
+			await form.validateFields(['model_id', 'name', 'attributeName', 'sourceType']);
+			setCurrentStep(1);
+		} catch {
+			// Validation failed
+		}
+	};
+
+	const handlePrev = () => {
+		setCurrentStep(0);
+	};
 
 	const handleSubmit = async () => {
 		try {
 			const values = await form.validateFields();
+			setLoading(true);
+			console.log('Creating parameter:', values);
 			
-			// Get model name for display
-			const selectedModel = mockModels.find(m => m.id === values.model_id);
-			const modelDisplay = selectedModel ? `${selectedModel.name} (${selectedModel.type})` : values.model_id;
+			// Simulate API call
+			await new Promise(resolve => setTimeout(resolve, 1000));
 			
-			// Show confirmation modal
-			Modal.confirm({
-				title: 'Confirm Parameter Creation',
-				content: (
-					<div>
-						<p><strong>Model:</strong> {modelDisplay}</p>
-						<p><strong>Parameter:</strong> {values.parameter}</p>
-						<p>Are you sure you want to create this parameter?</p>
-					</div>
-				),
-				okText: 'Confirm',
-				cancelText: 'Cancel',
-				onOk: async () => {
-					setLoading(true);
-
-					// 模拟 API 调用
-					console.log('Creating parameter:', values);
-
-					// TODO: 实际 API 调用
-					// POST /api/parameters - 创建参数
-					
-					await new Promise(resolve => setTimeout(resolve, 1000));
-
-					message.success('Parameter added successfully!');
-					form.resetFields();
-					setLoading(false);
-				},
-			});
+			message.success('Parameter added successfully!');
+			form.resetFields();
+			setCurrentStep(0);
+			setLoading(false);
 		} catch (error) {
 			console.error('Validation failed:', error);
 		}
 	};
 
-	const handleReset = () => {
-		form.resetFields();
-		setDataType(1);
+	const renderConfigFields = () => {
+		switch (sourceType) {
+			case 'modbus':
+				return (
+					<>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Register Address" name={['config', 'address']} required>
+									<InputNumber style={{ width: '100%' }} />
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Length (len)" name={['config', 'len']} initialValue={1} required>
+									<InputNumber style={{ width: '100%' }} />
+								</Form.Item>
+							</Col>
+						</Row>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Read Function Code (readFC)" name={['config', 'readFC']} required>
+									<Select>
+										<Option value={0}>00: Not Available</Option>
+										<Option value={1}>01: Read Coils</Option>
+										<Option value={2}>02: Read Discrete Inputs</Option>
+										<Option value={3}>03: Read Holding Registers</Option>
+										<Option value={4}>04: Read Input Registers</Option>
+									</Select>
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Write Function Code (writeFC)" name={['config', 'writeFC']} required>
+									<Select>
+										<Option value={0}>00: Not Available</Option>
+										<Option value={5}>05: Write Single Coil</Option>
+										<Option value={6}>06: Write Single Register</Option>
+										<Option value={15}>15: Write Multiple Coils</Option>
+										<Option value={16}>16: Write Multiple Registers</Option>
+									</Select>
+								</Form.Item>
+							</Col>
+						</Row>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Data Type (datatype)" name={['config', 'modbusDataType']} required>
+									<Select>
+										<Option value={1}>1: Int</Option>
+										<Option value={2}>2: Discrete</Option>
+										<Option value={3}>3: Float</Option>
+									</Select>
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Decimal Place (dp)" name={['config', 'dp']} initialValue={1}>
+									<InputNumber style={{ width: '100%' }} />
+								</Form.Item>
+							</Col>
+						</Row>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Scaler" name={['config', 'scaler']} initialValue={0.1}>
+									<InputNumber style={{ width: '100%' }} step={0.1} />
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Offset" name={['config', 'offset']} initialValue={0}>
+									<InputNumber style={{ width: '100%' }} />
+								</Form.Item>
+							</Col>
+						</Row>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Timeout (ms)" name={['config', 'timeout']} initialValue={200}>
+									<InputNumber style={{ width: '100%' }} />
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Polling Speed" name={['config', 'pollSpeed']}>
+									<Select>
+										<Option value={0}>0: NA</Option>
+										<Option value={1}>1: Fast</Option>
+										<Option value={2}>2: Medium</Option>
+										<Option value={3}>3: Slow</Option>
+									</Select>
+								</Form.Item>
+							</Col>
+						</Row>
+					</>
+				);
+			case 'DI':
+				return (
+					<>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Pin" name={['config', 'pin']} required>
+									<Select options={pinOptions} />
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Invert" name={['config', 'invert']} required>
+									<Select options={invertOptions} />
+								</Form.Item>
+							</Col>
+						</Row>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Enable (en)" name={['config', 'en']} required>
+									<Select options={enableOptions} />
+								</Form.Item>
+							</Col>
+						</Row>
+					</>
+				);
+			case 'DO':
+				return (
+					<>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Pin" name={['config', 'pin']} required>
+									<Select options={pinOptions} />
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Default Value" name={['config', 'default_val']} required>
+									<Select options={doDefaultOptions} />
+								</Form.Item>
+							</Col>
+						</Row>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Enable (en)" name={['config', 'en']} required>
+									<Select options={enableOptions} />
+								</Form.Item>
+							</Col>
+						</Row>
+					</>
+				);
+			case 'AI':
+				return (
+					<>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Pin" name={['config', 'pin']} required>
+									<Select options={pinOptions} />
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Unit" name="unit" required>
+									<Select options={unitOptions} />
+								</Form.Item>
+							</Col>
+						</Row>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Scaler" name={['config', 'scaler']} initialValue={1}>
+									<InputNumber style={{ width: '100%' }} step={0.1} />
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Offset" name={['config', 'offset']} initialValue={0}>
+									<InputNumber style={{ width: '100%' }} />
+								</Form.Item>
+							</Col>
+						</Row>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Decimal Place (dp)" name={['config', 'dp']} initialValue={2}>
+									<InputNumber style={{ width: '100%' }} />
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Sensitivity" name={['config', 'sensitivity']} initialValue={0.1}>
+									<InputNumber style={{ width: '100%' }} step={0.1} />
+								</Form.Item>
+							</Col>
+						</Row>
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Enable (en)" name={['config', 'en']} required>
+									<Select options={enableOptions} />
+								</Form.Item>
+							</Col>
+						</Row>
+					</>
+				);
+			case 'zigbee':
+				return <Text type="secondary">Zigbee configuration will be available soon.</Text>;
+			default:
+				return <Text type="secondary">No configuration needed for this source type.</Text>;
+		}
 	};
 
 	return (
 		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#fff' }}>
 			<div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
-				<div style={{ maxWidth: 1200, margin: '0 auto' }}>
+				<div style={{ maxWidth: 800, margin: '0 auto' }}>
 					<Title level={3}>
-						<PlusOutlined /> Add Parameter
+						<PlusOutlined /> Supplement Add Parameter
 					</Title>
 					<Paragraph type="secondary">
-						Create a new device parameter with detailed configuration
+						Add a single parameter to an existing model.
 					</Paragraph>
 
-					<Row gutter={24} style={{ marginTop: 32 }}>
-						<Col xs={24} md={14}>
-							<Card bordered>
-								<Form
-									form={form}
-									layout="vertical"
-									initialValues={{
-										data_type: 1,
-										rw: 0,
-										source: 4,
-										runtime: 0,
-										bit: 99,
-									}}
-									onValuesChange={(changedValues) => {
-									if (changedValues.data_type !== undefined) {
-										setDataType(changedValues.data_type);
-									}
-								}}
-							>
+					<Card bordered style={{ marginTop: 24 }}>
+						<Steps current={currentStep} style={{ marginBottom: 24 }}>
+							<Steps.Step title="Basic Info" description="Define parameter details" icon={<InfoCircleOutlined />} />
+							<Steps.Step title="Source Config" description="Configure source interface" icon={<InfoCircleOutlined />} />
+						</Steps>
+
+						<Form
+							form={form}
+							layout="vertical"
+							initialValues={{
+								bit: 99,
+								dataType: 'integer',
+								rw: 'r',
+								sourceType: 'modbus'
+							}}
+						>
+							<div style={{ display: currentStep === 0 ? 'block' : 'none' }}>
 								<Row gutter={16}>
-									<Col span={12}>
+									<Col span={24}>
 										<Form.Item
-											label="Model"
+											label="Select Model"
 											name="model_id"
-											rules={[
-												{ required: true, message: 'Please select a model' },
-											]}
-											tooltip="Select the device model this parameter belongs to"
+											rules={[{ required: true, message: 'Please select a model' }]}
 										>
 											<Select
 												showSearch
 												placeholder="Search and select model"
-												size="large"
 												optionFilterProp="label"
-												filterOption={(input, option) =>
-													(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-												}
 												options={mockModels.map(model => ({
 													value: model.id,
 													label: `${model.name} (${model.type})`,
@@ -164,236 +364,99 @@ const AddParameter: React.FC = () => {
 											/>
 										</Form.Item>
 									</Col>
-
+								</Row>
+								<Divider />
+								<Row gutter={16}>
 									<Col span={12}>
-										<Form.Item
-											label="Parameter Name"
-											name="parameter"
-											rules={[
-												{ required: true, message: 'Please enter parameter name' },
-												{ max: 50, message: 'Parameter name must be less than 50 characters' },
-											]}
-											tooltip="Unique identifier for this parameter"
-										>
-											<Input 
-												placeholder="e.g., pwr_status, lum_level" 
-												size="large"
-											/>
+										<Form.Item label="Parameter Name" name="name" required>
+											<Input placeholder="e.g., Temperature" />
 										</Form.Item>
 									</Col>
-								</Row>									<Row gutter={16}>
-										<Col span={12}>
-											<Form.Item
-												label="Attribute Name"
-												name="attr"
-												rules={[
-													{ required: true, message: 'Please enter attribute name' },
-													{ max: 50, message: 'Attribute name must be less than 50 characters' },
-												]}
-												tooltip="Display name or description for this parameter"
-											>
-												<Input 
-													placeholder="e.g., Power Status, Luminance Level" 
-													size="large"
-												/>
-											</Form.Item>
-										</Col>
-
-										<Col span={12}>
-											<Form.Item
-												label="Unit"
-												name="unit"
-												tooltip="Unit of measurement (optional)"
-											>
-												<Input 
-													placeholder="e.g., %, V, A, °C, kW" 
-													size="large"
-												/>
-											</Form.Item>
-										</Col>
-									</Row>
-
-									<Divider>Data Configuration</Divider>
-
-									<Row gutter={16}>
-										<Col span={8}>
-											<Form.Item
-												label="Bit"
-												name="bit"
-												rules={[{ required: true, message: 'Please enter bit value' }]}
-												tooltip="0-31: Bit position | 99: NA"
-											>
-												<Select
-													placeholder="Select bit position"
-													size="large"
-													showSearch
-													options={bitOptions}
-												/>
-											</Form.Item>
-										</Col>
-
-										<Col span={8}>
-											<Form.Item
-												label="Data Type"
-												name="data_type"
-												rules={[{ required: true, message: 'Please select data type' }]}
-											>
-												<Select
-													size="large"
-													options={dataTypeOptions}
-												/>
-											</Form.Item>
-										</Col>
-
-										<Col span={8}>
-											<Form.Item
-												label="Access"
-												name="rw"
-												rules={[{ required: true, message: 'Please select access' }]}
-											>
-												<Select
-													size="large"
-													options={rwAccessOptions}
-												/>
-											</Form.Item>
-										</Col>
-									</Row>
-
+									<Col span={12}>
+										<Form.Item label="Attribute Name" name="attributeName" required tooltip="Unique identifier">
+											<Input placeholder="e.g., temp_01" />
+										</Form.Item>
+									</Col>
+								</Row>
+								<Row gutter={16}>
+									<Col span={12}>
+										<Form.Item label="Unit" name="unit">
+											<Select options={unitOptions} showSearch />
+										</Form.Item>
+									</Col>
+									<Col span={12}>
+										<Form.Item label="Bit" name="bit">
+											<Select options={bitOptions} />
+										</Form.Item>
+									</Col>
+								</Row>
+								<Row gutter={16}>
+									<Col span={12}>
+										<Form.Item label="Data Type" name="dataType">
+											<Select options={dataTypeOptions} />
+										</Form.Item>
+									</Col>
+									<Col span={12}>
+										<Form.Item label="RW (Read/Write)" name="rw">
+											<Select options={rwOptions} />
+										</Form.Item>
+									</Col>
+								</Row>
+								{rw === 'rw' && (
 									<Row gutter={16}>
 										<Col span={12}>
-											<Form.Item
-												label="Source Interface"
-												name="source"
-												rules={[{ required: true, message: 'Please select source' }]}
-											>
-												<Select
-													size="large"
-													options={sourceOptions}
-												/>
+											<Form.Item label="Lower Limit" name="lowerLimit" required>
+												<InputNumber style={{ width: '100%' }} placeholder="e.g., 0" />
 											</Form.Item>
 										</Col>
-
 										<Col span={12}>
-											<Form.Item
-												label="Runtime"
-												name="runtime"
-												rules={[{ required: true, message: 'Please select runtime' }]}
-												tooltip="Yes(1): Defines device runtime"
-											>
-												<Select
-													size="large"
-													options={runtimeOptions}
-												/>
+											<Form.Item label="Upper Limit" name="upperLimit" required>
+												<InputNumber style={{ width: '100%' }} placeholder="e.g., 100" />
 											</Form.Item>
 										</Col>
 									</Row>
+								)}
+								<Row gutter={16}>
+									<Col span={12}>
+										<Form.Item label="Source Interface" name="sourceType" required>
+											<Select options={sourceOptions} />
+										</Form.Item>
+									</Col>
+								</Row>
+							</div>
 
-									<Divider>Value Limits</Divider>
+							<div style={{ display: currentStep === 1 ? 'block' : 'none' }}>
+								<div style={{ background: '#fafafa', padding: 16, borderRadius: 8, marginBottom: 16 }}>
+									<Space align="center" style={{ marginBottom: 16 }}>
+										<SettingOutlined />
+										<Text strong>Configuration for {sourceType?.toUpperCase()}</Text>
+									</Space>
+									{renderConfigFields()}
+								</div>
+							</div>
 
-									<Row gutter={16}>
-										<Col span={12}>
-											<Form.Item
-												label="Lower Limit"
-												name="lower_limit"
-												rules={[{ required: true, message: 'Please enter lower limit' }]}
-											>
-												<InputNumber 
-													placeholder="e.g., 0" 
-													size="large"
-													style={{ width: '100%' }}
-													step={dataType === 2 ? 0.01 : 1}
-												/>
-											</Form.Item>
-										</Col>
-
-										<Col span={12}>
-											<Form.Item
-												label="Upper Limit"
-												name="upper_limit"
-												rules={[{ required: true, message: 'Please enter upper limit' }]}
-											>
-												<InputNumber 
-													placeholder="e.g., 100" 
-													size="large"
-													style={{ width: '100%' }}
-													step={dataType === 2 ? 0.01 : 1}
-												/>
-											</Form.Item>
-										</Col>
-									</Row>
-
-									<div style={{ marginTop: 24, textAlign: 'right' }}>
-										<Space>
-											<Button size="large" onClick={handleReset}>
-												Reset
-											</Button>
+							<div style={{ marginTop: 24, textAlign: 'right' }}>
+								<Space>
+									{currentStep > 0 && (
+										<Button onClick={handlePrev}>Back</Button>
+									)}
+									{currentStep === 0 && (
+										<Button type="primary" onClick={handleNext}>Next</Button>
+									)}
+									{currentStep === 1 && (
 										<Button
 											type="primary"
-											size="large"
 											loading={loading}
 											onClick={handleSubmit}
 											style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
 										>
 											Create Parameter
 										</Button>
-										</Space>
-									</div>
-								</Form>
-							</Card>
-						</Col>
-
-						<Col xs={24} md={10}>
-							<Card style={{ background: '#f5f5f5', position: 'sticky', top: 0 }}>
-								<Title level={5}>
-									<InfoCircleOutlined /> Configuration Guide
-								</Title>
-								<Divider style={{ margin: '8px 0' }} />
-								
-								<Space direction="vertical" size="small" style={{ width: '100%' }}>
-									<div>
-										<Text strong style={{ fontSize: '12px' }}>Bit:</Text>
-										<Text type="secondary" style={{ fontSize: '11px', marginLeft: 8 }}>0-31: Bit position | 99: NA</Text>
-									</div>
-
-									<div>
-										<Text strong style={{ fontSize: '12px' }}>Data Type:</Text>
-										<Text type="secondary" style={{ fontSize: '11px', marginLeft: 8 }}>Discrete(0) / Integer(1) / Float(2)</Text>
-									</div>
-
-									<div>
-										<Text strong style={{ fontSize: '12px' }}>Source:</Text>
-										<Text type="secondary" style={{ fontSize: '11px', marginLeft: 8 }}>DI/AI/DO/Modbus/Zigbee/T8000</Text>
-									</div>
-
-									<div>
-										<Text strong style={{ fontSize: '12px' }}>Runtime:</Text>
-										<Text type="secondary" style={{ fontSize: '11px', marginLeft: 8 }}>Yes(1): Defines device runtime | No(0): Static</Text>
-									</div>
-
-									<Divider style={{ margin: '12px 0' }} />
-
-									<Text strong style={{ fontSize: '13px' }}>Example:</Text>
-									<div style={{ 
-										marginTop: 4, 
-										padding: 8, 
-										background: '#fff', 
-										borderRadius: 4,
-										border: '1px solid #d9d9d9'
-									}}>
-										<Text style={{ fontSize: '11px' }}>
-											<strong>Model:</strong> T-DIM-001<br/>
-											<strong>Parameter:</strong> lum_level<br/>
-											<strong>Attribute:</strong> Luminance Level<br/>
-											<strong>Unit:</strong> %<br/>
-											<strong>Bit:</strong> 99 | <strong>Type:</strong> Integer(1)<br/>
-											<strong>Access:</strong> R/W(1) | <strong>Source:</strong> Modbus(3)<br/>
-											<strong>Limits:</strong> 0-100 | <strong>Runtime:</strong> Yes(1)
-										</Text>
-									</div>
+									)}
 								</Space>
-							</Card>
-						</Col>
-					</Row>
+							</div>
+						</Form>
+					</Card>
 				</div>
 			</div>
 		</div>

@@ -8,10 +8,14 @@ import Analysis from "./pages/Analysis";
 import Devices from "./pages/devices";
 import DeviceAdd from "./pages/DeviceAdd";
 import DeviceRules from "./pages/DeviceRules";
+import AllModels from "./pages/AllModels";
+import AllParameters from "./pages/AllParameters";
 import AddModel from "./pages/AddModel";
 import AddParameter from "./pages/AddParameter";
-import AddAlarmRule from "./pages/AddAlarm";
+import AddAlarm from "./pages/AddAlarm";
+import AddRule from "./pages/AddRule";
 import Settings from "./pages/Settings";
+import Account from "./pages/Account";
 import SettingsNetwork from "./pages/settings/Network";
 import SettingsMqtt from "./pages/settings/Mqtt";
 import SettingsModbus from "./pages/settings/Modbus";
@@ -32,11 +36,14 @@ return (
 		{/* Devices 区域，可拓展子页面 */}
 		<Route path="devices" element={<Devices />} />
 		<Route path="devices/add" element={<DeviceAdd />} />
+		<Route path="devices/models" element={<AllModels />} />
+		<Route path="devices/parameters" element={<AllParameters />} />
 
 		{/* Configuration 区域 */}
 		<Route path="configuration/add-model" element={<AddModel />} />
 		<Route path="configuration/add-parameter" element={<AddParameter />} />
-		<Route path="configuration/add-alarm" element={<AddAlarmRule />} />
+		<Route path="configuration/add-alarm" element={<AddAlarm />} />
+		<Route path="configuration/add-rule" element={<AddRule />} />
 
 		{/* Settings 区域：嵌套路由 */}
 			<Route path="settings" element={<Settings />}>
@@ -47,7 +54,9 @@ return (
 			<Route path="system" element={<SettingsSystem />} />
 		</Route>
 
-		{/* 未匹配到的路径，统一重定向到首页（可按需改 404） */}
+		{/* Account 页面 */}
+		<Route path="account" element={<Account />} />
+
 		<Route path="*" element={<Navigate to="/" replace />} />
 	</Route>
 </Routes>

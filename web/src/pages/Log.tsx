@@ -1,160 +1,307 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Space, Input, DatePicker, Select } from 'antd';
-import { ExportOutlined } from '@ant-design/icons';
-import type { ColumnType } from 'antd/es/table';
+import { Card, Table, Button, Space, Input, DatePicker, Tabs, Tag, Badge, Pagination } from 'antd';
+import { ExportOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
 
-interface LogData {
+// --- Interfaces ---
+interface BaseLog {
 	key: string;
 	time: string;
+}
+
+interface LogScheduled extends BaseLog {
 	deviceName: string;
 	parameterName: string;
 	value: string | number;
-	logType: string;
 }
 
+interface LogChange extends BaseLog {
+	deviceName: string;
+	parameterName: string;
+	value: string | number;
+}
+
+interface LogAlarm extends BaseLog {
+	deviceName: string;
+	parameterName: string;
+	value: string | number;
+	alarmName: string;
+	alarmStatus: 'normalized' | 'triggered';
+}
+
+interface LogError extends BaseLog {
+	deviceName: string;
+	parameterName: string;
+	errorCode: string; // "Error Code 1-99"
+}
+
+interface LogHealth extends BaseLog {
+	deviceName: string;
+	networkStatus: 'online' | 'offline';
+	lastReport: string;
+	runtime: string;
+	alarmState: string;
+	errState: string;
+}
+
+interface LogRule extends BaseLog {
+	ruleName: string;
+	ruleStatus: 'normalized' | 'triggered';
+}
+
+type LogItem = LogScheduled | LogChange | LogAlarm | LogError | LogHealth | LogRule;
+
+// --- Mock Data ---
+const mockScheduled: LogScheduled[] = Array.from({ length: 20 }).map((_, i) => ({
+	key: `sch-${i}`,
+	time: dayjs().subtract(i * 10, 'minute').format('YYYY-MM-DD HH:mm:ss'),
+	deviceName: i % 2 === 0 ? 'AR-EM-0005' : 'T-OXM-001',
+	parameterName: i % 3 === 0 ? 'voltage' : 'temperature',
+	value: (Math.random() * 100).toFixed(2),
+}));
+
+const mockChange: LogChange[] = Array.from({ length: 10 }).map((_, i) => ({
+	key: `chg-${i}`,
+	time: dayjs().subtract(i * 2, 'hour').format('YYYY-MM-DD HH:mm:ss'),
+	deviceName: 'Gateway Main',
+	parameterName: 'config_interval',
+	value: i % 2 === 0 ? '300s' : '600s',
+}));
+
+const mockAlarm: LogAlarm[] = Array.from({ length: 15 }).map((_, i) => ({
+	key: `alm-${i}`,
+	time: dayjs().subtract(i * 5, 'hour').format('YYYY-MM-DD HH:mm:ss'),
+	deviceName: 'T-SP-001',
+	parameterName: 'current',
+	value: (10 + Math.random() * 5).toFixed(2),
+	alarmName: 'Over Current',
+	alarmStatus: i % 2 === 0 ? 'triggered' : 'normalized',
+}));
+
+const mockError: LogError[] = Array.from({ length: 8 }).map((_, i) => ({
+	key: `err-${i}`,
+	time: dayjs().subtract(i, 'day').format('YYYY-MM-DD HH:mm:ss'),
+	deviceName: 'T-EMS-002',
+	parameterName: 'sensor_read',
+	errorCode: `E-${Math.floor(Math.random() * 99) + 1}`,
+}));
+
+const mockHealth: LogHealth[] = Array.from({ length: 12 }).map((_, i) => ({
+	key: `hlt-${i}`,
+	time: dayjs().subtract(i * 30, 'minute').format('YYYY-MM-DD HH:mm:ss'),
+	deviceName: i % 3 === 0 ? 'Gateway Main' : 'AR-EM-0005',
+	networkStatus: Math.random() > 0.1 ? 'online' : 'offline',
+	lastReport: dayjs().subtract(Math.random() * 10, 'minute').format('HH:mm:ss'),
+	runtime: `${Math.floor(Math.random() * 1000)}h`,
+	alarmState: Math.random() > 0.8 ? 'Alarm' : 'Normal',
+	errState: Math.random() > 0.9 ? 'Error' : 'Normal',
+}));
+
+const mockRule: LogRule[] = Array.from({ length: 10 }).map((_, i) => ({
+	key: `rule-${i}`,
+	time: dayjs().subtract(i * 4, 'hour').format('YYYY-MM-DD HH:mm:ss'),
+	ruleName: i % 2 === 0 ? 'High Temp Warning' : 'Low Battery Alert',
+	ruleStatus: i % 2 === 0 ? 'triggered' : 'normalized',
+}));
+
+type LogType = 'log_scheduled' | 'log_change' | 'log_alarm' | 'log_error' | 'log_health' | 'log_rule';
+
 const Log: React.FC = () => {
-	const [currentPage, setCurrentPage] = useState(1);
+	const [activeTab, setActiveTab] = useState<LogType>('log_scheduled');
 	const [filterDeviceName, setFilterDeviceName] = useState('');
-	const [filterParameterName, setFilterParameterName] = useState('');
-	const [filterLogType, setFilterLogType] = useState<string>('all');
+	const [filterParameterName, setFilterParameterName] = useState(''); // Also used for Rule Name
 	const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([null, null]);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [pageSize, setPageSize] = useState(15);
 
-	// Mock log data
-	const allLogs: LogData[] = [
-		{ key: '1', time: 'Nov 07, 2024 15:45', deviceName: 'AR-EM-0005', parameterName: 'load_switch', value: 1, logType: 'log_scheduled' },
-		{ key: '2', time: 'Nov 07, 2024 15:45', deviceName: 'AR-EM-0005', parameterName: 'voltage', value: 240.7, logType: 'log_scheduled' },
-		{ key: '3', time: 'Nov 07, 2024 15:45', deviceName: 'AR-EM-0005', parameterName: 'energy_total', value: 2.34, logType: 'log_scheduled' },
-		{ key: '4', time: 'Nov 07, 2024 15:45', deviceName: 'AR-EM-0005', parameterName: 'pwr_factor', value: 0.157, logType: 'log_scheduled' },
-		{ key: '5', time: 'Nov 07, 2024 15:45', deviceName: 'AR-EM-0005', parameterName: 'frequency', value: 49.95, logType: 'log_scheduled' },
-		{ key: '6', time: 'Nov 07, 2024 15:45', deviceName: 'AR-EM-0005', parameterName: 'kW', value: 0, logType: 'log_scheduled' },
-		{ key: '7', time: 'Nov 07, 2024 15:44', deviceName: 'Gateway Main', parameterName: 'status', value: 'online', logType: 'log_change' },
-		{ key: '8', time: 'Nov 07, 2024 15:44', deviceName: 'T-OXM-001', parameterName: 'occupancy', value: 1, logType: 'log_scheduled' },
-		{ key: '9', time: 'Nov 07, 2024 15:43', deviceName: 'T-DIM-001', parameterName: 'brightness', value: 75, logType: 'log_scheduled' },
-		{ key: '10', time: 'Nov 07, 2024 15:43', deviceName: 'T-PM-001', parameterName: 'temperature', value: 23.5, logType: 'log_health' },
-		{ key: '11', time: 'Nov 07, 2024 15:42', deviceName: 'AR-EM-0005', parameterName: 'current', value: 1.2, logType: 'log_scheduled' },
-		{ key: '12', time: 'Nov 07, 2024 15:42', deviceName: 'T-IR-001', parameterName: 'level', value: 85, logType: 'log_scheduled' },
-		{ key: '13', time: 'Nov 07, 2024 15:41', deviceName: 'T-SP-001', parameterName: 'power', value: 1250, logType: 'log_scheduled' },
-		{ key: '14', time: 'Nov 07, 2024 15:41', deviceName: 'Gateway Main', parameterName: 'memory_usage', value: 45.2, logType: 'log_change' },
-		{ key: '15', time: 'Nov 07, 2024 15:40', deviceName: 'T-TEM-001', parameterName: 'temperature', value: 22.8, logType: 'log_scheduled' },
-		{ key: '16', time: 'Nov 07, 2024 15:40', deviceName: 'Gateway Main', parameterName: 'connection', value: 'established', logType: 'log_change' },
-		{ key: '17', time: 'Nov 07, 2024 15:39', deviceName: 'T-OXM-001', parameterName: 'battery_level', value: 85, logType: 'log_health' },
-		{ key: '18', time: 'Nov 07, 2024 15:38', deviceName: 'T-SP-001', parameterName: 'alarm_triggered', value: 1, logType: 'log_alarm' },
-		{ key: '19', time: 'Nov 07, 2024 15:37', deviceName: 'T-EMS-002', parameterName: 'voltage_l1', value: 220.5, logType: 'log_scheduled' },
-		{ key: '20', time: 'Nov 07, 2024 15:36', deviceName: 'Gateway Main', parameterName: 'config_update', value: 'success', logType: 'log_error' },
-	];
+	// --- Columns Definition ---
+	const getColumns = (type: LogType): ColumnsType<LogItem> => {
+		const commonTimeCol = { title: 'Time', dataIndex: 'time', key: 'time', width: 180 };
+		const commonDeviceCol = { title: 'Device Name', dataIndex: 'deviceName', key: 'deviceName', width: 180 };
+		const commonParamCol = { title: 'Parameter Name', dataIndex: 'parameterName', key: 'parameterName', width: 180 };
+		const commonValueCol = { title: 'Value', dataIndex: 'value', key: 'value', width: 120 };
 
-	// Filter logic
-	const filteredLogs = allLogs.filter(log => {
-		const matchDevice = filterDeviceName === '' || log.deviceName.toLowerCase().includes(filterDeviceName.toLowerCase());
-		const matchParameter = filterParameterName === '' || log.parameterName.toLowerCase().includes(filterParameterName.toLowerCase());
-		const matchLogType = filterLogType === 'all' || log.logType === filterLogType;
-		
-		// Date range filter (simplified - in real app would parse dates properly)
-		const matchDate = true;
-		// Add date filtering logic here if needed
-		
-		return matchDevice && matchParameter && matchLogType && matchDate;
-	});
+		switch (type) {
+			case 'log_scheduled':
+				return [commonTimeCol, commonDeviceCol, commonParamCol, commonValueCol];
+			
+			case 'log_change':
+				return [commonTimeCol, commonDeviceCol, commonParamCol, commonValueCol];
+			
+			case 'log_alarm':
+				return [
+					commonTimeCol, 
+					commonDeviceCol, 
+					commonParamCol, 
+					commonValueCol,
+					{ title: 'Alarm Name', dataIndex: 'alarmName', key: 'alarmName', width: 180 },
+					{ 
+						title: 'Status', 
+						dataIndex: 'alarmStatus', 
+						key: 'alarmStatus', 
+						width: 120,
+						render: (status: string) => (
+							<Tag color={status === 'triggered' ? 'red' : 'green'}>
+								{status.toUpperCase()}
+							</Tag>
+						)
+					}
+				];
 
-	// Reset to page 1 when filters change
-	React.useEffect(() => {
-		setCurrentPage(1);
-	}, [filterDeviceName, filterParameterName, filterLogType, dateRange]);
+			case 'log_error':
+				return [
+					commonTimeCol, 
+					commonDeviceCol, 
+					commonParamCol, 
+					{ 
+						title: 'Error Code', 
+						dataIndex: 'errorCode', 
+						key: 'errorCode',
+						render: (code: string) => <Tag color="volcano">{code}</Tag>
+					}
+				];
 
-	const columns: ColumnType<LogData>[] = [
-		{
-			title: 'Time',
-			dataIndex: 'time',
-			key: 'time',
-			width: 180,
-		},
-		{
-			title: 'Device Name',
-			dataIndex: 'deviceName',
-			key: 'deviceName',
-			width: 200,
-		},
-		{
-			title: 'Log Type',
-			dataIndex: 'logType',
-			key: 'logType',
-			width: 150,
-		},
-		{
-			title: 'Parameter Name',
-			dataIndex: 'parameterName',
-			key: 'parameterName',
-			width: 200,
-		},
-		{
-			title: 'Value',
-			dataIndex: 'value',
-			key: 'value',
-			width: 150,
-		},
-	];
+			case 'log_health':
+				return [
+					commonTimeCol,
+					commonDeviceCol,
+					{ 
+						title: 'Network', 
+						dataIndex: 'networkStatus', 
+						key: 'networkStatus',
+						render: (status: string) => <Badge status={status === 'online' ? 'success' : 'error'} text={status} />
+					},
+					{ title: 'Last Report', dataIndex: 'lastReport', key: 'lastReport' },
+					{ title: 'Runtime', dataIndex: 'runtime', key: 'runtime' },
+					{ title: 'Alarm State', dataIndex: 'alarmState', key: 'alarmState' },
+					{ title: 'Error State', dataIndex: 'errState', key: 'errState' },
+				];
+
+			case 'log_rule':
+				return [
+					commonTimeCol,
+					{ title: 'Rule Name', dataIndex: 'ruleName', key: 'ruleName' },
+					{ 
+						title: 'Status', 
+						dataIndex: 'ruleStatus', 
+						key: 'ruleStatus',
+						render: (status: string) => (
+							<Tag color={status === 'triggered' ? 'red' : 'green'}>
+								{status.toUpperCase()}
+							</Tag>
+						)
+					}
+				];
+			default:
+				return [];
+		}
+	};
+
+	// --- Data Filtering ---
+	const getData = () => {
+		let data: LogItem[] = [];
+		switch (activeTab) {
+			case 'log_scheduled': data = mockScheduled; break;
+			case 'log_change': data = mockChange; break;
+			case 'log_alarm': data = mockAlarm; break;
+			case 'log_error': data = mockError; break;
+			case 'log_health': data = mockHealth; break;
+			case 'log_rule': data = mockRule; break;
+		}
+
+		return data.filter(item => {
+			// Date Range Filter (Mock implementation)
+			// if (dateRange[0] && dateRange[1]) { ... }
+
+			// Device Name Filter
+			if (filterDeviceName && 'deviceName' in item) {
+				if (!item.deviceName.toLowerCase().includes(filterDeviceName.toLowerCase())) return false;
+			}
+
+			// Parameter Name Filter (or Rule Name for log_rule)
+			if (filterParameterName) {
+				if (activeTab === 'log_rule' && 'ruleName' in item) {
+					if (!item.ruleName.toLowerCase().includes(filterParameterName.toLowerCase())) return false;
+				} else if ('parameterName' in item) {
+					if (!item.parameterName.toLowerCase().includes(filterParameterName.toLowerCase())) return false;
+				}
+			}
+
+			return true;
+		});
+	};
 
 	const handleReset = () => {
 		setFilterDeviceName('');
 		setFilterParameterName('');
-		setFilterLogType('all');
 		setDateRange([null, null]);
 		setCurrentPage(1);
 	};
 
-	const handleExport = () => {
-		// Export functionality - to be implemented
-		console.log('Exporting logs...');
-	};
+	const items = [
+		{ key: 'log_scheduled', label: 'Scheduled' },
+		{ key: 'log_change', label: 'Change' },
+		{ key: 'log_alarm', label: 'Alarm' },
+		{ key: 'log_error', label: 'Error' },
+		{ key: 'log_health', label: 'Health' },
+		{ key: 'log_rule', label: 'Rule' },
+	];
+
+	const filteredData = getData();
+	const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
 	return (
 		<div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%', overflow: 'hidden' }}>
+			<Card bordered={false} bodyStyle={{ padding: '0 16px' }}>
+				<Tabs 
+					activeKey={activeTab} 
+					onChange={(key) => {
+						setActiveTab(key as LogType);
+						handleReset(); // Optional: reset filters when switching tabs
+					}}
+					items={items}
+					size="large"
+					tabBarStyle={{ marginBottom: 0 }}
+				/>
+			</Card>
+
 			{/* Filter Bar */}
-			<Card bordered bodyStyle={{ padding: '12px 16px' }}>
-				<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-					<Space size={12}>
+			<Card bordered bodyStyle={{ padding: '16px' }}>
+				<Space size={16} wrap>
+					{activeTab !== 'log_rule' && (
 						<Input
 							placeholder="Device Name"
 							allowClear
+							prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
 							style={{ width: 200 }}
 							value={filterDeviceName}
 							onChange={(e) => setFilterDeviceName(e.target.value)}
 						/>
+					)}
+					
+					{activeTab !== 'log_health' && (
 						<Input
-							placeholder="Parameter Name"
+							placeholder={activeTab === 'log_rule' ? "Rule Name" : "Parameter Name"}
 							allowClear
+							prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
 							style={{ width: 200 }}
 							value={filterParameterName}
 							onChange={(e) => setFilterParameterName(e.target.value)}
 						/>
-					<Select
-						value={filterLogType}
-						onChange={setFilterLogType}
-						style={{ width: 200 }}
-						options={[
-							{ value: 'all', label: 'All Types' },
-							{ value: 'log_scheduled', label: 'log_scheduled' },
-							{ value: 'log_change', label: 'log_change' },
-							{ value: 'log_alarm', label: 'log_alarm' },
-							{ value: 'log_error', label: 'log_error' },
-							{ value: 'log_health', label: 'log_health' },
-							{ value: 'log_rule', label: 'log_rule' },
-						]}
+					)}
+
+					<RangePicker
+						style={{ width: 260 }}
+						value={dateRange}
+						onChange={(dates) => setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null])}
 					/>
-						<RangePicker
-							style={{ width: 280 }}
-							value={dateRange}
-							onChange={(dates) => setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null])}
-						/>
-				</Space>
-				<Space size={8}>
-					<Button onClick={handleReset}>Reset</Button>
-					<Button type="primary" onClick={() => {/* Query logic */}} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>Query</Button>
-					<Button icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
-				</Space>
+
+					<Button icon={<ReloadOutlined />} onClick={handleReset}>Reset</Button>
+					<Button type="primary" icon={<SearchOutlined />} style={{ backgroundColor: '#003A70' }}>Query</Button>
+					<Button icon={<ExportOutlined />}>Export</Button>
 				</Space>
 			</Card>
 
@@ -162,25 +309,31 @@ const Log: React.FC = () => {
 			<Card 
 				bordered
 				style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
-				bodyStyle={{ padding: '0 0 16px 0', flex: 1, display: 'flex', flexDirection: 'column' }}
+				bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
 			>
-				<Table
-					columns={columns}
-					dataSource={filteredLogs}
-					pagination={{
-						current: currentPage,
-						pageSize: 15,
-						total: filteredLogs.length,
-						onChange: (page) => setCurrentPage(page),
-						showSizeChanger: true,
-						showQuickJumper: true,
-						pageSizeOptions: ['10', '15', '20', '50'],
-						showTotal: (total) => `Total ${total} items`,
-						position: ['bottomCenter'],
-						style: { marginBottom: 0 }
-					}}
-					size="small"
-				/>
+				<div style={{ flex: 1, overflow: 'hidden', padding: '0 16px' }}>
+					<Table
+						columns={getColumns(activeTab)}
+						dataSource={paginatedData}
+						pagination={false}
+						scroll={{ y: 'calc(100vh - 420px)' }}
+						size="middle"
+						rowKey="key"
+					/>
+				</div>
+				<div style={{ padding: '12px 16px', borderTop: '1px solid #f0f0f0', textAlign: 'right', backgroundColor: '#fff' }}>
+					<Pagination
+						current={currentPage}
+						pageSize={pageSize}
+						total={filteredData.length}
+						onChange={(page, size) => {
+							setCurrentPage(page);
+							setPageSize(size);
+						}}
+						showSizeChanger
+						showTotal={(total) => `Total ${total} items`}
+					/>
+				</div>
 			</Card>
 		</div>
 	);

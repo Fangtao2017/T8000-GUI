@@ -1,60 +1,106 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Row, Col, Typography, message, Select, Divider } from 'antd';
-import { PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Steps, Form, message, Typography, Button } from 'antd';
+import { PlusOutlined, InfoCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import AddModelBasic from './AddModelBasic';
+import AddModelParameters from './AddModelParameters';
+import AddModelSummary from './AddModelSummary';
 
-const { Title, Text, Paragraph } = Typography;
-
-// Icon options from DeviceAdd
-const iconOptions = [
-	{ label: '👁️ Eye', value: '👁️' },
-	{ label: '💡 Light Bulb', value: '💡' },
-	{ label: '❄️ Snowflake', value: '❄️' },
-	{ label: '💧 Water Drop', value: '💧' },
-	{ label: '⚡ Lightning', value: '⚡' },
-	{ label: '🌡️ Thermometer', value: '🌡️' },
-	{ label: '🔌 Plug', value: '🔌' },
-	{ label: '🔥 Fire', value: '🔥' },
-	{ label: '💨 Wind', value: '💨' },
-	{ label: '🔧 Wrench', value: '🔧' },
-	{ label: '🚰 Faucet', value: '🚰' },
-	{ label: '👤 Person', value: '👤' },
-	{ label: '🚪 Door', value: '🚪' },
-	{ label: '💦 Splash', value: '💦' },
-	{ label: '🔊 Speaker', value: '🔊' },
-	{ label: '🪟 Window', value: '🪟' },
-	{ label: '🔐 Lock', value: '🔐' },
-	{ label: '🚨 Siren', value: '🚨' },
-];
+const { Title, Paragraph } = Typography;
 
 const AddModel: React.FC = () => {
+	const [currentStep, setCurrentStep] = useState(0);
 	const [form] = Form.useForm();
-	const [loading, setLoading] = useState(false);
 
-	const handleSubmit = async () => {
+	const next = async () => {
 		try {
-			const values = await form.validateFields();
-			setLoading(true);
-
-			// 模拟 API 调用
-			console.log('Creating model:', values);
-
-			// TODO: 实际 API 调用
-			// POST /api/models - 创建模型
+			// Validate fields for the current step before moving forward
+			if (currentStep === 0) {
+				await form.validateFields(['brand', 'model', 'dev_type', 'interface', 'icon']);
+			}
+			// Step 1 (Parameters) validation is handled within the component or loosely here
+			// We might want to ensure at least one parameter is added?
+			// For now, let's allow moving forward.
 			
-			await new Promise(resolve => setTimeout(resolve, 1000));
-
-			message.success('Model added successfully!');
-			form.resetFields();
+			setCurrentStep(currentStep + 1);
 		} catch (error) {
 			console.error('Validation failed:', error);
-		} finally {
-			setLoading(false);
 		}
 	};
 
-	const handleReset = () => {
-		form.resetFields();
+	const prev = () => {
+		setCurrentStep(currentStep - 1);
 	};
+
+	const handleSubmit = async () => {
+		try {
+			const values = form.getFieldsValue(true);
+			console.log('Creating model with values:', values);
+
+			// TODO: Actual API call to create model
+			// POST /api/models
+			
+			await new Promise(resolve => setTimeout(resolve, 1000));
+
+			message.success('Model created successfully!');
+			
+			// Reset and go back to start
+			form.resetFields();
+			setCurrentStep(0);
+		} catch (error) {
+			console.error('Submission failed:', error);
+			message.error('Failed to create model');
+		}
+	};
+
+	const steps = [
+		{
+			title: 'Basic Info',
+			content: (
+				<div>
+					<AddModelBasic form={form} />
+					<div style={{ marginTop: 24, textAlign: 'right' }}>
+						<Button 
+							type="primary" 
+							size="large"
+							style={{ backgroundColor: '#003A70' }}
+							onClick={next}
+						>
+							Next
+						</Button>
+					</div>
+				</div>
+			),
+		},
+		{
+			title: 'Parameters',
+			content: (
+				<div>
+					<AddModelParameters form={form} />
+					<div style={{ marginTop: 24, textAlign: 'right' }}>
+						<Button 
+							size="large"
+							style={{ marginRight: 8 }} 
+							onClick={prev}
+						>
+							Previous
+						</Button>
+						<Button 
+							type="primary" 
+							size="large"
+							style={{ backgroundColor: '#003A70' }}
+							onClick={next}
+						>
+							Next
+						</Button>
+					</div>
+				</div>
+			),
+		},
+		{
+			title: 'Summary',
+			content: <AddModelSummary form={form} onPrevious={prev} onSubmit={handleSubmit} />,
+		},
+	];
 
 	return (
 		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#fff' }}>
@@ -64,161 +110,20 @@ const AddModel: React.FC = () => {
 						<PlusOutlined /> Add Model
 					</Title>
 					<Paragraph type="secondary">
-						Create a new device model template with basic configuration
+						Create a new device model template with parameters configuration.
 					</Paragraph>
 
-					<Row gutter={24} style={{ marginTop: 32 }}>
-						<Col xs={24} md={14}>
-							<Card bordered>
-								<Form
-									form={form}
-									layout="vertical"
-									initialValues={{
-										icon: '💡',
-									}}
-								>
-									<Form.Item
-										label="Brand"
-										name="brand"
-										rules={[
-											{ required: true, message: 'Please enter brand name' },
-											{ max: 50, message: 'Brand name must be less than 50 characters' },
-										]}
-									>
-										<Input 
-											placeholder="e.g., TMAS" 
-											size="large"
-										/>
-									</Form.Item>
-
-									<Form.Item
-										label="Model"
-										name="model"
-										rules={[
-											{ required: true, message: 'Please enter model name' },
-											{ max: 50, message: 'Model name must be less than 50 characters' },
-										]}
-									>
-										<Input 
-											placeholder="e.g., T8000, T-AOH-001, T-DIM-001" 
-											size="large"
-										/>
-									</Form.Item>
-
-									<Form.Item
-										label="Device Type"
-										name="dev_type"
-										rules={[
-											{ required: true, message: 'Please enter device type' },
-											{ max: 50, message: 'Device type must be less than 50 characters' },
-										]}
-									>
-										<Input 
-											placeholder="e.g., gateway, analog_output, dimmer, temp_snsr" 
-											size="large"
-										/>
-									</Form.Item>
-
-									<Form.Item
-										label="Interface"
-										name="interface"
-										rules={[
-											{ required: true, message: 'Please enter interface number' },
-											{ pattern: /^\d+$/, message: 'Please enter a valid number' },
-										]}
-									>
-										<Input 
-											placeholder="e.g., 1, 4, 16" 
-											size="large"
-											type="number"
-										/>
-									</Form.Item>
-
-									<Divider />
-
-									<Form.Item
-										label="Icon (Optional)"
-										name="icon"
-										extra="Choose an icon to represent this model in device selection"
-									>
-										<Select
-											size="large"
-											placeholder="Select an icon"
-											options={iconOptions}
-											optionRender={(option) => (
-												<Space>
-													<span style={{ fontSize: 18 }}>{option.data.value}</span>
-													<span>{option.data.label.replace(/^.*\s/, '')}</span>
-												</Space>
-											)}
-										/>
-									</Form.Item>
-
-									<div style={{ marginTop: 32, textAlign: 'right' }}>
-										<Space>
-											<Button size="large" onClick={handleReset}>
-												Reset
-											</Button>
-										<Button
-											type="primary"
-											size="large"
-											loading={loading}
-											onClick={handleSubmit}
-											style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
-										>
-											Create Model
-										</Button>
-										</Space>
-									</div>
-								</Form>
-							</Card>
-						</Col>
-
-						<Col xs={24} md={10}>
-							<Card style={{ background: '#f5f5f5', position: 'sticky', top: 0 }}>
-								<Title level={5}>
-									<InfoCircleOutlined /> How to Add a Model
-								</Title>
-								<Divider style={{ margin: '12px 0' }} />
-								
-								<Space direction="vertical" size="small" style={{ width: '100%' }}>
-									<Text strong style={{ fontSize: '13px' }}>Required Fields:</Text>
-									<ul style={{ paddingLeft: 20, marginBottom: 12 }}>
-										<li><Text type="secondary" style={{ fontSize: '12px' }}><strong>Brand</strong> - Manufacturer name (e.g., TMAS, TUAS)</Text></li>
-										<li><Text type="secondary" style={{ fontSize: '12px' }}><strong>Model</strong> - Unique model identifier</Text></li>
-										<li><Text type="secondary" style={{ fontSize: '12px' }}><strong>Device Type</strong> - Category or function type</Text></li>
-										<li><Text type="secondary" style={{ fontSize: '12px' }}><strong>Interface</strong> - Number of interfaces/channels</Text></li>
-									</ul>
-
-									<Divider style={{ margin: '12px 0' }} />
-
-									<Text strong style={{ fontSize: '13px' }}>Optional:</Text>
-									<ul style={{ paddingLeft: 20, marginBottom: 12 }}>
-										<li><Text type="secondary" style={{ fontSize: '12px' }}><strong>Icon</strong> - Visual identifier for device selection</Text></li>
-									</ul>
-
-									<Divider style={{ margin: '12px 0' }} />
-
-									<Text strong style={{ fontSize: '13px' }}>Example:</Text>
-									<div style={{ 
-										marginTop: 4, 
-										padding: 8, 
-										background: '#fff', 
-										borderRadius: 4,
-										border: '1px solid #d9d9d9'
-									}}>
-										<Text style={{ fontSize: '12px' }}>
-											<strong>Brand:</strong> TMAS<br/>
-											<strong>Model:</strong> T-DIM-001<br/>
-											<strong>Type:</strong> dimmer<br/>
-											<strong>Interface:</strong> 4<br/>
-											<strong>Icon:</strong> 💡 Light Bulb
-										</Text>
-									</div>
-								</Space>
-							</Card>
-						</Col>
-					</Row>
+					<Steps current={currentStep} style={{ marginBottom: 32 }}>
+						<Steps.Step title="Basic Info" description="Define model identity" icon={<InfoCircleOutlined />} />
+						<Steps.Step title="Parameters" description="Configure data points" icon={<InfoCircleOutlined />} />
+						<Steps.Step title="Summary" description="Review and create" icon={<CheckCircleOutlined />} />
+					</Steps>
+						
+					<Form form={form} layout="vertical" initialValues={{ icon: '💡', parameters: [] }}>
+						<div className="steps-content">
+							{steps[currentStep].content}
+						</div>
+					</Form>
 				</div>
 			</div>
 		</div>

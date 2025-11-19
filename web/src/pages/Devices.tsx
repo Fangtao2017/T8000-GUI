@@ -1,65 +1,14 @@
-import React, { useState } from 'react';
-import { Card, Table, Button, Space, Tag, Badge, Row, Col, Typography, Progress, Input, Select, Modal, DatePicker, message, List } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, LineChartOutlined, DownloadOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, ArrowRightOutlined } from '@ant-design/icons';
-import type { ColumnType } from 'antd/es/table';
-import dayjs from 'dayjs';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Card, Table, Button, Space, Tag, Badge, Row, Col, Typography, Progress, Input, Select, Modal, message, List, Switch, Descriptions, InputNumber } from 'antd';
+import { EyeOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { DeviceData, allDevices, parameterUnits, writableConfigs } from '../data/devicesData';
 
 const { Search } = Input;
-const { RangePicker } = DatePicker;
-
-// Parameter unit mapping
-const parameterUnits: Record<string, string> = {
-	voltage: 'V',
-	voltageL1: 'V',
-	voltageL2: 'V',
-	voltageL3: 'V',
-	current: 'A',
-	currentL1: 'A',
-	currentL2: 'A',
-	currentL3: 'A',
-	power: 'W',
-	energy: 'kWh',
-	frequency: 'Hz',
-	powerFactor: '',
-	temperature: '°C',
-	setTemp: '°C',
-	currentTemp: '°C',
-	setpoint: '°C',
-	humidity: '%',
-	brightness: '%',
-	level: '%',
-	pressure: 'bar',
-	uptime: 'h',
-	connectionCount: '',
-	fanSpeed: '',
-	mode: '',
-	input1: '',
-	input2: '',
-	input3: '',
-	input4: '',
-	output1: '',
-	output2: '',
-	output3: '',
-	output4: '',
-	signalStrength: 'dBm',
-};
-
-interface DeviceData {
-	key: string;
-	name: string;
-	model: string;
-	serialNumber: string;
-	type: string;
-	priAddr: string;
-	location: string;
-	status: 'online' | 'offline';
-	lastReport: string;
-	parameters?: Record<string, number | string>; // Dynamic parameters
-}
 
 const Devices: React.FC = () => {
+	const location = useLocation();
 	const [searchText, setSearchText] = useState('');
-	const [filterType, setFilterType] = useState<string>('all');
 	const [filterStatus, setFilterStatus] = useState<string>('all');
 	const [filterModel, setFilterModel] = useState<string>('all');
 	const [filterLocation, setFilterLocation] = useState<string>('all');
@@ -70,15 +19,10 @@ const Devices: React.FC = () => {
 	const [isEditModalVisible, setIsEditModalVisible] = useState(false);
 	const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null);
 	const [editingDevice, setEditingDevice] = useState<DeviceData | null>(null);
-	const [selectedParam1, setSelectedParam1] = useState<string>('');
-	const [selectedParam2, setSelectedParam2] = useState<string>('');
-	const [dateRange1, setDateRange1] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
-	const [dateRange2, setDateRange2] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
 	
 	// Edit form states - based on database schema from images
 	const [editForm, setEditForm] = useState({
 		node_id: '',
-		pri_addr: '',
 		sec_addr: '',
 		ter_addr: '',
 		log_intvl: '',
@@ -95,6 +39,8 @@ const Devices: React.FC = () => {
 		y: '',
 		h: '',
 		fw_ver: '',
+		alarm_state: 'Not alarm',
+		err_state: 'No error',
 	});
 
 	// Parameter binding states
@@ -120,34 +66,20 @@ const Devices: React.FC = () => {
 		{ id: 'P010', name: 'Occupancy', deviceName: 'Motion Detector', type: 'Digital Input', unit: '' },
 	];
 
-	// Mock data with models from image
-	const allDevices: DeviceData[] = [
-		{ key: '1', name: 'Gateway Main', model: 'T8000', serialNumber: '200310000092', type: 'Gateway', priAddr: '1', location: 'Office Area NE Corner', status: 'online', lastReport: 'Just now', parameters: { voltage: 220, current: 2.5, power: 550, frequency: 50, uptime: 72, connectionCount: 12 } },
-		{ key: '2', name: 'Occupancy Sensor A1', model: 'T-OXM-001', serialNumber: '200310000093', type: 'Humidity', priAddr: '2', location: 'Reception Area', status: 'online', lastReport: '1 min ago', parameters: { humidity: 65, temperature: 23.5 } },
-		{ key: '3', name: 'Dimmer Control 1', model: 'T-DIM-001', serialNumber: '200310000094', type: 'Actuator', priAddr: '3', location: 'Storage Area', status: 'online', lastReport: '2 min ago', parameters: { brightness: 75, power: 120, voltage: 220 } },
-		{ key: '4', name: 'Occupancy Sensor B2', model: 'T-OCC-001', serialNumber: '200310000095', type: 'Temp', priAddr: '4', location: 'Office Area SW Corner', status: 'offline', lastReport: '10 min ago', parameters: { temperature: 22.1, humidity: 58 } },
-		{ key: '5', name: 'Air Conditioning Panel', model: 'T-PM-001', serialNumber: '200310000096', type: 'Actuator', priAddr: '5', location: 'Meeting Room A', status: 'online', lastReport: '3 min ago', parameters: { setTemp: 24, currentTemp: 23.8, fanSpeed: 3, mode: 'cool', power: 1200 } },
-		{ key: '6', name: 'Tank Level Sensor', model: 'T-IR-001', serialNumber: '200310000097', type: 'Pressure', priAddr: '6', location: 'Basement Water Tank', status: 'online', lastReport: '5 min ago', parameters: { level: 85, pressure: 2.3, temperature: 18.5 } },
-		{ key: '7', name: 'Electric Meter Main', model: 'T-SP-001', serialNumber: '200310000098', type: 'Gateway', priAddr: '7', location: 'Electrical Room', status: 'online', lastReport: 'Just now', parameters: { voltage: 220, current: 15.2, power: 3344, energy: 1250.5, powerFactor: 0.98 } },
-		{ key: '8', name: 'Energy Meter 3-Phase', model: 'T-EMS-002', serialNumber: '200310000099', type: 'Pressure', priAddr: '8', location: 'Substation A', status: 'offline', lastReport: '25 min ago', parameters: { voltageL1: 220, voltageL2: 221, voltageL3: 219, currentL1: 8.5, currentL2: 8.7, currentL3: 8.3, power: 5650, energy: 3200.8, frequency: 50, powerFactor: 0.95 } },
-		{ key: '9', name: 'Aircon Control Panel', model: 'T-ACP-001', serialNumber: '200310000100', type: 'Temp', priAddr: '9', location: 'Office Area Central', status: 'online', lastReport: '2 min ago', parameters: { temperature: 23.2, setpoint: 24, fanSpeed: 2, mode: 'auto' } },
-		{ key: '10', name: 'Digital I/O Module', model: 'T-DITO-01', serialNumber: '200310000101', type: 'Actuator', priAddr: '10', location: 'Control Cabinet 1', status: 'online', lastReport: '4 min ago', parameters: { input1: 1, input2: 0, input3: 1, input4: 0, output1: 1, output2: 1, output3: 0, output4: 1 } },
-		{ key: '11', name: 'Temperature Sensor 1', model: 'T-TEM-001', serialNumber: '200310000102', type: 'Temp', priAddr: '11', location: 'Server Room', status: 'online', lastReport: '1 min ago', parameters: { temperature: 21.5 } },
-		{ key: '12', name: 'Multi Interface Unit', model: 'T-MIU-001', serialNumber: '200310000103', type: 'Gateway', priAddr: '12', location: 'Workshop East Zone', status: 'online', lastReport: '3 min ago', parameters: { voltage: 220, current: 5.2, temperature: 45.3, humidity: 52, signalStrength: -65 } },
-		{ key: '13', name: 'Temperature Sensor 4', model: 'T-TEM-001', serialNumber: '200310000104', type: 'Temp', priAddr: '13', location: 'Conference Room B', status: 'online', lastReport: '2 min ago', parameters: { temperature: 22.8 } },
-		{ key: '14', name: 'Humidity Sensor C1', model: 'T-OXM-001', serialNumber: '200310000105', type: 'Humidity', priAddr: '14', location: 'Storage Area South', status: 'online', lastReport: '4 min ago', parameters: { humidity: 58, temperature: 21.5 } },
-		{ key: '15', name: 'Pressure Sensor A5', model: 'T-IR-001', serialNumber: '200310000106', type: 'Pressure', priAddr: '15', location: 'Pump Room', status: 'offline', lastReport: '15 min ago', parameters: { level: 72, pressure: 1.8, temperature: 19.2 } },
-		{ key: '16', name: 'Gateway G2', model: 'T8000', serialNumber: '200310000107', type: 'Gateway', priAddr: '16', location: 'Building 2 Entrance', status: 'online', lastReport: 'Just now', parameters: { voltage: 220, current: 2.8, power: 616, frequency: 50, uptime: 120, connectionCount: 8 } },
-		{ key: '17', name: 'Dimmer Control 2', model: 'T-DIM-001', serialNumber: '200310000108', type: 'Actuator', priAddr: '17', location: 'Hallway Main', status: 'online', lastReport: '1 min ago', parameters: { brightness: 60, power: 95, voltage: 220 } },
-		{ key: '18', name: 'AC Panel Meeting Room B', model: 'T-PM-001', serialNumber: '200310000109', type: 'Actuator', priAddr: '18', location: 'Meeting Room B', status: 'online', lastReport: '5 min ago', parameters: { setTemp: 23, currentTemp: 22.9, fanSpeed: 2, mode: 'cool', power: 1100 } },
-		{ key: '19', name: 'Flow Meter Main', model: 'T-FM-001', serialNumber: '200310000110', type: 'Pressure', priAddr: '19', location: 'Water Supply Room', status: 'online', lastReport: '3 min ago', parameters: { level: 90, pressure: 2.5, temperature: 17.8 } },
-		{ key: '20', name: 'Temperature Sensor 5', model: 'T-TEM-001', serialNumber: '200310000111', type: 'Temp', priAddr: '20', location: 'Data Center', status: 'online', lastReport: '1 min ago', parameters: { temperature: 19.5 } },
-		{ key: '21', name: 'Energy Meter Building 2', model: 'T-EMS-002', serialNumber: '200310000112', type: 'Pressure', priAddr: '21', location: 'Building 2 Main Panel', status: 'online', lastReport: '2 min ago', parameters: { voltageL1: 221, voltageL2: 220, voltageL3: 222, currentL1: 9.2, currentL2: 9.5, currentL3: 9.1, power: 6100, energy: 4500.2, frequency: 50, powerFactor: 0.96 } },
-		{ key: '22', name: 'Occupancy Sensor C3', model: 'T-OCC-001', serialNumber: '200310000113', type: 'Temp', priAddr: '22', location: 'Cafeteria', status: 'online', lastReport: '6 min ago', parameters: { temperature: 24.5, humidity: 62 } },
-		{ key: '23', name: 'Digital I/O Module 2', model: 'T-DITO-01', serialNumber: '200310000114', type: 'Actuator', priAddr: '23', location: 'Control Cabinet 2', status: 'offline', lastReport: '20 min ago', parameters: { input1: 0, input2: 1, input3: 0, input4: 1, output1: 0, output2: 1, output3: 1, output4: 0 } },
-		{ key: '24', name: 'Humidity Sensor D4', model: 'T-OXM-001', serialNumber: '200310000115', type: 'Humidity', priAddr: '24', location: 'Archive Room', status: 'online', lastReport: '7 min ago', parameters: { humidity: 45, temperature: 20.2 } },
-		{ key: '25', name: 'Gateway G3', model: 'T8000', serialNumber: '200310000116', type: 'Gateway', priAddr: '25', location: 'Building 3 Lobby', status: 'online', lastReport: 'Just now', parameters: { voltage: 220, current: 3.1, power: 682, frequency: 50, uptime: 96, connectionCount: 15 } },
-	];
+
+	// Handle navigation from Dashboard
+	useEffect(() => {
+		const state = location.state as { viewDeviceId?: string } | null;
+		if (state?.viewDeviceId) {
+			const targetDevice = allDevices.find(d => d.key === state.viewDeviceId);
+			if (targetDevice) {
+				setSelectedDevice(targetDevice);
+				setIsModalVisible(true);
+				// Clear state to prevent reopening on refresh (optional, but good practice)
+				window.history.replaceState({}, document.title);
+			}
+		}
+	}, [location.state]);
 
 	const handleRefresh = () => {
 		setRefreshing(true);
@@ -155,84 +87,9 @@ const Devices: React.FC = () => {
 		setTimeout(() => setRefreshing(false), 1000);
 	};
 
-	const handleExportChart1 = () => {
-		if (!selectedDevice || !selectedParam1) {
-			message.warning('Please select a parameter first');
-			return;
-		}
-		
-		const exportData = {
-			deviceName: selectedDevice.name,
-			parameter: selectedParam1,
-			value: selectedDevice.parameters?.[selectedParam1],
-			unit: parameterUnits[selectedParam1] || '',
-			dateRange: dateRange1 ? {
-				start: dateRange1[0].format('YYYY-MM-DD HH:mm'),
-				end: dateRange1[1].format('YYYY-MM-DD HH:mm'),
-			} : null,
-			exportTime: new Date().toLocaleString(),
-		};
-		
-		const jsonString = JSON.stringify(exportData, null, 2);
-		const blob = new Blob([jsonString], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = `${selectedDevice.name}_${selectedParam1}_${new Date().getTime()}.json`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
-		
-		message.success('Chart 1 data exported successfully');
-	};
-
-	const handleExportChart2 = () => {
-		if (!selectedDevice || !selectedParam2) {
-			message.warning('Please select a parameter first');
-			return;
-		}
-		
-		const exportData = {
-			deviceName: selectedDevice.name,
-			parameter: selectedParam2,
-			value: selectedDevice.parameters?.[selectedParam2],
-			unit: parameterUnits[selectedParam2] || '',
-			dateRange: dateRange2 ? {
-				start: dateRange2[0].format('YYYY-MM-DD HH:mm'),
-				end: dateRange2[1].format('YYYY-MM-DD HH:mm'),
-			} : null,
-			exportTime: new Date().toLocaleString(),
-		};
-		
-		const jsonString = JSON.stringify(exportData, null, 2);
-		const blob = new Blob([jsonString], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = `${selectedDevice.name}_${selectedParam2}_${new Date().getTime()}.json`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
-		
-		message.success('Chart 2 data exported successfully');
-	};
-
 	const handleViewDevice = (device: DeviceData) => {
 		setSelectedDevice(device);
 		setIsModalVisible(true);
-		// Set default parameters for charts
-		const params = Object.keys(device.parameters || {});
-		if (params.length > 0) {
-			setSelectedParam1(params[0]);
-			if (params.length > 1) {
-				setSelectedParam2(params[1]);
-			}
-		}
-		// Set default date range (last 24 hours with time)
-		setDateRange1([dayjs().subtract(24, 'hour'), dayjs()]);
-		setDateRange2([dayjs().subtract(24, 'hour'), dayjs()]);
 	};
 
 	const handleEditDevice = (device: DeviceData) => {
@@ -241,7 +98,6 @@ const Devices: React.FC = () => {
 		// Initialize form with device data (using NULL as placeholder for empty fields)
 		setEditForm({
 			node_id: device.serialNumber || 'NULL',
-			pri_addr: device.priAddr || 'NULL',
 			sec_addr: 'NULL',
 			ter_addr: 'NULL',
 			log_intvl: '4',
@@ -258,6 +114,8 @@ const Devices: React.FC = () => {
 			y: 'NULL',
 			h: 'NULL',
 			fw_ver: '1.32.3.4',
+			alarm_state: device.alarm_state,
+			err_state: device.err_state,
 		});
 		// Initialize with mock bound parameters (in real app, fetch from API)
 		setBoundParameters([
@@ -326,15 +184,13 @@ const Devices: React.FC = () => {
 		const matchSearch = searchText === '' || 
 			device.name.toLowerCase().includes(searchText.toLowerCase()) ||
 			device.serialNumber.toLowerCase().includes(searchText.toLowerCase()) ||
-			device.model.toLowerCase().includes(searchText.toLowerCase()) ||
-			device.priAddr.includes(searchText);
+			device.model.toLowerCase().includes(searchText.toLowerCase());
 		
-		const matchType = filterType === 'all' || device.type === filterType;
 		const matchStatus = filterStatus === 'all' || device.status === filterStatus;
 		const matchModel = filterModel === 'all' || device.model === filterModel;
 		const matchLocation = filterLocation === 'all' || device.location === filterLocation;
 
-		return matchSearch && matchType && matchStatus && matchModel && matchLocation;
+		return matchSearch && matchStatus && matchModel && matchLocation;
 	}).sort((a, b) => {
 		// Sort offline devices to the top
 		if (a.status === 'offline' && b.status === 'online') return -1;
@@ -345,10 +201,9 @@ const Devices: React.FC = () => {
 	// Reset to page 1 when filters change
 	React.useEffect(() => {
 		// Filters changed, no pagination needed
-	}, [searchText, filterType, filterStatus, filterModel, filterLocation]);
+	}, [searchText, filterStatus, filterModel, filterLocation]);
 
 	// Get unique values for filter options
-	const uniqueTypes = Array.from(new Set(allDevices.map(d => d.type))).sort();
 	const uniqueModels = Array.from(new Set(allDevices.map(d => d.model))).sort();
 	const uniqueLocations = Array.from(new Set(allDevices.map(d => d.location))).sort();
 
@@ -357,6 +212,15 @@ const Devices: React.FC = () => {
 	const onlineDevices = filteredDevices.filter(d => d.status === 'online').length;
 	const offlineDevices = filteredDevices.filter(d => d.status === 'offline').length;
 	const connectionRate = totalDevices > 0 ? Math.round((onlineDevices / totalDevices) * 100) : 0;
+
+	// Helper for interval text
+	const getIntervalText = (val?: number) => {
+		const map: Record<number, string> = {
+			0: 'Disabled', 1: '10min', 2: '15min', 3: '30min', 
+			4: '1hour', 5: '6hour', 6: '12hour', 7: 'daily'
+		};
+		return val !== undefined ? map[val] || val.toString() : 'NULL';
+	};
 
 	const columns: ColumnType<DeviceData>[] = [
 		{
@@ -379,17 +243,22 @@ const Devices: React.FC = () => {
 			width: 160,
 		},
 		{
-			title: 'Type',
-			dataIndex: 'type',
-			key: 'type',
-			width: 150,
-			render: (type: string) => <Tag>{type}</Tag>,
+			title: 'Alarm State',
+			dataIndex: 'alarm_state',
+			key: 'alarm_state',
+			width: 120,
+			render: (state: string) => (
+				<Tag>{state}</Tag>
+			),
 		},
 		{
-			title: 'Pri_addr',
-			dataIndex: 'priAddr',
-			key: 'priAddr',
-			width: 100,
+			title: 'Error State',
+			dataIndex: 'err_state',
+			key: 'err_state',
+			width: 120,
+			render: (state: string) => (
+				<Tag>{state}</Tag>
+			),
 		},
 		{
 			title: 'Status',
@@ -414,6 +283,13 @@ const Devices: React.FC = () => {
 			dataIndex: 'lastReport',
 			key: 'lastReport',
 			width: 140,
+		},
+		{
+			title: 'Enable',
+			dataIndex: 'enabled',
+			key: 'enabled',
+			width: 80,
+			render: (enabled: boolean) => <Switch size="small" checked={enabled !== false} />,
 		},
 		{
 			title: 'Actions',
@@ -464,8 +340,8 @@ const Devices: React.FC = () => {
 					<Card bordered bodyStyle={{ padding: '16px' }}>
 						<Space direction="vertical" size={4} style={{ width: '100%' }}>
 							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Connection Rate</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: connectionRate > 80 ? '#52c41a' : '#faad14' }}>{connectionRate}%</Typography.Title>
-							<Progress percent={connectionRate} showInfo={false} strokeColor={connectionRate > 80 ? '#52c41a' : '#faad14'} />
+							<Typography.Title level={2} style={{ margin: 0, color: connectionRate === 100 ? '#52c41a' : '#ff4d4f' }}>{connectionRate}%</Typography.Title>
+							<Progress percent={connectionRate} showInfo={false} strokeColor={connectionRate === 100 ? '#52c41a' : '#ff4d4f'} />
 						</Space>
 					</Card>
 				</Col>
@@ -476,23 +352,12 @@ const Devices: React.FC = () => {
 				<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
 					<Space size={12}>
 						<Search
-							placeholder="Search by name, S/N, model or Pri_addr..."
+							placeholder="Search by name, S/N, model..."
 							allowClear
 							style={{ width: 300 }}
 							value={searchText}
 							onChange={(e) => setSearchText(e.target.value)}
 						/>
-						<Select
-							placeholder="Device Type"
-							style={{ width: 160 }}
-							value={filterType}
-							onChange={setFilterType}
-						>
-							<Select.Option value="all">All Types</Select.Option>
-							{uniqueTypes.map(type => (
-								<Select.Option key={type} value={type}>{type}</Select.Option>
-							))}
-						</Select>
 						<Select
 							placeholder="Status"
 							style={{ width: 130 }}
@@ -533,7 +398,6 @@ const Devices: React.FC = () => {
 					<Space size={8}>
 						<Button icon={<ReloadOutlined />} onClick={() => {
 							setSearchText('');
-							setFilterType('all');
 							setFilterStatus('all');
 							setFilterModel('all');
 							setFilterLocation('all');
@@ -569,233 +433,216 @@ const Devices: React.FC = () => {
 				open={isModalVisible}
 				onCancel={() => setIsModalVisible(false)}
 				footer={null}
-				width="90%"
+				width="95%"
 				style={{ top: 20 }}
-				bodyStyle={{ padding: 0, backgroundColor: '#E8EDF2' }}
+				bodyStyle={{ padding: 0, backgroundColor: '#f0f2f5' }}
 				zIndex={1050}
 			>
 				{selectedDevice && (
 					<div style={{ padding: '24px' }}>
-						{/* Device Basic Info Header */}
-						<Card 
-							bordered={false} 
-							style={{ marginBottom: 24, backgroundColor: '#fafafa' }}
-							bodyStyle={{ padding: '16px 24px' }}
-						>
-							<Row gutter={32}>
+						{/* Part 1: Top - Device Information (Merged Basic + Comm) */}
+						<Card bordered={false} style={{ marginBottom: 16 }} bodyStyle={{ padding: '24px' }}>
+							<Row gutter={[24, 16]}>
 								<Col span={6}>
-									<Space direction="vertical" size={4}>
-										<Typography.Text type="secondary" style={{ fontSize: 12 }}>Device Model</Typography.Text>
-										<Typography.Title level={4} style={{ margin: 0 }}>{selectedDevice.model}</Typography.Title>
-									</Space>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Device Name</Typography.Text>
+									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.name}</div>
 								</Col>
 								<Col span={6}>
-									<Space direction="vertical" size={4}>
-										<Typography.Text type="secondary" style={{ fontSize: 12 }}>Single-phase Energy Meter</Typography.Text>
-										<Typography.Text strong style={{ fontSize: 16 }}>{selectedDevice.name}</Typography.Text>
-									</Space>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Model</Typography.Text>
+									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.model}</div>
 								</Col>
 								<Col span={6}>
-									<Space direction="vertical" size={4}>
-										<Typography.Text type="secondary" style={{ fontSize: 12 }}>Load Status</Typography.Text>
-										<Space>
-											<Badge status={selectedDevice.status === 'online' ? 'success' : 'error'} />
-											<Typography.Text strong>{selectedDevice.status === 'online' ? 'ON - Active' : 'OFF - Inactive'}</Typography.Text>
-										</Space>
-									</Space>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Serial Number</Typography.Text>
+									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.serialNumber}</div>
 								</Col>
 								<Col span={6}>
-									<Space direction="vertical" size={4}>
-										<Typography.Text type="secondary" style={{ fontSize: 12 }}>Location</Typography.Text>
-										<Typography.Text strong>{selectedDevice.location}</Typography.Text>
-									</Space>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Firmware Version</Typography.Text>
+									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.fw_ver ?? 'NULL'}</div>
+								</Col>
+
+								<Col span={6}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Status</Typography.Text>
+									<div><Badge status={selectedDevice.status === 'online' ? 'success' : 'error'} text={selectedDevice.status} /></div>
+								</Col>
+								<Col span={6}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Alarm State</Typography.Text>
+									<div><Tag>{selectedDevice.alarm_state}</Tag></div>
+								</Col>
+								<Col span={6}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Error State</Typography.Text>
+									<div><Tag>{selectedDevice.err_state}</Tag></div>
+								</Col>
+								<Col span={6}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Last Report</Typography.Text>
+									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.lastReport}</div>
+								</Col>
+
+								<Col span={6}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Modbus Address</Typography.Text>
+									<div style={{ fontSize: 14 }}>Pri: {selectedDevice.pri_addr ?? 'NULL'}</div>
+								</Col>
+								<Col span={6}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Secondary Address</Typography.Text>
+									<div style={{ fontSize: 14 }}>{selectedDevice.sec_addr ?? 'NULL'}</div>
+								</Col>
+								<Col span={6}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Tertiary Address</Typography.Text>
+									<div style={{ fontSize: 14 }}>{selectedDevice.ter_addr ?? 'NULL'}</div>
+								</Col>
+								<Col span={6}>
+									{/* Empty spacer */}
+								</Col>
+
+								<Col span={6}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Logging Interval</Typography.Text>
+									<div style={{ fontSize: 14 }}>{getIntervalText(selectedDevice.log_intvl)}</div>
+								</Col>
+								<Col span={6}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Reporting Interval</Typography.Text>
+									<div style={{ fontSize: 14 }}>{getIntervalText(selectedDevice.report_intvl)}</div>
+								</Col>
+								<Col span={6}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Health Interval</Typography.Text>
+									<div style={{ fontSize: 14 }}>{getIntervalText(selectedDevice.health_intvl)}</div>
 								</Col>
 							</Row>
 						</Card>
 
-						{/* Main Content - Parameters and Charts */}
 						<Row gutter={16}>
-							{/* Left: Parameters Panel */}
+							{/* Part 2: Left - Location */}
 							<Col span={8}>
-								<Card 
-									title="Device Parameters" 
-									bordered
-									style={{ height: '600px', backgroundColor: '#FFFFFF', color: '#000' }}
-									headStyle={{ backgroundColor: '#fafafa', color: '#000', borderBottom: '1px solid #333' }}
-									bodyStyle={{ 
-										padding: '16px',
-										height: 'calc(100% - 57px)',
-										overflow: 'auto',
-										backgroundColor: '#ffffffff'
-									}}
-								>
-									<Row gutter={[16, 16]}>
-										{selectedDevice.parameters && Object.entries(selectedDevice.parameters).map(([key, value]) => (
-											<Col span={12} key={key}>
-												<Card
-													size="small"
-													style={{ 
-														backgroundColor: '#fafafa',
-														border: '1px solid #d9d9d9',
-														cursor: 'pointer',
-														transition: 'all 0.3s'
-													}}
-													bodyStyle={{ padding: '12px' }}
-													hoverable
-													onClick={() => {
-														if (!selectedParam1) {
-															setSelectedParam1(key);
-														} else if (!selectedParam2) {
-															setSelectedParam2(key);
-														}
-													}}
-												>
-													<Space direction="vertical" size={4} style={{ width: '100%' }}>
-														<Typography.Text style={{ color: '#888', fontSize: 11, textTransform: 'uppercase' }}>
-															{key.replace(/([A-Z])/g, ' $1').trim()}
-															{parameterUnits[key] ? ` (${parameterUnits[key]})` : ''}
-														</Typography.Text>
-														<Typography.Text strong style={{ color: '#000', fontSize: 18 }}>
-															{typeof value === 'number' ? value.toFixed(2) : value}
-														</Typography.Text>
-													</Space>
-												</Card>
-											</Col>
-										))}
-									</Row>
+								<Card title="Location Information" bordered={false} style={{ height: '100%' }}>
+									<Descriptions column={1} size="small" bordered>
+										<Descriptions.Item label="Location ID">{selectedDevice.loc_id ?? 'NULL'}</Descriptions.Item>
+										<Descriptions.Item label="Location Name">{selectedDevice.loc_name ?? 'NULL'}</Descriptions.Item>
+										<Descriptions.Item label="Subname">{selectedDevice.loc_subname ?? 'NULL'}</Descriptions.Item>
+										<Descriptions.Item label="Block">{selectedDevice.loc_blk ?? 'NULL'}</Descriptions.Item>
+										<Descriptions.Item label="Unit">{selectedDevice.loc_unit ?? 'NULL'}</Descriptions.Item>
+										<Descriptions.Item label="Postal Code">{selectedDevice.postal_code ?? 'NULL'}</Descriptions.Item>
+										<Descriptions.Item label="Address">{selectedDevice.loc_addr ?? 'NULL'}</Descriptions.Item>
+										<Descriptions.Item label="Coordinates (X, Y)">
+											{selectedDevice.x ?? 'NULL'}, {selectedDevice.y ?? 'NULL'}
+										</Descriptions.Item>
+										<Descriptions.Item label="Height (H)">{selectedDevice.h ?? 'NULL'}</Descriptions.Item>
+									</Descriptions>
 								</Card>
 							</Col>
 
-							{/* Right: Two Chart Panels */}
+							{/* Part 3: Right - Parameters */}
 							<Col span={16}>
-								<Space direction="vertical" size={16} style={{ width: '100%' }}>
-									{/* Chart 1 */}
-									<Card 
-										title={
-											<Space>
-												<LineChartOutlined />
-												<span>Historical Data Chart 1</span>
-												<Button 
-													type="primary" 
-													size="small"
-													icon={<DownloadOutlined />}
-													onClick={handleExportChart1}
-													style={{ marginLeft: 8, backgroundColor: '#003A70', borderColor: '#003A70' }}
-												>
-													Export Data
-												</Button>
-											</Space>
-										}
-										bordered
-										style={{ height: '292px' }}
-										bodyStyle={{ padding: '16px', height: 'calc(100% - 57px)' }}
-										extra={
-											<Space>
-												<Select
-													style={{ width: 180 }}
-													placeholder="Select Parameter"
-													value={selectedParam1}
-													onChange={setSelectedParam1}
-												>
-													{selectedDevice.parameters && Object.keys(selectedDevice.parameters).map(param => (
-														<Select.Option key={param} value={param}>
-															{param.replace(/([A-Z])/g, ' $1').trim()}
-														</Select.Option>
-													))}
-											</Select>
-											<RangePicker
-												size="small"
-												showTime={{ format: 'HH:mm' }}
-												format="YYYY-MM-DD HH:mm"
-												value={dateRange1}
-												onChange={(dates) => setDateRange1(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)}
-												style={{ width: 320 }}
-											/>
-											</Space>
-										}
-									>
-										<div style={{ 
-											height: '100%', 
-											display: 'flex', 
-											alignItems: 'center', 
-											justifyContent: 'center',
-											border: '2px solid #f0f0f0',
-											borderRadius: '4px',
-											backgroundColor: '#fafafa'
-										}}>
-											<Typography.Text type="secondary">
-												{selectedParam1 ? `Chart for ${selectedParam1} will be displayed here` : 'Select a parameter to display chart'}
-											</Typography.Text>
-										</div>
-									</Card>
-
-									{/* Chart 2 */}
-									<Card 
-										title={
-											<Space>
-												<LineChartOutlined />
-												<span>Historical Data Chart 2</span>
-												<Button 
-													type="primary" 
-													size="small"
-													icon={<DownloadOutlined />}
-													onClick={handleExportChart2}
-													style={{ marginLeft: 8, backgroundColor: '#003A70', borderColor: '#003A70' }}
-												>
-													Export Data
-												</Button>
-											</Space>
-										}
-										bordered
-										style={{ height: '292px' }}
-										bodyStyle={{ padding: '16px', height: 'calc(100% - 57px)' }}
-										extra={
-											<Space>
-												<Select
-													style={{ width: 180 }}
-													placeholder="Select Parameter"
-													value={selectedParam2}
-													onChange={setSelectedParam2}
-												>
-													{selectedDevice.parameters && Object.keys(selectedDevice.parameters).map(param => (
-														<Select.Option key={param} value={param}>
-															{param.replace(/([A-Z])/g, ' $1').trim()}
-														</Select.Option>
-													))}
-											</Select>
-											<RangePicker
-												size="small"
-												showTime={{ format: 'HH:mm' }}
-												format="YYYY-MM-DD HH:mm"
-												value={dateRange2}
-												onChange={(dates) => setDateRange2(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)}
-												style={{ width: 320 }}
-											/>
-											</Space>
-										}
-									>
-										<div style={{ 
-											height: '100%', 
-											display: 'flex', 
-											alignItems: 'center', 
-											justifyContent: 'center',
-											border: '2px solid #f0f0f0',
-											borderRadius: '4px',
-											backgroundColor: '#fafafa'
-										}}>
-											<Typography.Text type="secondary">
-												{selectedParam2 ? `Chart for ${selectedParam2} will be displayed here` : 'Select a parameter to display chart'}
-											</Typography.Text>
-										</div>
-									</Card>
-								</Space>
+								<Card 
+									title="Device Parameters" 
+									bordered={false}
+									style={{ height: '480px', display: 'flex', flexDirection: 'column' }}
+									bodyStyle={{ 
+										padding: '16px',
+										overflowY: 'auto',
+										flex: 1,
+									}}
+								>
+									<Row gutter={[16, 16]}>
+										{selectedDevice.parameters && Object.entries(selectedDevice.parameters).map(([key, value]) => {
+											const config = writableConfigs[key];
+											const isWritable = !!config;
+											
+											return (
+												<Col span={8} key={key}>
+													<Card
+														size="small"
+														style={{ 
+															backgroundColor: '#fafafa',
+															border: isWritable ? '1px solid #1890ff' : '1px solid #d9d9d9',
+															cursor: 'default',
+															transition: 'all 0.3s'
+														}}
+														bodyStyle={{ padding: '12px' }}
+														hoverable={false}
+													>
+														<Space direction="vertical" size={4} style={{ width: '100%' }}>
+															<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+																<Typography.Text style={{ color: '#888', fontSize: 11, textTransform: 'uppercase' }}>
+																	{key.replace(/([A-Z])/g, ' $1').trim()}
+																	{parameterUnits[key] ? ` (${parameterUnits[key]})` : ''}
+																</Typography.Text>
+																{isWritable && <EditOutlined style={{ color: '#1890ff', fontSize: 12 }} />}
+															</div>
+															
+															{isWritable ? (
+																<div style={{ marginTop: 4 }}>
+																	{config.type === 'number' && (
+																		<InputNumber
+																			size="middle"
+																			value={value as number}
+																			style={{ width: '100%' }}
+																			onChange={(val) => {
+																				if (selectedDevice && val !== null) {
+																					setSelectedDevice({
+																						...selectedDevice,
+																						parameters: {
+																							...selectedDevice.parameters,
+																							[key]: val
+																						}
+																					});
+																				}
+																			}}
+																		/>
+																	)}
+																	{config.type === 'select' && (
+																		<Select
+																			size="middle"
+																			value={value as string}
+																			style={{ width: '100%' }}
+																			onChange={(val) => {
+																				if (selectedDevice) {
+																					setSelectedDevice({
+																						...selectedDevice,
+																						parameters: {
+																							...selectedDevice.parameters,
+																							[key]: val
+																						}
+																					});
+																				}
+																			}}
+																		>
+																			{config.options?.map(opt => (
+																				<Select.Option key={opt} value={opt}>{opt}</Select.Option>
+																			))}
+																		</Select>
+																	)}
+																	{config.type === 'switch' && (
+																		<Switch
+																			checked={Number(value) === 1}
+																			onChange={(checked) => {
+																				if (selectedDevice) {
+																					setSelectedDevice({
+																						...selectedDevice,
+																						parameters: {
+																							...selectedDevice.parameters,
+																							[key]: checked ? 1 : 0
+																						}
+																					});
+																				}
+																			}}
+																		/>
+																	)}
+																</div>
+															) : (
+																<Typography.Text strong style={{ color: '#000', fontSize: 18 }}>
+																	{typeof value === 'number' ? value.toFixed(2) : value}
+																</Typography.Text>
+															)}
+														</Space>
+													</Card>
+												</Col>
+											);
+										})}
+									</Row>
+								</Card>
 							</Col>
 						</Row>
 					</div>
 				)}
-			</Modal>
-
-			{/* Device Edit Modal */}
+			</Modal>			{/* Device Edit Modal */}
 			<Modal
 				title={<Typography.Title level={4} style={{ margin: 0 }}>Edit Device: {editingDevice?.name || ''}</Typography.Title>}
 				open={isEditModalVisible}
@@ -857,13 +704,29 @@ const Devices: React.FC = () => {
 							<Row gutter={16}>
 								<Col span={8}>
 									<Typography.Text strong style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>
-										Primary Address
+										Alarm State
 									</Typography.Text>
-									<Input
-										value={editForm.pri_addr}
-										onChange={(e) => setEditForm({ ...editForm, pri_addr: e.target.value })}
-										placeholder="15"
-									/>
+									<Select
+										value={editForm.alarm_state}
+										onChange={(value) => setEditForm({ ...editForm, alarm_state: value })}
+										style={{ width: '100%' }}
+									>
+										<Select.Option value="Not alarm">Not alarm</Select.Option>
+										<Select.Option value="Active Alarm">Active Alarm</Select.Option>
+									</Select>
+								</Col>
+								<Col span={8}>
+									<Typography.Text strong style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>
+										Error State
+									</Typography.Text>
+									<Select
+										value={editForm.err_state}
+										onChange={(value) => setEditForm({ ...editForm, err_state: value })}
+										style={{ width: '100%' }}
+									>
+										<Select.Option value="No error">No error</Select.Option>
+										<Select.Option value="Error">Error</Select.Option>
+									</Select>
 								</Col>
 								<Col span={8}>
 									<Typography.Text strong style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>
@@ -875,6 +738,9 @@ const Devices: React.FC = () => {
 										placeholder="NULL"
 									/>
 								</Col>
+							</Row>
+
+							<Row gutter={16} style={{ marginTop: 12 }}>
 								<Col span={8}>
 									<Typography.Text strong style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>
 										Tertiary Address

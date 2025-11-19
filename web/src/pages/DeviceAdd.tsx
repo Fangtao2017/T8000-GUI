@@ -273,14 +273,17 @@ const DeviceAdd: React.FC = () => {
 	const steps = [
 		{
 			title: 'Select Model',
+			description: 'Choose device template',
 			icon: <InfoCircleOutlined />,
 		},
 		{
 			title: 'Device Info',
+			description: 'Enter details',
 			icon: <InfoCircleOutlined />,
 		},
 		{
 			title: 'Complete',
+			description: 'Finish',
 			icon: <CheckCircleOutlined />,
 		},
 	];
@@ -386,18 +389,9 @@ const DeviceAdd: React.FC = () => {
 										<Input placeholder="e.g., Gateway Main, Sensor A1" size="large" />
 									</Form.Item>
 
-									<Row gutter={16}>
-										<Col span={12}>
-											<Form.Item label="Model" name="model">
-												<Input disabled size="large" />
-											</Form.Item>
-										</Col>
-										<Col span={12}>
-											<Form.Item label="Type" name="type">
-												<Input disabled size="large" />
-											</Form.Item>
-										</Col>
-									</Row>
+									<Form.Item label="Model" name="model">
+										<Input disabled size="large" />
+									</Form.Item>
 
 									<Form.Item
 										label="Serial Number"
@@ -407,13 +401,7 @@ const DeviceAdd: React.FC = () => {
 										<Input placeholder="e.g., 200310000092" size="large" />
 									</Form.Item>
 
-									<Form.Item
-										label="Primary Address"
-										name="priAddr"
-										rules={[{ required: true, message: 'Please enter primary address' }]}
-									>
-										<Input placeholder="e.g., 1, 2, 3..." size="large" />
-									</Form.Item>
+
 
 									<Form.Item label="Location (Optional)" name="location">
 										<Input placeholder="e.g., Floor 1 / Zone A" size="large" />

@@ -19,23 +19,23 @@ const RootLayout: React.FC = () => {
 			{/* 顶部区域：放 Logo、标题、右侧占位（用户、设置等） */}
 			<Header style={{ 
 				padding: 0, 
-				background: '#fff', 
-				borderBottom: '1px solid #f0f0f0',
+				background: '#001B34', 
+				borderBottom: 'none',
 				height: 56,
 				lineHeight: '56px',
 				position: 'fixed',
 				width: '100%',
 				zIndex: 10,
-			}}>
+				}}>
 				<TopNav collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
 			</Header>
 			
 		<Layout style={{ marginTop: 56, height: 'calc(100vh - 56px)' }}>
 			{/* 最左侧：图标导航栏（Overview / Monitoring / Configuration / Administration） - 带下拉菜单 */}
 			<Sider
-				width={180}
+				width={220}
 				style={{
-					background: '#001529',
+					background: '#001B34',
 					height: '100%',
 					overflow: 'hidden',
 				}}
@@ -45,7 +45,7 @@ const RootLayout: React.FC = () => {
 
 			{/* 右侧内容区：承载子路由页面 */}
 			<Layout style={{ height: '100%', overflow: 'hidden' }}>
-				<Content style={{ padding: 16, background: '#f5f5f5', height: '100%', overflow: 'auto' }}>
+				<Content style={{ padding: '16px 16px 16px 16px', background: '#E8EDF2', height: '100%', overflow: 'auto' }}>
 					{/* Outlet 渲染 <Route path="/"> 的子路由页面 */}
 					<Outlet />
 				</Content>
