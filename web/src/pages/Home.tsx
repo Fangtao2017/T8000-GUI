@@ -41,7 +41,7 @@ import {
 	EditOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { DeviceData, allDevices, parameterUnits, writableConfigs } from '../data/devicesData';
+import { type DeviceData, allDevices, parameterUnits, writableConfigs } from '../data/devicesData';
 
 // Notification data
 interface NotificationEvent {

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card, Table, Button, Space, Tag, Badge, Row, Col, Typography, Progress, Input, Select, Modal, message, List, Switch, Descriptions, InputNumber } from 'antd';
 import { EyeOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, ArrowRightOutlined } from '@ant-design/icons';
-import { DeviceData, allDevices, parameterUnits, writableConfigs } from '../data/devicesData';
+import { type DeviceData, allDevices, parameterUnits, writableConfigs } from '../data/devicesData';
+import type { ColumnsType } from 'antd/es/table';
 
 const { Search } = Input;
 
@@ -222,7 +223,7 @@ const Devices: React.FC = () => {
 		return val !== undefined ? map[val] || val.toString() : 'NULL';
 	};
 
-	const columns: ColumnType<DeviceData>[] = [
+	const columns: ColumnsType<DeviceData> = [
 		{
 			title: 'Device Name',
 			dataIndex: 'name',
