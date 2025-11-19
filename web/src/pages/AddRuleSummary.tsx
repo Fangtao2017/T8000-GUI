@@ -63,7 +63,8 @@ const AddRuleSummary: React.FC<AddRuleSummaryProps> = ({
 
 					<Card style={{ marginBottom: 24 }}>
 						<Descriptions title="Rule Summary" bordered column={2}>
-							<Descriptions.Item label="Rule Name" span={2}>{form.getFieldValue('name')}</Descriptions.Item>
+							<Descriptions.Item label="Rule Name">{form.getFieldValue('name')}</Descriptions.Item>
+							<Descriptions.Item label="Severity">{form.getFieldValue('severity')}</Descriptions.Item>
 							<Descriptions.Item label="Condition Type">{conditionType === 'device' ? 'Device' : 'Timer'}</Descriptions.Item>
 							<Descriptions.Item label="Condition Logic">{form.getFieldValue('conditionLogic')}</Descriptions.Item>
 
@@ -78,9 +79,10 @@ const AddRuleSummary: React.FC<AddRuleSummaryProps> = ({
 								))}
 							</Descriptions.Item>
 
+							<Descriptions.Item label="Action Name">{form.getFieldValue('actionName')}</Descriptions.Item>
 							<Descriptions.Item label="Control Type">{controlType === 'device' ? 'Device' : 'Timer'}</Descriptions.Item>
 							<Descriptions.Item label="Report">{form.getFieldValue('report') === 1 ? 'Enabled' : 'Disabled'}</Descriptions.Item>
-							<Descriptions.Item label="Log" span={2}>{form.getFieldValue('log') === 1 ? 'Enabled' : 'Disabled'}</Descriptions.Item>
+							<Descriptions.Item label="Log">{form.getFieldValue('log') === 1 ? 'Enabled' : 'Disabled'}</Descriptions.Item>
 
 							<Descriptions.Item label="Controls" span={2}>
 								{(form.getFieldValue('controls') || []).map((ctrl: Control, idx: number) => (

@@ -16,10 +16,15 @@ import {
 	DownOutlined,
 	BlockOutlined,
 	FormOutlined,
+	UserOutlined,
 } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-const IconNav: React.FC = () => {
+interface IconNavProps {
+	collapsed?: boolean;
+}
+
+const IconNav: React.FC<IconNavProps> = ({ collapsed }) => {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -28,9 +33,15 @@ const IconNav: React.FC = () => {
 	const section = (() => {
 		const path = location.pathname;
 		if (path === '/') return 'overview';
-		if (path === '/devices' || path === '/analysis' || path === '/alarms' || path === '/log' || path === '/rules') return 'monitor';
-		if (path.startsWith('/devices/') || path.startsWith('/configuration')) return 'configuration';
-		if (path.startsWith('/settings')) return 'administration';
+		
+		if (path.startsWith('/analysis') || path.startsWith('/log') || path.startsWith('/alarms') || path.startsWith('/rules')) return 'monitoring';
+		
+		if (path.startsWith('/devices') || path === '/settings/modbus' || path === '/configuration/add-model' || path === '/configuration/add-parameter') return 'device-management';
+		
+		if (path === '/configuration/add-rule' || path === '/configuration/add-alarm') return 'logic-management';
+		
+		if (path === '/settings/network' || path === '/settings/system' || path === '/settings/mqtt' || path.startsWith('/account')) return 'communication-management';
+		
 		return 'overview';
 	})();
 
@@ -39,53 +50,63 @@ const IconNav: React.FC = () => {
 		{
 			key: 'overview',
 			icon: <HomeOutlined />,
-			label: 'Dashboard',
+			label: 'Overview',
 			path: '/',
 			hasDropdown: false,
 		},
 		{
-			key: 'monitor',
+			key: 'monitoring',
 			icon: <DashboardOutlined />,
 			label: 'Monitoring',
 			hasDropdown: true,
 			submenu: [
-				{ key: 'devices-list', label: 'All Devices', icon: <AppstoreAddOutlined />, path: '/devices' },
-				{ key: 'all-model', label: 'All Model', icon: <BlockOutlined />, path: '/devices/models' },
-				{ key: 'all-parameter', label: 'All Parameter', icon: <FormOutlined />, path: '/devices/parameters' },
 				{ key: 'analysis', label: 'Analysis', icon: <LineChartOutlined />, path: '/analysis' },
-				{ key: 'alarms', label: 'Alarms', icon: <BellOutlined />, path: '/alarms' },
 				{ key: 'log', label: 'Log', icon: <FileTextOutlined />, path: '/log' },
+				{ key: 'alarms', label: 'Alarms', icon: <BellOutlined />, path: '/alarms' },
 				{ key: 'rules', label: 'Rules', icon: <ControlOutlined />, path: '/rules' },
 			],
 		},
 		{
-			key: 'configuration',
+			key: 'device-management',
 			icon: <AppstoreAddOutlined />,
-			label: 'Configuration',
+			label: 'Device Management',
 			hasDropdown: true,
 			submenu: [
-				{ key: 'add-device', label: 'Add Device', icon: <AppstoreAddOutlined />, path: '/devices/add' },
+				{ key: 'model-setting', label: 'Model Setting', icon: <BlockOutlined />, path: '/devices/models' },
+				{ key: 'device-setting', label: 'Device Setting', icon: <AppstoreAddOutlined />, path: '/devices' },
+				{ key: 'parameter-setting', label: 'Parameter Setting', icon: <FormOutlined />, path: '/devices/parameters' },
+				{ key: 'modbus-setting', label: 'Modbus Setting', icon: <ClusterOutlined />, path: '/settings/modbus' },
 				{ key: 'add-model', label: 'Add Model', icon: <BlockOutlined />, path: '/configuration/add-model' },
-				{ key: 'add-parameter', label: 'Supplement Add Parameter', icon: <FormOutlined />, path: '/configuration/add-parameter' },
-				{ key: 'add-alarm', label: 'Add Alarm', icon: <BellOutlined />, path: '/configuration/add-alarm' },
-				{ key: 'add-rule', label: 'Add Rule', icon: <ControlOutlined />, path: '/configuration/add-rule' },
+				{ key: 'add-device', label: 'Add Device', icon: <AppstoreAddOutlined />, path: '/devices/add' },
+				{ key: 'supplement-add-parameter', label: 'Supplement Add Parameter', icon: <FormOutlined />, path: '/configuration/add-parameter' },
 			],
 		},
 		{
-			key: 'administration',
-			icon: <ToolOutlined />,
-			label: 'Administration',
+			key: 'logic-management',
+			icon: <ControlOutlined />,
+			label: 'Logic Management',
 			hasDropdown: true,
 			submenu: [
-				{ key: 'network', label: 'Network Settings', icon: <WifiOutlined />, path: '/settings/network' },
-				{ key: 'mqtt', label: 'MQTT Configuration', icon: <ApiOutlined />, path: '/settings/mqtt' },
-				{ key: 'modbus', label: 'Modbus Settings', icon: <ClusterOutlined />, path: '/settings/modbus' },
-				{ key: 'system', label: 'System Settings', icon: <SettingOutlined />, path: '/settings/system' },
+				{ key: 'add-rule', label: 'Add Rule', icon: <ControlOutlined />, path: '/configuration/add-rule' },
+				{ key: 'add-alarm', label: 'Add Alarm', icon: <BellOutlined />, path: '/configuration/add-alarm' },
+			],
+		},
+		{
+			key: 'communication-management',
+			icon: <ApiOutlined />,
+			label: 'Communication Management',
+			hasDropdown: true,
+			submenu: [
+				{ key: 'network-setting', label: 'Network Setting', icon: <WifiOutlined />, path: '/settings/network' },
+				{ key: 'system-setting', label: 'System Setting', icon: <SettingOutlined />, path: '/settings/system' },
+				{ key: 'mqtt-setting', label: 'MQTT Setting', icon: <ApiOutlined />, path: '/settings/mqtt' },
+				{ key: 'account-setting', label: 'Account Setting', icon: <UserOutlined />, path: '/account' },
 			],
 		},
 	];
 
 	const handleItemClick = (item: typeof navigationItems[0]) => {
+		if (collapsed && item.hasDropdown) return;
 		if (item.hasDropdown) {
 			setExpandedSection(expandedSection === item.key ? null : item.key);
 		} else {
@@ -102,7 +123,7 @@ const IconNav: React.FC = () => {
 			vertical
 			gap={8}
 			style={{
-				width: 220,
+				width: '100%',
 				background: '#001B34',
 				paddingTop: 16,
 				paddingBottom: 16,
@@ -127,8 +148,9 @@ const IconNav: React.FC = () => {
 							style={{
 								display: 'flex',
 								alignItems: 'center',
+								justifyContent: collapsed ? 'center' : 'flex-start',
 								gap: 12,
-								padding: '12px 16px',
+								padding: collapsed ? '12px 0' : '12px 16px',
 								margin: '0 8px',
 								borderRadius: 4,
 								color: active ? '#8CC63F' : 'rgba(255,255,255,0.85)',
@@ -151,8 +173,8 @@ const IconNav: React.FC = () => {
 							}}
 						>
 							<span style={{ fontSize: 18 }}>{item.icon}</span>
-							<span style={{ flex: 1 }}>{item.label}</span>
-							{item.hasDropdown && (
+							{!collapsed && <span style={{ flex: 1 }}>{item.label}</span>}
+							{!collapsed && item.hasDropdown && (
 								<DownOutlined style={{ 
 									fontSize: 10,
 									opacity: 0.6,
@@ -163,12 +185,16 @@ const IconNav: React.FC = () => {
 						</div>
 						
 						{/* Submenu Items */}
-						{item.hasDropdown && expanded && (
+						{!collapsed && item.hasDropdown && (
 							<div style={{
 								paddingLeft: 8,
 								paddingRight: 8,
-								marginTop: 4,
-								marginBottom: 4,
+								marginTop: expanded ? 4 : 0,
+								marginBottom: expanded ? 4 : 0,
+								maxHeight: expanded ? 500 : 0,
+								opacity: expanded ? 1 : 0,
+								overflow: 'hidden',
+								transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 							}}>
 								{item.submenu?.map((subItem) => {
 									const subActive = location.pathname === subItem.path;

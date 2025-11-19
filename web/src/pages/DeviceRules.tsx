@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Space, Badge, Row, Col, Typography, Progress, Input, Select, Switch } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Badge, Row, Col, Typography, Progress, Input, Select, Switch, message } from 'antd';
+import { EyeOutlined, EditOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import type { ColumnType } from 'antd/es/table';
 import RuleViewData from './RuleViewData';
 
@@ -32,10 +33,18 @@ interface RuleData {
 }
 
 const DeviceRules: React.FC = () => {
+	const navigate = useNavigate();
 	const [searchText, setSearchText] = useState('');
 	const [filterStatus, setFilterStatus] = useState<string>('all');
 	const [isViewDataModalVisible, setIsViewDataModalVisible] = useState(false);
 	const [selectedRule, setSelectedRule] = useState<RuleData | null>(null);
+	const [refreshing, setRefreshing] = useState(false);
+
+	const handleRefresh = () => {
+		setRefreshing(true);
+		message.success('Data refreshed successfully');
+		setTimeout(() => setRefreshing(false), 1000);
+	};
 
 	// Mock data based on the screenshot with additional condition/control data
 	const allRules: RuleData[] = [
@@ -257,6 +266,19 @@ const DeviceRules: React.FC = () => {
 							setFilterStatus('all');
 						}}>Reset</Button>
 						<Button type="primary" style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>Query</Button>
+					</Space>
+					<Space size={8}>
+						<Button icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
+							Refresh
+						</Button>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={() => navigate('/configuration/add-rule')}
+							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+						>
+							Add Rule
+						</Button>
 					</Space>
 				</Space>
 			</Card>

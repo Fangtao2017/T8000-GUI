@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, Table, Button, Space, Tag, Badge, Row, Col, Typography, Progress, Input, Select, Modal, message, List, Switch, Descriptions, InputNumber } from 'antd';
 import { EyeOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { type DeviceData, allDevices, parameterUnits, writableConfigs } from '../data/devicesData';
@@ -9,6 +9,7 @@ const { Search } = Input;
 
 const Devices: React.FC = () => {
 	const location = useLocation();
+	const navigate = useNavigate();
 	const [searchText, setSearchText] = useState('');
 	const [filterStatus, setFilterStatus] = useState<string>('all');
 	const [filterModel, setFilterModel] = useState<string>('all');
@@ -405,6 +406,14 @@ const Devices: React.FC = () => {
 						}}>Reset All Filters</Button>
 						<Button type="primary" icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>
 							Refresh Data
+						</Button>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={() => navigate('/devices/add')}
+							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+						>
+							Add Device
 						</Button>
 					</Space>
 				</Space>

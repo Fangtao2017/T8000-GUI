@@ -41,6 +41,7 @@ import {
 	EditOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+
 import { type DeviceData, allDevices, parameterUnits, writableConfigs } from '../data/devicesData';
 
 // Notification data
@@ -210,6 +211,7 @@ const initialNotifications: NotificationItem[] = [
 	},
 ];
 
+// deviceColumns moved inside component
 const deviceColumns = [
 	{
 		title: 'Name',
@@ -279,6 +281,7 @@ const Home: React.FC = () => {
 		const models = new Set(allDevices.map(d => d.model));
 		return Array.from(models).sort();
 	}, []);
+
 	
 	// Filter and sort devices
 	const filteredAndSortedDevices = useMemo(() => {
@@ -545,7 +548,7 @@ const Home: React.FC = () => {
 									<Col span={3}>
 										<Typography.Text type="secondary" style={{ fontSize: 13, display: 'block' }}>Status</Typography.Text>
 										<Space size={8}>
-											<Badge status={systemRunning ? 'processing' : 'default'} text={<span style={{fontSize: 12}}>Sys</span>} />
+											<Badge status={systemRunning ? 'processing' : 'default'} text={<span style={{fontSize: 12}}>Running</span>} />
 											<Space size={4}>
 												<ApiOutlined style={{ fontSize: 12, color: mqttConnected ? '#52c41a' : '#ff4d4f' }} />
 												<span style={{fontSize: 12}}>MQTT</span>
@@ -842,6 +845,7 @@ const Home: React.FC = () => {
 							columns={deviceColumns}
 							dataSource={filteredAndSortedDevices}
 							pagination={false}
+							scroll={{ y: 'calc(100vh - 580px)' }}
 							rowClassName={(record) => record.status === 'offline' ? 'offline-row' : ''}
 							style={{ marginBottom: 0 }}
 							onRow={(record) => ({

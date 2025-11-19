@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, FormOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select, Row, Col, Progress } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 
-const { Title, Paragraph } = Typography;
 const { Option } = Select;
+const { Search } = Input;
 
 interface ParameterData {
 	key: string;
@@ -24,6 +24,7 @@ const AllParameters: React.FC = () => {
 	const navigate = useNavigate();
 	const [searchText, setSearchText] = useState('');
 	const [filterAccess, setFilterAccess] = useState<string>('all');
+	const [refreshing, setRefreshing] = useState(false);
 
 	// Mock data
 	const [parameters] = useState<ParameterData[]>([
@@ -89,6 +90,12 @@ const AllParameters: React.FC = () => {
 		},
 	]);
 
+	const handleRefresh = () => {
+		setRefreshing(true);
+		message.success('Data refreshed successfully');
+		setTimeout(() => setRefreshing(false), 1000);
+	};
+
 	const handleDelete = (record: ParameterData) => {
 		Modal.confirm({
 			title: 'Delete Parameter',
@@ -107,6 +114,7 @@ const AllParameters: React.FC = () => {
 			dataIndex: 'name',
 			key: 'name',
 			sorter: (a, b) => a.name.localeCompare(b.name),
+			render: (text: string) => <strong>{text}</strong>,
 		},
 		{
 			title: 'Device Model',
@@ -119,7 +127,7 @@ const AllParameters: React.FC = () => {
 			dataIndex: 'dataType',
 			key: 'dataType',
 			render: (type: string) => (
-				<Tag style={{ background: '#f0f0f0', border: '1px solid #d9d9d9', color: '#595959' }}>{type}</Tag>
+				<Tag>{type}</Tag>
 			),
 		},
 		{
@@ -134,7 +142,7 @@ const AllParameters: React.FC = () => {
 			key: 'access',
 			width: 120,
 			render: (access: string) => (
-				<Tag style={{ background: '#f0f0f0', border: '1px solid #d9d9d9', color: '#595959' }}>{access}</Tag>
+				<Tag color={access === 'Read/Write' ? 'blue' : 'default'}>{access}</Tag>
 			),
 		},
 		{
@@ -159,14 +167,16 @@ const AllParameters: React.FC = () => {
 		{
 			title: 'Action',
 			key: 'action',
-			width: 150,
+			width: 180,
+			fixed: 'right',
 			render: (_, record) => (
-				<Space size="small">
+				<Space size="middle">
 					<Button
 						type="link"
 						icon={<EditOutlined />}
 						size="small"
 						onClick={() => navigate(`/configuration/add-parameter?edit=${record.key}`)}
+						style={{ color: '#003A70' }}
 					>
 						Edit
 					</Button>
@@ -195,62 +205,100 @@ const AllParameters: React.FC = () => {
 		return matchesSearch && matchesAccess;
 	});
 
+	// Statistics
+	const totalParameters = parameters.length;
+	const readOnlyCount = parameters.filter(p => p.access === 'Read Only').length;
+	const readWriteCount = parameters.filter(p => p.access === 'Read/Write').length;
+
 	return (
-		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#fff' }}>
-			<div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
-				<div style={{ maxWidth: 1600, margin: '0 auto' }}>
-					<div style={{ marginBottom: 24 }}>
-						<Title level={3}>
-							<FormOutlined /> All Device Parameters
-						</Title>
-						<Paragraph type="secondary">
-							Manage all device parameters across all models
-						</Paragraph>
-					</div>
-
-					<Card>
-						<div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
-							<Space>
-								<Input
-									placeholder="Search parameters..."
-									prefix={<SearchOutlined />}
-									value={searchText}
-									onChange={(e) => setSearchText(e.target.value)}
-									style={{ width: 300 }}
-									allowClear
-								/>
-								<Select
-									value={filterAccess}
-									onChange={setFilterAccess}
-									style={{ width: 150 }}
-								>
-									<Option value="all">All Access</Option>
-									<Option value="Read Only">Read Only</Option>
-									<Option value="Read/Write">Read/Write</Option>
-								</Select>
-							</Space>
-							<Button
-								type="primary"
-								icon={<PlusOutlined />}
-								onClick={() => navigate('/configuration/add-parameter')}
-								style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
-							>
-								Add New Parameter
-							</Button>
-						</div>
-
-						<Table
-							columns={columns}
-							dataSource={filteredData}
-							pagination={{
-								pageSize: 10,
-								showSizeChanger: true,
-								showTotal: (total) => `Total ${total} parameters`,
-							}}
-						/>
+		<div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
+			{/* Statistics Cards */}
+			<Row gutter={16}>
+				<Col span={8}>
+					<Card bordered bodyStyle={{ padding: '16px' }}>
+						<Space direction="vertical" size={4} style={{ width: '100%' }}>
+							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Total Parameters</Typography.Text>
+							<Typography.Title level={2} style={{ margin: 0 }}>{totalParameters}</Typography.Title>
+							<Progress percent={100} showInfo={false} strokeColor="#003A70" />
+						</Space>
 					</Card>
-				</div>
-			</div>
+				</Col>
+				<Col span={8}>
+					<Card bordered bodyStyle={{ padding: '16px' }}>
+						<Space direction="vertical" size={4} style={{ width: '100%' }}>
+							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Read Only</Typography.Text>
+							<Typography.Title level={2} style={{ margin: 0, color: '#8c8c8c' }}>{readOnlyCount}</Typography.Title>
+							<Progress percent={totalParameters > 0 ? (readOnlyCount / totalParameters) * 100 : 0} showInfo={false} strokeColor="#8c8c8c" />
+						</Space>
+					</Card>
+				</Col>
+				<Col span={8}>
+					<Card bordered bodyStyle={{ padding: '16px' }}>
+						<Space direction="vertical" size={4} style={{ width: '100%' }}>
+							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Read/Write</Typography.Text>
+							<Typography.Title level={2} style={{ margin: 0, color: '#1890ff' }}>{readWriteCount}</Typography.Title>
+							<Progress percent={totalParameters > 0 ? (readWriteCount / totalParameters) * 100 : 0} showInfo={false} strokeColor="#1890ff" />
+						</Space>
+					</Card>
+				</Col>
+			</Row>
+
+			{/* Search and Filter Bar */}
+			<Card bordered bodyStyle={{ padding: '12px 16px' }}>
+				<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+					<Space size={12}>
+						<Search
+							placeholder="Search parameters..."
+							allowClear
+							style={{ width: 300 }}
+							value={searchText}
+							onChange={(e) => setSearchText(e.target.value)}
+						/>
+						<Select
+							value={filterAccess}
+							onChange={setFilterAccess}
+							style={{ width: 150 }}
+							suffixIcon={<FilterOutlined />}
+						>
+							<Option value="all">All Access</Option>
+							<Option value="Read Only">Read Only</Option>
+							<Option value="Read/Write">Read/Write</Option>
+						</Select>
+						<Typography.Text type="secondary" style={{ fontSize: 12, alignSelf: 'center' }}>
+							{filteredData.length} of {totalParameters} parameters
+						</Typography.Text>
+					</Space>
+					<Space size={8}>
+						<Button icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
+							Refresh
+						</Button>
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={() => navigate('/configuration/add-parameter')}
+							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+						>
+							Add New Parameter
+						</Button>
+					</Space>
+				</Space>
+			</Card>
+
+			{/* Parameters Table */}
+			<Card 
+				title={`All Parameters (${filteredData.length})`}
+				bordered
+				style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+				bodyStyle={{ padding: 16, flex: 1, overflow: 'auto' }}
+			>
+				<Table
+					columns={columns}
+					dataSource={filteredData}
+					pagination={false}
+					size="small"
+					scroll={{ x: 'max-content' }}
+				/>
+			</Card>
 		</div>
 	);
 };

@@ -65,6 +65,23 @@ const AddAlarm: React.FC = () => {
 								</Form.Item>
 
 								<Form.Item
+									label="Severity"
+									name="severity"
+									rules={[{ required: true, message: 'Please select severity' }]}
+									initialValue="Critical"
+								>
+									<Select
+										placeholder="Select severity"
+										size="large"
+										options={[
+											{ value: 'Critical', label: 'Critical' },
+											{ value: 'Warning', label: 'Warning' },
+											{ value: 'Info', label: 'Info' },
+										]}
+									/>
+								</Form.Item>
+
+								<Form.Item
 									label="Device"
 									name="device"
 									rules={[{ required: true, message: 'Please select a device' }]}

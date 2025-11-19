@@ -34,13 +34,16 @@ const RootLayout: React.FC = () => {
 			{/* 最左侧：图标导航栏（Overview / Monitoring / Configuration / Administration） - 带下拉菜单 */}
 			<Sider
 				width={220}
+				collapsed={collapsed}
+				trigger={null}
 				style={{
 					background: '#001B34',
 					height: '100%',
 					overflow: 'hidden',
+					transition: 'all 0.2s',
 				}}
 			>
-				<IconNav />
+				<IconNav collapsed={collapsed} />
 			</Sider>
 
 			{/* 右侧内容区：承载子路由页面 */}

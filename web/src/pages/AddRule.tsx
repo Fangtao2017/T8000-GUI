@@ -20,13 +20,13 @@ const AddRule: React.FC = () => {
 			if (currentStep === 0) {
 				// Validate condition fields
 				if (conditionType === 'device') {
-					await form.validateFields(['name', 'conditions', 'conditionLogic']);
+					await form.validateFields(['name', 'severity', 'conditions', 'conditionLogic']);
 				} else {
-					await form.validateFields(['name', 'conditions', 'conditionLogic']);
+					await form.validateFields(['name', 'severity', 'conditions', 'conditionLogic']);
 				}
 			} else if (currentStep === 1) {
 				// Validate action fields
-				await form.validateFields(['controls', 'controlType']);
+				await form.validateFields(['actionName', 'controls', 'controlType', 'report', 'log']);
 			}
 			setCurrentStep(currentStep + 1);
 		} catch (error) {

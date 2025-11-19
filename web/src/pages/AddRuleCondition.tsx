@@ -28,7 +28,7 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 			<Title level={4}>Step 1: Set Trigger Conditions</Title>
 
 			<Row gutter={16} style={{ marginBottom: 16 }}>
-				<Col span={8}>
+				<Col span={6}>
 					<Form.Item
 						label="Rule Name"
 						name="name"
@@ -38,7 +38,25 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 						<Input size="large" placeholder="e.g., Temperature Alert" />
 					</Form.Item>
 				</Col>
-				<Col span={8}>
+				<Col span={6}>
+					<Form.Item
+						label="Severity"
+						name="severity"
+						rules={[{ required: true, message: 'Please select severity' }]}
+						initialValue="Critical"
+						tooltip="Select the severity level for this rule"
+					>
+						<Select
+							size="large"
+							options={[
+								{ value: 'Critical', label: 'Critical' },
+								{ value: 'Warning', label: 'Warning' },
+								{ value: 'Info', label: 'Info' },
+							]}
+						/>
+					</Form.Item>
+				</Col>
+				<Col span={6}>
 					<Form.Item
 						label="Condition Type"
 						name="conditionType"
@@ -62,7 +80,7 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 						/>
 					</Form.Item>
 				</Col>
-				<Col span={8}>
+				<Col span={6}>
 					<Form.Item
 						label="Condition Logic"
 						name="conditionLogic"
