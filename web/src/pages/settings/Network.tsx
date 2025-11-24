@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Divider, Typography, Row, Col, Switch, message, Tag } from 'antd';
+import { Card, Form, Input, Button, Space, Divider, Typography, Row, Col, Switch, message, Tag, Alert } from 'antd';
 import { SaveOutlined, ReloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -77,6 +77,13 @@ const SettingsNetwork: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <Alert
+        message="Under Development"
+        description="This page is currently under development. Features may be incomplete or subject to change."
+        type="warning"
+        showIcon
+        style={{ marginBottom: 24 }}
+      />
       {/* Device Connection Status */}
       <Card 
         bordered 

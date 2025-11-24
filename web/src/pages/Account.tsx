@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Avatar, Upload, Space, Typography, Divider, message, Tabs } from 'antd';
+import { Card, Form, Input, Button, Avatar, Upload, Space, Typography, Divider, message, Tabs, Alert } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, CameraOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 
@@ -41,7 +41,7 @@ const Account: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       message.success('Password changed successfully');
       passwordForm.resetFields();
-      console.log('Password changed');
+      console.log('Password changed', values);
     } catch (error) {
       message.error('Password change failed');
     } finally {
@@ -253,6 +253,13 @@ const Account: React.FC = () => {
   return (
     <div style={{ padding: '0 8px' }}>
       <Title level={3} style={{ marginBottom: 24 }}>Account Settings</Title>
+      <Alert
+        message="Under Development"
+        description="This page is currently under development. Features may be incomplete or subject to change."
+        type="warning"
+        showIcon
+        style={{ marginBottom: 24 }}
+      />
       <Card>
         <Tabs items={tabItems} />
       </Card>

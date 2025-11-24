@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Row, Col, Select, Tooltip, Progress } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Search } = Input;
@@ -21,6 +21,7 @@ interface ModelData {
 
 const AllModels: React.FC = () => {
 	const navigate = useNavigate();
+	const { deviceId } = useParams<{ deviceId: string }>();
 	const [searchText, setSearchText] = useState('');
 	const [typeFilter, setTypeFilter] = useState('all');
 	const [brandFilter, setBrandFilter] = useState('all');
@@ -232,7 +233,7 @@ const AllModels: React.FC = () => {
 						type="link"
 						icon={<EditOutlined />}
 						size="small"
-						onClick={() => navigate(`/configuration/add-model?edit=${record.key}`)}
+						onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-model?edit=${record.key}` : `/configuration/add-model?edit=${record.key}`)}
 						style={{ color: '#003A70' }}
 					>
 						Edit
@@ -357,7 +358,7 @@ const AllModels: React.FC = () => {
 						<Button
 							type="primary"
 							icon={<PlusOutlined />}
-							onClick={() => navigate('/configuration/add-model')}
+							onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-model` : '/configuration/add-model')}
 							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
 						>
 							Add New Model

@@ -1,0 +1,296 @@
+import React, { useState, useEffect } from 'react';
+import { Typography, Button, Menu, theme, ConfigProvider } from 'antd';
+import { 
+  ArrowRightOutlined,
+  BlockOutlined,
+  FormOutlined,
+  ClusterOutlined,
+  AppstoreAddOutlined,
+  BellOutlined,
+  ControlOutlined,
+  WifiOutlined,
+  SettingOutlined,
+  ApiOutlined,
+  UserOutlined,
+  CloseOutlined
+} from '@ant-design/icons';
+import type { MenuProps } from 'antd';
+
+const { Title, Paragraph } = Typography;
+const { useToken } = theme;
+
+export type MenuSectionType = 'device-management' | 'logic-management' | 'communication-management';
+
+interface SubPageItem {
+  key: string;
+  label: string;
+  icon: React.ReactNode;
+  path: string;
+  description: string;
+  features: string[];
+}
+
+interface NavMegaMenuProps {
+  section: MenuSectionType;
+  deviceId?: string;
+  onNavigate: (path: string) => void;
+  onClose: () => void;
+}
+
+const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, deviceId, onNavigate, onClose }) => {
+  const { token } = useToken();
+  const [selectedKey, setSelectedKey] = useState<string>('');
+
+  // Helper to format path
+  const getPath = (path: string) => {
+    if (!deviceId) return path;
+    return `/device/${deviceId}${path}`;
+  };
+
+  // Data Definitions
+  const deviceManagementItems: SubPageItem[] = [
+    {
+      key: 'device-list',
+      label: 'Sensor',
+      icon: <SettingOutlined />,
+      path: '/devices',
+      description: 'View and manage all connected sensors and devices. Monitor their real-time status, connectivity, and basic configurations.',
+      features: ['Real-time Status Monitoring', 'Device Inventory', 'Connection Health Check']
+    },
+    {
+      key: 'model-setting',
+      label: 'Model',
+      icon: <BlockOutlined />,
+      path: '/devices/models',
+      description: 'Define and manage device models. Configure capabilities, brands, and types for standardization across your system.',
+      features: ['Model Standardization', 'Capability Definition', 'Brand Management']
+    },
+    {
+      key: 'parameter-setting',
+      label: 'Parameter',
+      icon: <FormOutlined />,
+      path: '/devices/parameters',
+      description: 'Configure data parameters for your devices. Set up data types, units, scaling factors, and access permissions.',
+      features: ['Data Type Configuration', 'Unit Management', 'Access Control']
+    },
+    {
+      key: 'modbus-setting',
+      label: 'Modbus',
+      icon: <ClusterOutlined />,
+      path: '/settings/modbus',
+      description: 'Configure Modbus communication parameters including baud rate, parity, and slave IDs for industrial integration.',
+      features: ['Protocol Configuration', 'Slave ID Management', 'Communication Tuning']
+    },
+    {
+      key: 'add-model',
+      label: 'Add Model',
+      icon: <BlockOutlined />,
+      path: '/configuration/add-model',
+      description: 'Register a new device model into the system catalog to enable support for new hardware types.',
+      features: ['New Hardware Support', 'Template Creation']
+    },
+    {
+      key: 'add-device',
+      label: 'Add Sub-Device',
+      icon: <AppstoreAddOutlined />,
+      path: '/devices/add',
+      description: 'Onboard a new sub-device or sensor to your gateway. Configure its initial connection and identification.',
+      features: ['Device Onboarding', 'Initial Setup', 'Topology Management']
+    },
+    {
+      key: 'supplement-add-parameter',
+      label: 'Supplement Add Parameter',
+      icon: <FormOutlined />,
+      path: '/configuration/add-parameter',
+      description: 'Add specific parameters to existing device models to extend their data collection capabilities.',
+      features: ['Capability Extension', 'Custom Data Points']
+    }
+  ];
+
+  const logicManagementItems: SubPageItem[] = [
+    {
+      key: 'alarm-setting',
+      label: 'Alarm Setting',
+      icon: <BellOutlined />,
+      path: '/alarms',
+      description: 'Configure alarm definitions and thresholds. Set up critical alerts for device parameters and system states.',
+      features: ['Threshold Configuration', 'Severity Levels', 'Alert Definitions']
+    },
+    {
+      key: 'rules-setting',
+      label: 'Rules Setting',
+      icon: <ControlOutlined />,
+      path: '/rules',
+      description: 'Define automation rules and logic. Create if-this-then-that scenarios to automate device controls.',
+      features: ['Automation Logic', 'Condition-Action Pairs', 'Scenario Management']
+    },
+    {
+      key: 'add-rule',
+      label: 'Add Rule',
+      icon: <ControlOutlined />,
+      path: '/configuration/add-rule',
+      description: 'Create a new automation rule. Define triggers, conditions, and actions for intelligent system behavior.',
+      features: ['New Logic Creation', 'Complex Event Processing']
+    },
+    {
+      key: 'add-alarm',
+      label: 'Add Alarm',
+      icon: <BellOutlined />,
+      path: '/configuration/add-alarm',
+      description: 'Create a new alarm definition. Specify the target device, parameter, and condition for triggering alerts.',
+      features: ['New Alert Creation', 'Monitoring Setup']
+    }
+  ];
+
+  const communicationManagementItems: SubPageItem[] = [
+    {
+      key: 'network-setting',
+      label: 'Network Setting',
+      icon: <WifiOutlined />,
+      path: '/settings/network',
+      description: 'Configure network interfaces, IP addresses, DNS, and gateway settings for system connectivity.',
+      features: ['IP Configuration', 'Interface Management', 'Connectivity Setup']
+    },
+    {
+      key: 'system-setting',
+      label: 'Firmware Settings',
+      icon: <SettingOutlined />,
+      path: '/settings/system',
+      description: 'Manage system firmware. Check for updates, upload new versions, and maintain system stability.',
+      features: ['Version Control', 'Update Management', 'System Maintenance']
+    },
+    {
+      key: 'mqtt-setting',
+      label: 'MQTT Setting',
+      icon: <ApiOutlined />,
+      path: '/settings/mqtt',
+      description: 'Configure MQTT broker connection details, topics, and authentication for cloud communication.',
+      features: ['Broker Connection', 'Topic Mapping', 'Cloud Integration']
+    },
+    {
+      key: 'account-setting',
+      label: 'Local Account',
+      icon: <UserOutlined />,
+      path: '/account',
+      description: 'Manage local user accounts, passwords, and access permissions for system security.',
+      features: ['User Management', 'Access Control', 'Security Settings']
+    }
+  ];
+
+  // Determine items based on section
+  const getItems = () => {
+    switch (section) {
+      case 'device-management': return deviceManagementItems;
+      case 'logic-management': return logicManagementItems;
+      case 'communication-management': return communicationManagementItems;
+      default: return [];
+    }
+  };
+
+  const items = getItems();
+  const selectedItem = items.find(item => item.key === selectedKey) || items[0];
+
+  useEffect(() => {
+    if (items.length > 0 && !selectedKey) {
+      setSelectedKey(items[0].key);
+    }
+  }, [items, selectedKey]);
+
+  const menuItems: MenuProps['items'] = items.map(item => ({
+    key: item.key,
+    icon: item.icon,
+    label: item.label,
+  }));
+
+  return (
+    <div 
+      style={{ 
+        width: '100%', 
+        height: '60vh', 
+        background: '#fff', 
+        boxShadow: '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)',
+        display: 'flex',
+        position: 'relative',
+        zIndex: 1000
+      }}
+      onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+    >
+      {/* Close Button */}
+      <Button 
+        type="text" 
+        icon={<CloseOutlined style={{ fontSize: 20 }} />} 
+        onClick={onClose}
+        style={{ 
+          position: 'absolute', 
+          top: 16, 
+          right: 16, 
+          zIndex: 1001 
+        }}
+      />
+
+      {/* Left Side: Menu List */}
+      <div style={{ width: 300, borderRight: `1px solid ${token.colorSplit}`, background: '#fafafa', padding: '24px 0' }}>
+        <ConfigProvider
+          theme={{
+            components: {
+              Menu: {
+                itemSelectedBg: '#003A70',
+                itemSelectedColor: '#ffffff',
+                itemHoverBg: 'rgba(0, 58, 112, 0.1)',
+              }
+            }
+          }}
+        >
+          <Menu
+            mode="vertical"
+            selectedKeys={[selectedItem.key]}
+            items={menuItems}
+            onClick={({ key }) => setSelectedKey(key)}
+            style={{ borderRight: 'none', background: 'transparent', fontSize: 16 }}
+          />
+        </ConfigProvider>
+      </div>
+
+      {/* Right Side: Content */}
+      <div style={{ flex: 1, padding: '48px 64px' }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', maxWidth: 800 }}>
+          <div>
+            <Title level={2} style={{ marginTop: 0, marginBottom: 24, color: '#001B34' }}>
+              {selectedItem.label}
+            </Title>
+            <Paragraph type="secondary" style={{ fontSize: 18, marginBottom: 32, lineHeight: 1.6 }}>
+              {selectedItem.description}
+            </Paragraph>
+            
+            <Title level={4} style={{ marginTop: 0, marginBottom: 16 }}>Key Features</Title>
+            <ul style={{ paddingLeft: 20, marginBottom: 40, color: token.colorTextSecondary, fontSize: 16 }}>
+              {selectedItem.features.map((feature, index) => (
+                <li key={index} style={{ marginBottom: 12 }}>{feature}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div style={{ marginTop: 'auto' }}>
+            <Button 
+              type="primary" 
+              size="large" 
+              icon={<ArrowRightOutlined />}
+              onClick={() => onNavigate(getPath(selectedItem.path))}
+              style={{ 
+                backgroundColor: '#003A70', 
+                borderColor: '#003A70',
+                height: 48,
+                padding: '0 32px',
+                fontSize: 16
+              }}
+            >
+              Go to {selectedItem.label}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default NavMegaMenu;

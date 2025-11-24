@@ -4,7 +4,6 @@ import type { MenuProps } from 'antd';
 import {
 	HomeOutlined,
 	AppstoreOutlined,
-	PlusCircleOutlined,
 	ApiOutlined,
 	ClusterOutlined,
 	PlayCircleOutlined,
@@ -13,6 +12,7 @@ import {
 	BellOutlined,
 	FileTextOutlined,
 	LineChartOutlined,
+	DesktopOutlined,
 } from '@ant-design/icons'; 
 
 
@@ -39,16 +39,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, section, onSelect }) => 
 					item('Network settings', '/settings/network', <WifiOutlined />),
 					item('MQTT configuration', '/settings/mqtt', <ApiOutlined />),
 					item('Modbus settings', '/settings/modbus', <ClusterOutlined />),
-					item('System settings', '/settings/system', <SettingOutlined />),
+					item('Firmware Settings', '/settings/system', <SettingOutlined />),
 				];
 			}
 			if (section === 'devices') {
-				return [
-					item('Add device', '/devices/add', <PlusCircleOutlined />),
-				];
+				return [];
 		}
 		return [
 			item('Overview', '/', <HomeOutlined />),
+			item('Monitor', '/monitor', <DesktopOutlined />),
 			item('All Devices', '/devices', <AppstoreOutlined />),
 			item('Analysis', '/analysis', <LineChartOutlined />),
 			item('Alarms', '/alarms', <BellOutlined />),

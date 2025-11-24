@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Row, Col, Typography, message, Select, InputNumber, Divider, Steps } from 'antd';
+import { Form, Input, Button, Space, Row, Col, Typography, message, Select, InputNumber, Divider, Steps } from 'antd';
 import { PlusOutlined, SettingOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
@@ -98,7 +98,7 @@ const AddParameter: React.FC = () => {
 
 	const handleNext = async () => {
 		try {
-			await form.validateFields(['model_id', 'name', 'attributeName', 'sourceType']);
+			await form.validateFields(['model_id', 'name', 'attributeName', 'sourceType', 'unit', 'bit', 'dataType', 'rw', 'lowerLimit', 'upperLimit']);
 			setCurrentStep(1);
 		} catch {
 			// Validation failed
@@ -318,10 +318,143 @@ const AddParameter: React.FC = () => {
 		}
 	};
 
+	const steps = [
+		{
+			title: 'Basic Info',
+			description: 'Define parameter details',
+			icon: <InfoCircleOutlined />,
+			content: (
+				<div>
+					<Row gutter={16}>
+						<Col span={24}>
+							<Form.Item
+								label="Select Model"
+								name="model_id"
+								rules={[{ required: true, message: 'Please select a model' }]}
+							>
+								<Select
+									showSearch
+									placeholder="Search and select model"
+									optionFilterProp="label"
+									options={mockModels.map(model => ({
+										value: model.id,
+										label: `${model.name} (${model.type})`,
+									}))}
+								/>
+							</Form.Item>
+						</Col>
+					</Row>
+					<Divider />
+					<Row gutter={16}>
+						<Col span={12}>
+							<Form.Item label="Parameter Name" name="name" required>
+								<Input placeholder="e.g., Temperature" />
+							</Form.Item>
+						</Col>
+						<Col span={12}>
+							<Form.Item label="Attribute Name" name="attributeName" required tooltip="Unique identifier">
+								<Input placeholder="e.g., temp_01" />
+							</Form.Item>
+						</Col>
+					</Row>
+					<Row gutter={16}>
+						<Col span={12}>
+							<Form.Item label="Unit" name="unit">
+								<Select options={unitOptions} showSearch />
+							</Form.Item>
+						</Col>
+						<Col span={12}>
+							<Form.Item label="Bit" name="bit">
+								<Select options={bitOptions} />
+							</Form.Item>
+						</Col>
+					</Row>
+					<Row gutter={16}>
+						<Col span={12}>
+							<Form.Item label="Data Type" name="dataType">
+								<Select options={dataTypeOptions} />
+							</Form.Item>
+						</Col>
+						<Col span={12}>
+							<Form.Item label="RW (Read/Write)" name="rw">
+								<Select options={rwOptions} />
+							</Form.Item>
+						</Col>
+					</Row>
+					{rw === 'rw' && (
+						<Row gutter={16}>
+							<Col span={12}>
+								<Form.Item label="Lower Limit" name="lowerLimit" required>
+									<InputNumber style={{ width: '100%' }} placeholder="e.g., 0" />
+								</Form.Item>
+							</Col>
+							<Col span={12}>
+								<Form.Item label="Upper Limit" name="upperLimit" required>
+									<InputNumber style={{ width: '100%' }} placeholder="e.g., 100" />
+								</Form.Item>
+							</Col>
+						</Row>
+					)}
+					<Row gutter={16}>
+						<Col span={12}>
+							<Form.Item label="Source Interface" name="sourceType" required>
+								<Select options={sourceOptions} />
+							</Form.Item>
+						</Col>
+					</Row>
+					<div style={{ marginTop: 24, textAlign: 'right' }}>
+						<Button 
+							type="primary" 
+							size="large"
+							style={{ backgroundColor: '#003A70' }}
+							onClick={handleNext}
+						>
+							Next
+						</Button>
+					</div>
+				</div>
+			),
+		},
+		{
+			title: 'Source Config',
+			description: 'Configure source interface',
+			icon: <SettingOutlined />,
+			content: (
+				<div>
+					<div style={{ background: '#fafafa', padding: 24, borderRadius: 8, marginBottom: 24 }}>
+						<Space align="center" style={{ marginBottom: 24 }}>
+							<SettingOutlined />
+							<Text strong>Configuration for {sourceType?.toUpperCase()}</Text>
+						</Space>
+						{renderConfigFields()}
+					</div>
+					<div style={{ marginTop: 24, textAlign: 'right' }}>
+						<Button 
+							size="large"
+							style={{ marginRight: 8 }} 
+							onClick={handlePrev}
+						>
+							Previous
+						</Button>
+						<Button 
+							type="primary" 
+							size="large"
+							loading={loading}
+							style={{ backgroundColor: '#003A70' }}
+							onClick={handleSubmit}
+						>
+							Create Parameter
+						</Button>
+					</div>
+				</div>
+			),
+		},
+	];
+
 	return (
 		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#fff' }}>
 			<div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
-				<div style={{ maxWidth: 800, margin: '0 auto' }}>
+				<div style={{ maxWidth: 1200, margin: '0 auto' }}>
 					<Title level={3}>
 						<PlusOutlined /> Supplement Add Parameter
 					</Title>
@@ -329,134 +462,26 @@ const AddParameter: React.FC = () => {
 						Add a single parameter to an existing model.
 					</Paragraph>
 
-					<Card bordered style={{ marginTop: 24 }}>
-						<Steps current={currentStep} style={{ marginBottom: 24 }}>
-							<Steps.Step title="Basic Info" description="Define parameter details" icon={<InfoCircleOutlined />} />
-							<Steps.Step title="Source Config" description="Configure source interface" icon={<InfoCircleOutlined />} />
-						</Steps>
+					<Steps current={currentStep} style={{ marginBottom: 32 }}>
+						{steps.map(item => (
+							<Steps.Step key={item.title} title={item.title} description={item.description} icon={item.icon} />
+						))}
+					</Steps>
 
-						<Form
-							form={form}
-							layout="vertical"
-							initialValues={{
-								bit: 99,
-								dataType: 'integer',
-								rw: 'r',
-								sourceType: 'modbus'
-							}}
-						>
-							<div style={{ display: currentStep === 0 ? 'block' : 'none' }}>
-								<Row gutter={16}>
-									<Col span={24}>
-										<Form.Item
-											label="Select Model"
-											name="model_id"
-											rules={[{ required: true, message: 'Please select a model' }]}
-										>
-											<Select
-												showSearch
-												placeholder="Search and select model"
-												optionFilterProp="label"
-												options={mockModels.map(model => ({
-													value: model.id,
-													label: `${model.name} (${model.type})`,
-												}))}
-											/>
-										</Form.Item>
-									</Col>
-								</Row>
-								<Divider />
-								<Row gutter={16}>
-									<Col span={12}>
-										<Form.Item label="Parameter Name" name="name" required>
-											<Input placeholder="e.g., Temperature" />
-										</Form.Item>
-									</Col>
-									<Col span={12}>
-										<Form.Item label="Attribute Name" name="attributeName" required tooltip="Unique identifier">
-											<Input placeholder="e.g., temp_01" />
-										</Form.Item>
-									</Col>
-								</Row>
-								<Row gutter={16}>
-									<Col span={12}>
-										<Form.Item label="Unit" name="unit">
-											<Select options={unitOptions} showSearch />
-										</Form.Item>
-									</Col>
-									<Col span={12}>
-										<Form.Item label="Bit" name="bit">
-											<Select options={bitOptions} />
-										</Form.Item>
-									</Col>
-								</Row>
-								<Row gutter={16}>
-									<Col span={12}>
-										<Form.Item label="Data Type" name="dataType">
-											<Select options={dataTypeOptions} />
-										</Form.Item>
-									</Col>
-									<Col span={12}>
-										<Form.Item label="RW (Read/Write)" name="rw">
-											<Select options={rwOptions} />
-										</Form.Item>
-									</Col>
-								</Row>
-								{rw === 'rw' && (
-									<Row gutter={16}>
-										<Col span={12}>
-											<Form.Item label="Lower Limit" name="lowerLimit" required>
-												<InputNumber style={{ width: '100%' }} placeholder="e.g., 0" />
-											</Form.Item>
-										</Col>
-										<Col span={12}>
-											<Form.Item label="Upper Limit" name="upperLimit" required>
-												<InputNumber style={{ width: '100%' }} placeholder="e.g., 100" />
-											</Form.Item>
-										</Col>
-									</Row>
-								)}
-								<Row gutter={16}>
-									<Col span={12}>
-										<Form.Item label="Source Interface" name="sourceType" required>
-											<Select options={sourceOptions} />
-										</Form.Item>
-									</Col>
-								</Row>
-							</div>
-
-							<div style={{ display: currentStep === 1 ? 'block' : 'none' }}>
-								<div style={{ background: '#fafafa', padding: 16, borderRadius: 8, marginBottom: 16 }}>
-									<Space align="center" style={{ marginBottom: 16 }}>
-										<SettingOutlined />
-										<Text strong>Configuration for {sourceType?.toUpperCase()}</Text>
-									</Space>
-									{renderConfigFields()}
-								</div>
-							</div>
-
-							<div style={{ marginTop: 24, textAlign: 'right' }}>
-								<Space>
-									{currentStep > 0 && (
-										<Button onClick={handlePrev}>Back</Button>
-									)}
-									{currentStep === 0 && (
-										<Button type="primary" onClick={handleNext}>Next</Button>
-									)}
-									{currentStep === 1 && (
-										<Button
-											type="primary"
-											loading={loading}
-											onClick={handleSubmit}
-											style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
-										>
-											Create Parameter
-										</Button>
-									)}
-								</Space>
-							</div>
-						</Form>
-					</Card>
+					<Form
+						form={form}
+						layout="vertical"
+						initialValues={{
+							bit: 99,
+							dataType: 'integer',
+							rw: 'r',
+							sourceType: 'modbus'
+						}}
+					>
+						<div className="steps-content">
+							{steps[currentStep].content}
+						</div>
+					</Form>
 				</div>
 			</div>
 		</div>

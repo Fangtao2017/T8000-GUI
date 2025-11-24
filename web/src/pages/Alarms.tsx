@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Space, Tag, Row, Col, Typography, Input, Select, Progress, message, Modal, Switch } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined, FireOutlined, WarningOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Search } = Input;
@@ -29,6 +29,7 @@ const alarmDefinitions: AlarmDefinition[] = [
 
 const Alarms: React.FC = () => {
 	const navigate = useNavigate();
+	const { deviceId } = useParams<{ deviceId: string }>();
 	const [searchText, setSearchText] = useState('');
 	const [filterSeverity, setFilterSeverity] = useState<string>('all');
 	const [refreshing, setRefreshing] = useState(false);
@@ -70,6 +71,7 @@ const Alarms: React.FC = () => {
 	const enabledAlarms = data.filter(a => a.enabled).length;
 	const criticalAlarms = data.filter(a => a.severity === 'Critical').length;
 	const warningAlarms = data.filter(a => a.severity === 'Warning').length;
+	const infoAlarms = data.filter(a => a.severity === 'Info').length;
 
 	const columns: ColumnsType<AlarmDefinition> = [
 		{
@@ -123,12 +125,19 @@ const Alarms: React.FC = () => {
 			title: 'Status',
 			dataIndex: 'enabled',
 			key: 'enabled',
+			width: 120,
 			render: (enabled, record) => (
-				<Switch 
-					checked={enabled} 
-					onChange={(checked) => handleToggleEnable(record.key, checked)}
-					size="small"
-				/>
+				<Space>
+					<Switch 
+						checked={enabled} 
+						size="small"
+						onChange={(checked) => handleToggleEnable(record.key, checked)}
+						style={{ backgroundColor: enabled ? '#003A70' : undefined }}
+					/>
+					<span style={{ color: enabled ? '#003A70' : '#999' }}>
+						{enabled ? 'Enabled' : 'Disabled'}
+					</span>
+				</Space>
 			)
 		},
 		{
@@ -141,7 +150,7 @@ const Alarms: React.FC = () => {
 						type="link" 
 						icon={<EditOutlined />} 
 						size="small"
-						onClick={() => navigate(`/configuration/add-alarm?edit=${record.key}`)}
+						onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-alarm?edit=${record.key}` : `/configuration/add-alarm?edit=${record.key}`)}
 						style={{ color: '#003A70' }}
 					>
 						Edit
@@ -167,18 +176,9 @@ const Alarms: React.FC = () => {
 				<Col span={6}>
 					<Card bordered bodyStyle={{ padding: '16px' }}>
 						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Total Definitions</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0 }}>{totalAlarms}</Typography.Title>
-							<Progress percent={100} showInfo={false} strokeColor="#003A70" />
-						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
 							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Enabled</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#52c41a' }}>{enabledAlarms}</Typography.Title>
-							<Progress percent={totalAlarms > 0 ? (enabledAlarms / totalAlarms) * 100 : 0} showInfo={false} strokeColor="#52c41a" />
+							<Typography.Title level={2} style={{ margin: 0, color: '#003A70' }}>{enabledAlarms}</Typography.Title>
+							<Progress percent={totalAlarms > 0 ? (enabledAlarms / totalAlarms) * 100 : 0} showInfo={false} strokeColor="#003A70" />
 						</Space>
 					</Card>
 				</Col>
@@ -197,6 +197,15 @@ const Alarms: React.FC = () => {
 							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Warning</Typography.Text>
 							<Typography.Title level={2} style={{ margin: 0, color: '#faad14' }}>{warningAlarms}</Typography.Title>
 							<Progress percent={totalAlarms > 0 ? (warningAlarms / totalAlarms) * 100 : 0} showInfo={false} strokeColor="#faad14" />
+						</Space>
+					</Card>
+				</Col>
+				<Col span={6}>
+					<Card bordered bodyStyle={{ padding: '16px' }}>
+						<Space direction="vertical" size={4} style={{ width: '100%' }}>
+							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Info</Typography.Text>
+							<Typography.Title level={2} style={{ margin: 0, color: '#52c41a' }}>{infoAlarms}</Typography.Title>
+							<Progress percent={totalAlarms > 0 ? (infoAlarms / totalAlarms) * 100 : 0} showInfo={false} strokeColor="#52c41a" />
 						</Space>
 					</Card>
 				</Col>
@@ -235,7 +244,7 @@ const Alarms: React.FC = () => {
 						<Button
 							type="primary"
 							icon={<PlusOutlined />}
-							onClick={() => navigate('/configuration/add-alarm')}
+							onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-alarm` : '/configuration/add-alarm')}
 							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
 						>
 							Add Alarm

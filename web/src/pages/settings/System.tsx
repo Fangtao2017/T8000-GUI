@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Button, Space, Divider, Typography, Row, Col, message, InputNumber, Progress, Upload } from 'antd';
+import { Card, Form, Button, Space, Divider, Typography, Row, Col, message, InputNumber, Progress, Upload, Alert } from 'antd';
 import { SaveOutlined, ReloadOutlined, CloudUploadOutlined, RocketOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 
@@ -124,6 +124,13 @@ const SettingsSystem: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <Alert
+        message="Under Development"
+        description="This page is currently under development. Features may be incomplete or subject to change."
+        type="warning"
+        showIcon
+        style={{ marginBottom: 24 }}
+      />
       {/* Firmware Information */}
       <Card 
         bordered 

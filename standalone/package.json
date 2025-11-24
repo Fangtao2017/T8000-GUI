@@ -1,0 +1,13 @@
+{
+  "name": "t8000-gui-standalone",
+  "version": "1.0.0",
+  "description": "T8000 GUI Standalone Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "open": "^8.4.0"
+  }
+}

@@ -290,8 +290,14 @@ const DeviceAdd: React.FC = () => {
 
 	return (
 		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#fff' }}>
-			<div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
-				<div style={{ maxWidth: 1200, margin: '0 auto' }}>
+			<div style={{ flex: 1, overflow: currentStep === 0 ? 'hidden' : 'auto', padding: '24px' }}>
+				<div style={{ 
+					maxWidth: 1200, 
+					margin: '0 auto',
+					height: currentStep === 0 ? '100%' : 'auto',
+					display: currentStep === 0 ? 'flex' : 'block',
+					flexDirection: 'column'
+				}}>
 					<Title level={3}>
 						<PlusOutlined /> Add New Device
 					</Title>
@@ -309,13 +315,14 @@ const DeviceAdd: React.FC = () => {
 						</Paragraph>
 
 						<div style={{ 
-							maxHeight: '500px', 
+							flex: 1,
 							overflow: 'auto', 
 							marginTop: 24,
 							border: '1px solid #f0f0f0',
 							borderRadius: '8px',
 							padding: '16px',
-							background: '#fafafa'
+							background: '#fafafa',
+							minHeight: 0
 						}}>
 							<Space direction="vertical" size={8} style={{ width: '100%' }}>
 								{Object.entries(deviceTemplates).map(([key, template]) => (

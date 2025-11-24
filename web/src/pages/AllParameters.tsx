@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select, Row, Col, Progress } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Option } = Select;
@@ -22,6 +22,7 @@ interface ParameterData {
 
 const AllParameters: React.FC = () => {
 	const navigate = useNavigate();
+	const { deviceId } = useParams<{ deviceId: string }>();
 	const [searchText, setSearchText] = useState('');
 	const [filterAccess, setFilterAccess] = useState<string>('all');
 	const [refreshing, setRefreshing] = useState(false);
@@ -175,7 +176,7 @@ const AllParameters: React.FC = () => {
 						type="link"
 						icon={<EditOutlined />}
 						size="small"
-						onClick={() => navigate(`/configuration/add-parameter?edit=${record.key}`)}
+						onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-parameter?edit=${record.key}` : `/configuration/add-parameter?edit=${record.key}`)}
 						style={{ color: '#003A70' }}
 					>
 						Edit
@@ -275,7 +276,7 @@ const AllParameters: React.FC = () => {
 						<Button
 							type="primary"
 							icon={<PlusOutlined />}
-							onClick={() => navigate('/configuration/add-parameter')}
+							onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-parameter` : '/configuration/add-parameter')}
 							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
 						>
 							Add New Parameter

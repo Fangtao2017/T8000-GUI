@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Space, Input, DatePicker, Tabs, Tag, Badge, Pagination } from 'antd';
-import { ExportOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Input, DatePicker, Tag, Badge, Segmented } from 'antd';
+import { ExportOutlined, SearchOutlined, ReloadOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 
@@ -55,57 +55,94 @@ interface LogRule extends BaseLog {
 type LogItem = LogScheduled | LogChange | LogAlarm | LogError | LogHealth | LogRule;
 
 // --- Mock Data ---
-const mockScheduled: LogScheduled[] = Array.from({ length: 20 }).map((_, i) => ({
-	key: `sch-${i}`,
-	time: dayjs().subtract(i * 10, 'minute').format('YYYY-MM-DD HH:mm:ss'),
-	deviceName: i % 2 === 0 ? 'AR-EM-0005' : 'T-OXM-001',
-	parameterName: i % 3 === 0 ? 'voltage' : 'temperature',
-	value: (Math.random() * 100).toFixed(2),
-}));
+const mockScheduled: LogScheduled[] = [
+	{ key: 'sch-1', time: '2025-11-24 14:30:00', deviceName: 'T-TEM-01', parameterName: 'temperature', value: '24.5' },
+	{ key: 'sch-2', time: '2025-11-24 14:30:00', deviceName: 'T-EMS-01', parameterName: 'energy_kwh', value: '1250.4' },
+	{ key: 'sch-3', time: '2025-11-24 14:30:00', deviceName: 'T-FM-01', parameterName: 'flow_rate', value: '45.2' },
+	{ key: 'sch-4', time: '2025-11-24 14:15:00', deviceName: 'T-TEM-02', parameterName: 'temperature', value: '22.1' },
+	{ key: 'sch-5', time: '2025-11-24 14:15:00', deviceName: 'T-EMS-03', parameterName: 'active_power', value: '3500' },
+	{ key: 'sch-6', time: '2025-11-24 14:15:00', deviceName: 'T-TK-01', parameterName: 'level', value: '78' },
+	{ key: 'sch-7', time: '2025-11-24 14:00:00', deviceName: 'T-TEM-01', parameterName: 'temperature', value: '24.8' },
+	{ key: 'sch-8', time: '2025-11-24 14:00:00', deviceName: 'T-EMS-01', parameterName: 'energy_kwh', value: '1249.8' },
+	{ key: 'sch-9', time: '2025-11-24 14:00:00', deviceName: 'T-FM-01', parameterName: 'flow_rate', value: '44.8' },
+	{ key: 'sch-10', time: '2025-11-24 13:45:00', deviceName: 'T-TEM-02', parameterName: 'temperature', value: '22.3' },
+];
 
-const mockChange: LogChange[] = Array.from({ length: 10 }).map((_, i) => ({
-	key: `chg-${i}`,
-	time: dayjs().subtract(i * 2, 'hour').format('YYYY-MM-DD HH:mm:ss'),
-	deviceName: 'Gateway Main',
-	parameterName: 'config_interval',
-	value: i % 2 === 0 ? '300s' : '600s',
-}));
+const mockChange: LogChange[] = [
+	{ key: 'chg-1', time: '2025-11-24 13:22:15', deviceName: 'T-DIM-01', parameterName: 'brightness', value: '80%' },
+	{ key: 'chg-2', time: '2025-11-24 12:45:30', deviceName: 'T-OCC-01', parameterName: 'occupancy', value: 'Occupied' },
+	{ key: 'chg-3', time: '2025-11-24 11:10:05', deviceName: 'T-DIM-01', parameterName: 'brightness', value: '40%' },
+	{ key: 'chg-4', time: '2025-11-24 10:05:00', deviceName: 'T-OCC-01', parameterName: 'occupancy', value: 'Vacant' },
+	{ key: 'chg-5', time: '2025-11-24 09:30:22', deviceName: 'T-ACP-01', parameterName: 'setpoint', value: '23°C' },
+	{ key: 'chg-6', time: '2025-11-24 08:15:10', deviceName: 'T-DIDO-01', parameterName: 'relay_1', value: 'ON' },
+	{ key: 'chg-7', time: '2025-11-24 07:00:00', deviceName: 'T-ACP-01', parameterName: 'mode', value: 'Cool' },
+	{ key: 'chg-8', time: '2025-11-23 22:30:45', deviceName: 'T-DIDO-01', parameterName: 'relay_1', value: 'OFF' },
+];
 
-const mockAlarm: LogAlarm[] = Array.from({ length: 15 }).map((_, i) => ({
-	key: `alm-${i}`,
-	time: dayjs().subtract(i * 5, 'hour').format('YYYY-MM-DD HH:mm:ss'),
-	deviceName: 'T-SP-001',
-	parameterName: 'current',
-	value: (10 + Math.random() * 5).toFixed(2),
-	alarmName: 'Over Current',
-	alarmStatus: i % 2 === 0 ? 'triggered' : 'normalized',
-}));
+const mockAlarm: LogAlarm[] = [
+	{ key: 'alm-1', time: '2025-11-24 14:05:10', deviceName: 'T-FP-001', parameterName: 'smoke_level', value: 'High', alarmName: 'Fire Detected', alarmStatus: 'triggered' },
+	{ key: 'alm-2', time: '2025-11-24 13:50:00', deviceName: 'T-PP-01', parameterName: 'motor_temp', value: '85°C', alarmName: 'Pump Overheat', alarmStatus: 'triggered' },
+	{ key: 'alm-3', time: '2025-11-24 12:30:00', deviceName: 'T-TK-01', parameterName: 'level', value: '10%', alarmName: 'Low Tank Level', alarmStatus: 'normalized' },
+	{ key: 'alm-4', time: '2025-11-24 10:15:00', deviceName: 'T-EMS-03', parameterName: 'voltage_phase_a', value: '250V', alarmName: 'Over Voltage', alarmStatus: 'normalized' },
+	{ key: 'alm-5', time: '2025-11-23 23:45:00', deviceName: 'T-FP-001', parameterName: 'battery', value: '15%', alarmName: 'Low Battery', alarmStatus: 'triggered' },
+	{ key: 'alm-6', time: '2025-11-23 18:20:00', deviceName: 'T-PP-01', parameterName: 'flow_status', value: 'No Flow', alarmName: 'Dry Run Protection', alarmStatus: 'normalized' },
+];
 
-const mockError: LogError[] = Array.from({ length: 8 }).map((_, i) => ({
-	key: `err-${i}`,
-	time: dayjs().subtract(i, 'day').format('YYYY-MM-DD HH:mm:ss'),
-	deviceName: 'T-EMS-002',
-	parameterName: 'sensor_read',
-	errorCode: `E-${Math.floor(Math.random() * 99) + 1}`,
-}));
+const errorCodeMap: Record<string, string> = {
+	'0': 'No error',
+	'1': 'Modbus port not open error',
+	'2': 'Modbus timeout',
+	'3': 'Invalid modbus function code',
+	'4': 'Invalid modbus write value',
+	'5': 'Modbus data processing error',
+	'6': 'Modbus table setting error',
+	'7': 'Received data mismatch',
+	'8': 'Received length error',
+	'9': 'Checksum error',
+	'10': 'Invalid header',
+	'11': 'Write operation failed',
+	'41': 'Invalid write value (value is null/out of range)',
+	'42': 'Write request denied, parameter is read-only',
+	'43': 'Device not found',
+	'44': 'Parameter not found',
+	'45': 'Database read/write error',
+	'46': 'Incomplete information provided',
+	'47': 'Invalid format',
+	'60': 'System busy (firmware/cert update in progress)',
+	'61': 'FW update error',
+	'62': 'Insufficient disk space',
+	'63': 'Invalid method',
+	'64': 'Invalid firmware version',
+	'70': 'MQTT setting error',
+	'99': 'Other error',
+};
 
-const mockHealth: LogHealth[] = Array.from({ length: 12 }).map((_, i) => ({
-	key: `hlt-${i}`,
-	time: dayjs().subtract(i * 30, 'minute').format('YYYY-MM-DD HH:mm:ss'),
-	deviceName: i % 3 === 0 ? 'Gateway Main' : 'AR-EM-0005',
-	networkStatus: Math.random() > 0.1 ? 'online' : 'offline',
-	lastReport: dayjs().subtract(Math.random() * 10, 'minute').format('HH:mm:ss'),
-	runtime: `${Math.floor(Math.random() * 1000)}h`,
-	alarmState: Math.random() > 0.8 ? 'Alarm' : 'Normal',
-	errState: Math.random() > 0.9 ? 'Error' : 'Normal',
-}));
+const mockError: LogError[] = [
+	{ key: 'err-1', time: '2025-11-24 10:15:22', deviceName: 'T-EMS-02', parameterName: 'modbus_read', errorCode: '2' },
+	{ key: 'err-2', time: '2025-11-24 09:30:05', deviceName: 'T8000', parameterName: 'modbus_poll', errorCode: '5' },
+	{ key: 'err-3', time: '2025-11-23 18:45:11', deviceName: 'T-AOM-01', parameterName: 'analog_write', errorCode: '42' },
+	{ key: 'err-4', time: '2025-11-23 14:20:33', deviceName: 'T-AIS-001', parameterName: 'firmware_update', errorCode: '61' },
+	{ key: 'err-5', time: '2025-11-22 11:10:00', deviceName: 'T8000', parameterName: 'mqtt_connect', errorCode: '70' },
+	{ key: 'err-6', time: '2025-11-22 08:05:44', deviceName: 'T-ACP-01', parameterName: 'status_check', errorCode: '43' },
+	{ key: 'err-7', time: '2025-11-21 16:55:12', deviceName: 'T-MIU-001', parameterName: 'ir_transmit', errorCode: '62' },
+	{ key: 'err-8', time: '2025-11-21 09:12:30', deviceName: 'T-TEM-01', parameterName: 'system_init', errorCode: '1' },
+];
 
-const mockRule: LogRule[] = Array.from({ length: 10 }).map((_, i) => ({
-	key: `rule-${i}`,
-	time: dayjs().subtract(i * 4, 'hour').format('YYYY-MM-DD HH:mm:ss'),
-	ruleName: i % 2 === 0 ? 'High Temp Warning' : 'Low Battery Alert',
-	ruleStatus: i % 2 === 0 ? 'triggered' : 'normalized',
-}));
+const mockHealth: LogHealth[] = [
+	{ key: 'hlt-1', time: '2025-11-24 14:30:00', deviceName: 'T8000', networkStatus: 'online', lastReport: '14:30:00', runtime: '120h', alarmState: 'Normal', errState: 'Normal' },
+	{ key: 'hlt-2', time: '2025-11-24 14:25:00', deviceName: 'T-EMS-01', networkStatus: 'online', lastReport: '14:25:00', runtime: '450h', alarmState: 'Normal', errState: 'Normal' },
+	{ key: 'hlt-3', time: '2025-11-24 14:20:00', deviceName: 'T-ACP-01', networkStatus: 'offline', lastReport: '10:00:00', runtime: '12h', alarmState: 'Normal', errState: 'Error' },
+	{ key: 'hlt-4', time: '2025-11-24 14:15:00', deviceName: 'T-FP-001', networkStatus: 'online', lastReport: '14:15:00', runtime: '2400h', alarmState: 'Alarm', errState: 'Normal' },
+	{ key: 'hlt-5', time: '2025-11-24 14:10:00', deviceName: 'T-AIR-001', networkStatus: 'online', lastReport: '14:10:00', runtime: '300h', alarmState: 'Normal', errState: 'Normal' },
+];
+
+const mockRule: LogRule[] = [
+	{ key: 'rule-1', time: '2025-11-24 14:00:00', ruleName: 'High Temp -> AC On', ruleStatus: 'triggered' },
+	{ key: 'rule-2', time: '2025-11-24 13:30:00', ruleName: 'Occupancy -> Lights On', ruleStatus: 'triggered' },
+	{ key: 'rule-3', time: '2025-11-24 12:00:00', ruleName: 'Low Tank -> Pump On', ruleStatus: 'triggered' },
+	{ key: 'rule-4', time: '2025-11-24 11:45:00', ruleName: 'Tank Full -> Pump Off', ruleStatus: 'normalized' },
+	{ key: 'rule-5', time: '2025-11-24 09:00:00', ruleName: 'Office Hours -> AC Schedule', ruleStatus: 'triggered' },
+];
 
 type LogType = 'log_scheduled' | 'log_change' | 'log_alarm' | 'log_error' | 'log_health' | 'log_rule';
 
@@ -114,8 +151,6 @@ const Log: React.FC = () => {
 	const [filterDeviceName, setFilterDeviceName] = useState('');
 	const [filterParameterName, setFilterParameterName] = useState(''); // Also used for Rule Name
 	const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([null, null]);
-	const [currentPage, setCurrentPage] = useState(1);
-	const [pageSize, setPageSize] = useState(15);
 
 	// --- Columns Definition ---
 	const getColumns = (type: LogType): ColumnsType<LogItem> => {
@@ -160,7 +195,17 @@ const Log: React.FC = () => {
 						title: 'Error Code', 
 						dataIndex: 'errorCode', 
 						key: 'errorCode',
-						render: (code: string) => <Tag color="volcano">{code}</Tag>
+						render: (code: string) => <Tag color="default">{code}</Tag>
+					},
+					{
+						title: 'Description',
+						key: 'description',
+						render: (_, record) => {
+							if ('errorCode' in record) {
+								return errorCodeMap[record.errorCode] || 'Unknown Error';
+							}
+							return '-';
+						}
 					}
 				];
 
@@ -238,38 +283,70 @@ const Log: React.FC = () => {
 		setFilterDeviceName('');
 		setFilterParameterName('');
 		setDateRange([null, null]);
-		setCurrentPage(1);
 	};
 
-	const items = [
-		{ key: 'log_scheduled', label: 'Scheduled' },
-		{ key: 'log_change', label: 'Change' },
-		{ key: 'log_alarm', label: 'Alarm' },
-		{ key: 'log_error', label: 'Error' },
-		{ key: 'log_health', label: 'Health' },
-		{ key: 'log_rule', label: 'Rule' },
+	const segmentedOptions = [
+		{ label: 'Interval Data', value: 'log_scheduled' },
+		{ label: 'Significant Changes', value: 'log_change' },
+		{ label: 'Alarms', value: 'log_alarm' },
+		{ label: 'System Errors', value: 'log_error' },
+		{ label: 'Device Health', value: 'log_health' },
+		{ label: 'Automation Rules', value: 'log_rule' },
 	];
 
+	const logDescriptions: Record<LogType, { message: string, description: string }> = {
+		'log_scheduled': {
+			message: 'Interval Data (Scheduled Report)',
+			description: 'These logs contain device parameter values that are automatically reported at fixed time intervals (e.g., every 15 minutes). This is useful for tracking regular trends over time.'
+		},
+		'log_change': {
+			message: 'Significant Changes (Change Report)',
+			description: 'These logs are generated only when a parameter value changes by an amount greater than the configured sensitivity threshold. This helps capture sudden spikes or drops without filling the log with minor fluctuations.'
+		},
+		'log_alarm': {
+			message: 'Alarm Events',
+			description: 'Critical alerts triggered when a monitored parameter exceeds its high or low safety limits. These events usually require immediate attention.'
+		},
+		'log_error': {
+			message: 'System Errors',
+			description: 'Records of device malfunctions, sensor faults, or communication failures. Check these logs to diagnose hardware or network issues.'
+		},
+		'log_health': {
+			message: 'Device Health Status',
+			description: 'Periodic "heartbeat" messages sent by the device to indicate it is online and functioning correctly. Includes network status and runtime information.'
+		},
+		'log_rule': {
+			message: 'Automation Rule Logs',
+			description: 'History of local logic rules that have been triggered. Shows when automatic actions (like turning on a fan) were executed based on device conditions.'
+		}
+	};
+
 	const filteredData = getData();
-	const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
 	return (
 		<div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%', overflow: 'hidden' }}>
-			<Card bordered={false} bodyStyle={{ padding: '0 16px' }}>
-				<Tabs 
-					activeKey={activeTab} 
-					onChange={(key) => {
-						setActiveTab(key as LogType);
-						handleReset(); // Optional: reset filters when switching tabs
-					}}
-					items={items}
-					size="large"
-					tabBarStyle={{ marginBottom: 0 }}
-				/>
-			</Card>
-
-			{/* Filter Bar */}
+			{/* Combined Control Card */}
 			<Card bordered bodyStyle={{ padding: '16px' }}>
+				<div style={{ marginBottom: 16 }}>
+					<Segmented 
+						options={segmentedOptions}
+						value={activeTab}
+						onChange={(val) => {
+							setActiveTab(val as LogType);
+							handleReset();
+						}}
+						block
+						size="large"
+					/>
+					<div style={{ marginTop: 12, color: '#666', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
+						<InfoCircleOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+						<span>
+							<span style={{ fontWeight: 600, color: '#000' }}>{logDescriptions[activeTab].message}: </span>
+							{logDescriptions[activeTab].description}
+						</span>
+					</div>
+				</div>
+
 				<Space size={16} wrap>
 					{activeTab !== 'log_rule' && (
 						<Input
@@ -311,27 +388,13 @@ const Log: React.FC = () => {
 				style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
 				bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
 			>
-				<div style={{ flex: 1, overflow: 'hidden', padding: '0 16px' }}>
+				<div style={{ flex: 1, overflow: 'auto' }}>
 					<Table
 						columns={getColumns(activeTab)}
-						dataSource={paginatedData}
+						dataSource={filteredData}
 						pagination={false}
-						scroll={{ y: 'calc(100vh - 420px)' }}
 						size="middle"
 						rowKey="key"
-					/>
-				</div>
-				<div style={{ padding: '12px 16px', borderTop: '1px solid #f0f0f0', textAlign: 'right', backgroundColor: '#fff' }}>
-					<Pagination
-						current={currentPage}
-						pageSize={pageSize}
-						total={filteredData.length}
-						onChange={(page, size) => {
-							setCurrentPage(page);
-							setPageSize(size);
-						}}
-						showSizeChanger
-						showTotal={(total) => `Total ${total} items`}
 					/>
 				</div>
 			</Card>

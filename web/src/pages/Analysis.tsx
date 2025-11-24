@@ -1,347 +1,278 @@
-import React from 'react';
-import { Card, Row, Col, Space, Typography, Tag, Badge, Statistic, Divider } from 'antd';
-import { ThunderboltOutlined, RiseOutlined } from '@ant-design/icons';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Card, Row, Col, Space, Typography, Select, Empty, Statistic, theme, DatePicker, Alert } from 'antd';
+import { Line } from '@ant-design/plots';
+import { 
+	DashboardOutlined, 
+	LineChartOutlined,
+	ArrowUpOutlined,
+	ArrowDownOutlined
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
+import { allDevices, parameterUnits } from '../data/devicesData';
 
 const { Text } = Typography;
+const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 const Analysis: React.FC = () => {
-	// Energy meter mock data - T-EMS-01
-	const energyMeter = {
-		voltage: 240.5,
-		current: 10.025,
-		activePower: 2.40,
-		energyTotal: 5.17,
-		powerFactor: 1.000,
-		frequency: 50.30,
-		loadSwitch: 1, // 1: ON, 0: OFF
-		importEnergy: 350.25,
+	const { token } = theme.useToken();
+	
+	// State
+	const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(allDevices[0]?.key);
+	const [selectedParameter, setSelectedParameter] = useState<string | undefined>(
+		allDevices[0]?.parameters ? Object.keys(allDevices[0].parameters)[0] : undefined
+	);
+	const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
+		dayjs().subtract(24, 'hour'),
+		dayjs()
+	]);
+
+	// Get selected device object
+	const selectedDevice = useMemo(() => 
+		allDevices.find(d => d.key === selectedDeviceId), 
+	[selectedDeviceId]);
+
+	// Update available parameters when device changes
+	useEffect(() => {
+		if (selectedDevice?.parameters) {
+			const params = Object.keys(selectedDevice.parameters);
+			if (params.length > 0 && (!selectedParameter || !params.includes(selectedParameter))) {
+				setSelectedParameter(params[0]);
+			}
+		} else {
+			setSelectedParameter(undefined);
+		}
+	}, [selectedDevice, selectedParameter]);
+
+	// Generate mock chart data
+	const chartData = useMemo(() => {
+		if (!selectedDevice || !selectedParameter || !selectedDevice.parameters) return [];
+
+		const currentValue = Number(selectedDevice.parameters[selectedParameter]) || 0;
+		const data = [];
+		const start = dateRange[0];
+		const end = dateRange[1];
+		const diffMinutes = end.diff(start, 'minute');
+		
+		// Determine interval based on range duration to keep point count reasonable
+		let interval = 1; // minutes
+		if (diffMinutes <= 60) interval = 1; // 1 hour -> 1 min interval (60 points)
+		else if (diffMinutes <= 360) interval = 5; // 6 hours -> 5 min interval (72 points)
+		else if (diffMinutes <= 1440) interval = 30; // 24 hours -> 30 min interval (48 points)
+		else if (diffMinutes <= 10080) interval = 180; // 7 days -> 3 hours (56 points)
+		else interval = Math.ceil(diffMinutes / 100); // > 7 days -> approx 100 points
+
+		let currentTime = start;
+		while (currentTime.isBefore(end) || currentTime.isSame(end)) {
+			// Simulate data pattern
+			const minutesFromStart = currentTime.diff(start, 'minute');
+			
+			// Generate some random variation around the current value
+			const randomFactor = (Math.random() - 0.5) * (currentValue * 0.2); 
+			// Add some trend
+			const trend = Math.sin(minutesFromStart / (diffMinutes / 10 || 1)) * (currentValue * 0.1);
+			
+			let value = currentValue + randomFactor + trend;
+			if (value < 0) value = 0; // Assume no negative values for most physical params
+
+			data.push({
+				time: currentTime.format(diffMinutes <= 1440 ? 'HH:mm' : 'MM-DD HH:mm'),
+				value: Number(value.toFixed(2)),
+				category: selectedParameter
+			});
+
+			currentTime = currentTime.add(interval, 'minute');
+		}
+		return data;
+	}, [selectedDevice, selectedParameter, dateRange]);
+
+	// Calculate statistics
+	const stats = useMemo(() => {
+		if (chartData.length === 0) return { min: 0, max: 0, avg: 0, current: 0 };
+		const values = chartData.map(d => d.value);
+		const sum = values.reduce((a, b) => a + b, 0);
+		return {
+			min: Math.min(...values),
+			max: Math.max(...values),
+			avg: sum / values.length,
+			current: values[values.length - 1]
+		};
+	}, [chartData]);
+
+	// Chart config
+	const config = {
+		data: chartData,
+		xField: 'time',
+		yField: 'value',
+		seriesField: 'category',
+		smooth: true,
+		animation: {
+			appear: {
+				animation: 'path-in',
+				duration: 1000,
+			},
+		},
+		color: '#8CC63F',
+		point: {
+			size: 2,
+			shape: 'circle',
+		},
+		yAxis: {
+			label: {
+				formatter: (v: string) => `${v} ${selectedParameter ? (parameterUnits[selectedParameter] || '') : ''}`,
+			},
+		},
+		tooltip: {
+			formatter: (datum: { category: string; value: number }) => {
+				return { name: datum.category, value: `${datum.value} ${selectedParameter ? (parameterUnits[selectedParameter] || '') : ''}` };
+			},
+		},
 	};
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-			<Typography.Title level={4} style={{ marginBottom: 0 }}>
-				Energy Analysis
-			</Typography.Title>
-
-			{/* Energy Meter Header */}
-			<Card bordered bodyStyle={{ padding: '16px 24px' }}>
-				<Space size="large">
-					<Space>
-						<ThunderboltOutlined style={{ fontSize: 24, color: '#faad14' }} />
-						<div>
-							<Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Device Model</Text>
-							<Text strong style={{ fontSize: 16 }}>T-EMS-01</Text>
-						</div>
-					</Space>
-					<Divider type="vertical" style={{ height: 40 }} />
-					<div>
-						<Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Single-phase Energy Meter</Text>
-						<Space>
-							<Tag color="blue">Electric Meter</Tag>
-							<Badge status="success" text="Online" />
+		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+			<Alert
+				message="Under Development"
+				description="This page is currently under development. Features may be incomplete or subject to change."
+				type="warning"
+				showIcon
+				style={{ marginBottom: 16 }}
+			/>
+			{/* Header / Controls Area */}
+			<Card bordered={false} bodyStyle={{ padding: '16px 24px' }}>
+				<Row gutter={[24, 16]} align="middle">
+					<Col xs={24} md={6}>
+						<Space direction="vertical" size={4} style={{ width: '100%' }}>
+							<Text type="secondary" style={{ fontSize: 12 }}>Select Device</Text>
+							<Select
+								showSearch
+								style={{ width: '100%' }}
+								placeholder="Select a device"
+								optionFilterProp="children"
+								value={selectedDeviceId}
+								onChange={setSelectedDeviceId}
+								filterOption={(input, option) =>
+									(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+								}
+								options={allDevices.map(d => ({ value: d.key, label: d.name }))}
+							/>
 						</Space>
-					</div>
-					<Divider type="vertical" style={{ height: 40 }} />
-					<div>
-						<Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Load Status</Text>
-						<Badge 
-							status={energyMeter.loadSwitch ? 'processing' : 'default'} 
-							text={energyMeter.loadSwitch ? 'ON - Active' : 'OFF - Disconnected'}
-						/>
-					</div>
-				</Space>
+					</Col>
+					<Col xs={24} md={6}>
+						<Space direction="vertical" size={4} style={{ width: '100%' }}>
+							<Text type="secondary" style={{ fontSize: 12 }}>Select Parameter</Text>
+							<Select
+								style={{ width: '100%' }}
+								placeholder="Select parameter"
+								value={selectedParameter}
+								onChange={setSelectedParameter}
+								disabled={!selectedDevice}
+							>
+								{selectedDevice?.parameters && Object.keys(selectedDevice.parameters).map(key => (
+									<Option key={key} value={key}>
+										{key.replace(/([A-Z])/g, ' $1').trim()} {parameterUnits[key] ? `(${parameterUnits[key]})` : ''}
+									</Option>
+								))}
+							</Select>
+						</Space>
+					</Col>
+					<Col xs={24} md={8}>
+						<Space direction="vertical" size={4} style={{ width: '100%' }}>
+							<Text type="secondary" style={{ fontSize: 12 }}>Time Range</Text>
+							<RangePicker 
+								showTime 
+								value={dateRange}
+								onChange={(dates) => {
+									if (dates && dates[0] && dates[1]) {
+										setDateRange([dates[0], dates[1]]);
+									}
+								}}
+								style={{ width: '100%' }}
+							/>
+						</Space>
+					</Col>
+				</Row>
 			</Card>
 
-			{/* Real-time Readings */}
-			<Row gutter={16}>
-				<Col span={6}>
-					<Card bordered>
-						<Statistic 
-							title="Voltage"
-							value={energyMeter.voltage} 
-							suffix="V" 
-							valueStyle={{ color: '#52c41a' }}
-						/>
-						<Text type="secondary" style={{ fontSize: 12 }}>Normal range: 220-250V</Text>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered>
-						<Statistic 
-							title="Current"
-							value={energyMeter.current} 
-							suffix="A" 
-							valueStyle={{ color: '#1890ff' }}
-						/>
-						<Text type="secondary" style={{ fontSize: 12 }}>Real-time current draw</Text>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered>
-						<Statistic 
-							title="Active Power"
-							value={energyMeter.activePower} 
-							suffix="kW" 
-							valueStyle={{ color: '#faad14' }}
-						/>
-						<Text type="secondary" style={{ fontSize: 12 }}>Instantaneous power</Text>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered>
-						<Statistic 
-							title="Frequency"
-							value={energyMeter.frequency} 
-							suffix="Hz" 
-							valueStyle={{ color: '#722ed1' }}
-						/>
-						<Text type="secondary" style={{ fontSize: 12 }}>Grid frequency</Text>
-					</Card>
-				</Col>
-			</Row>
-
-			{/* Energy Consumption & Metrics */}
-			<Row gutter={16}>
-				<Col span={12}>
-					<Card 
-						title="Energy Consumption" 
-						bordered
-						extra={<Tag color="green" icon={<RiseOutlined />}>+2.3% vs yesterday</Tag>}
-					>
-						<Row gutter={16}>
-							<Col span={12}>
-								<Space direction="vertical" size={8} style={{ width: '100%' }}>
-									<Text type="secondary">Total Energy (energy_total)</Text>
-									<Statistic 
-										value={energyMeter.energyTotal} 
-										suffix="kWh" 
-										valueStyle={{ fontSize: 28 }}
-									/>
-									<Text type="secondary" style={{ fontSize: 12 }}>Since last reset</Text>
-								</Space>
-							</Col>
-							<Col span={12}>
-								<Space direction="vertical" size={8} style={{ width: '100%' }}>
-									<Text type="secondary">Import Energy (import_energy)</Text>
-									<Statistic 
-										value={energyMeter.importEnergy} 
-										suffix="kWh" 
-										valueStyle={{ fontSize: 28 }}
-									/>
-									<Text type="secondary" style={{ fontSize: 12 }}>Total imported</Text>
-								</Space>
-							</Col>
-						</Row>
-					</Card>
-				</Col>
-				<Col span={12}>
-					<Card title="Power Quality" bordered>
-						<Row gutter={16}>
-							<Col span={12}>
-								<Space direction="vertical" size={8} style={{ width: '100%' }}>
-									<Text type="secondary">Power Factor (pwr_factor)</Text>
-									<Space align="baseline">
-										<Statistic 
-											value={energyMeter.powerFactor} 
-											precision={3}
-											valueStyle={{ fontSize: 28 }}
-										/>
-										<Tag color={energyMeter.powerFactor > 0.9 ? 'green' : 'orange'}>
-											{energyMeter.powerFactor > 0.9 ? 'Excellent' : 'Needs Improvement'}
-										</Tag>
-									</Space>
-									<Text type="secondary" style={{ fontSize: 12 }}>
-										{energyMeter.powerFactor > 0.95 ? 'Optimal efficiency' : 'Consider power factor correction'}
-									</Text>
-								</Space>
-							</Col>
-							<Col span={12}>
-								<Space direction="vertical" size={8} style={{ width: '100%' }}>
-									<Text type="secondary">Load Switch Status</Text>
-									<div style={{ marginTop: 8 }}>
-										<Badge 
-											status={energyMeter.loadSwitch ? 'processing' : 'default'} 
-											text={energyMeter.loadSwitch ? 'Connected' : 'Disconnected'}
-											style={{ fontSize: 16 }}
-										/>
-									</div>
-									<Text type="secondary" style={{ fontSize: 12, marginTop: 16, display: 'block' }}>
-										{energyMeter.loadSwitch ? 'Providing power to load' : 'Power disconnected'}
-									</Text>
-								</Space>
-							</Col>
-						</Row>
-					</Card>
-				</Col>
-			</Row>
-
-			{/* 24-Hour Power Trend */}
-			<Card title="24-Hour Power Consumption Trend" bordered>
-				<div>
-					<Text type="secondary" style={{ fontSize: 12, marginBottom: 8, display: 'block' }}>
-						Active Power (kW) over the last 24 hours
-					</Text>
-					<svg width="100%" height="200" style={{ marginTop: 12 }}>
-						{(() => {
-							const hours = 24;
-							const height = 200;
-							const width = 100;
-							const powerData = Array.from({ length: hours }, (_, i) => {
-								// Simulate daily power pattern (higher during day, lower at night)
-								const hour = i;
-								const baseLoad = hour >= 6 && hour <= 22 ? 2.5 : 0.8;
-								return baseLoad + Math.sin(i / 2) * 0.5 + Math.random() * 0.3;
-							});
-							
-							const maxPower = Math.max(...powerData);
-							const minPower = Math.min(...powerData);
-							const range = maxPower - minPower;
-							
-							// Points for line chart
-							const points = powerData
-								.map((val, i) => 
-									`${(i / (hours - 1)) * width},${height - ((val - minPower) / range) * (height - 40)}`
-								)
-								.join(' ');
-							
-							// Fill area under curve
-							const fillPoints = `0,${height} ${points} ${width},${height}`;
-							
-							// Grid lines
-							const gridLines = [0.25, 0.5, 0.75].map(ratio => {
-								const y = height - ratio * (height - 40);
-								return (
-									<line 
-										key={ratio}
-										x1="0" 
-										y1={y} 
-										x2={width} 
-										y2={y} 
-										stroke="#f0f0f0" 
-										strokeWidth="1"
-										vectorEffect="non-scaling-stroke"
-									/>
-								);
-							});
-							
-							return (
-								<>
-									{gridLines}
-									<polygon 
-										points={fillPoints} 
-										fill="rgba(250, 173, 20, 0.1)" 
-										stroke="none"
-									/>
-									<polyline 
-										points={points} 
-										fill="none" 
-										stroke="#faad14" 
-										strokeWidth="3" 
-										vectorEffect="non-scaling-stroke" 
-									/>
-									{/* Data points */}
-									{powerData.map((val, i) => {
-										if (i % 3 === 0) { // Show every 3rd point
-											const x = (i / (hours - 1)) * width;
-											const y = height - ((val - minPower) / range) * (height - 40);
-											return (
-												<circle
-													key={i}
-													cx={x}
-													cy={y}
-													r="3"
-													fill="#faad14"
-													vectorEffect="non-scaling-stroke"
-												/>
-											);
-										}
-										return null;
-									})}
-								</>
-							);
-						})()}
-					</svg>
-					
-					{/* Chart legend and stats */}
-					<Row gutter={16} style={{ marginTop: 16 }}>
-						<Col span={8}>
-							<Text type="secondary">Peak Power: <Text strong>2.85 kW</Text></Text>
+			{/* Main Content */}
+			{selectedDevice && selectedParameter ? (
+				<div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+					{/* Statistics Cards */}
+					<Row gutter={16}>
+						<Col span={6}>
+							<Card bordered={false} bodyStyle={{ padding: 16 }}>
+								<Statistic
+									title="Current Value"
+									value={stats.current}
+									precision={2}
+									valueStyle={{ color: token.colorTextHeading }}
+									prefix={<DashboardOutlined />}
+									suffix={parameterUnits[selectedParameter] || ''}
+								/>
+							</Card>
 						</Col>
-						<Col span={8} style={{ textAlign: 'center' }}>
-							<Text type="secondary">Average: <Text strong>2.15 kW</Text></Text>
+						<Col span={6}>
+							<Card bordered={false} bodyStyle={{ padding: 16 }}>
+								<Statistic
+									title="Average"
+									value={stats.avg}
+									precision={2}
+									valueStyle={{ color: '#1890ff' }}
+									prefix={<LineChartOutlined />}
+									suffix={parameterUnits[selectedParameter] || ''}
+								/>
+							</Card>
 						</Col>
-						<Col span={8} style={{ textAlign: 'right' }}>
-							<Text type="secondary">Off-Peak: <Text strong>0.92 kW</Text></Text>
+						<Col span={6}>
+							<Card bordered={false} bodyStyle={{ padding: 16 }}>
+								<Statistic
+									title="Maximum"
+									value={stats.max}
+									precision={2}
+									valueStyle={{ color: '#cf1322' }}
+									prefix={<ArrowUpOutlined />}
+									suffix={parameterUnits[selectedParameter] || ''}
+								/>
+							</Card>
+						</Col>
+						<Col span={6}>
+							<Card bordered={false} bodyStyle={{ padding: 16 }}>
+								<Statistic
+									title="Minimum"
+									value={stats.min}
+									precision={2}
+									valueStyle={{ color: '#3f8600' }}
+									prefix={<ArrowDownOutlined />}
+									suffix={parameterUnits[selectedParameter] || ''}
+								/>
+							</Card>
 						</Col>
 					</Row>
-				</div>
-			</Card>
 
-			{/* Insights and Recommendations */}
-			<Row gutter={16}>
-				<Col span={12}>
-					<Card title="Energy Insights" bordered>
-						<Space direction="vertical" size={12} style={{ width: '100%' }}>
-							<div>
-								<Badge status="success" />
-								<Text strong style={{ marginLeft: 8 }}>Power quality is excellent</Text>
-								<Text type="secondary" style={{ display: 'block', marginLeft: 28, fontSize: 12 }}>
-									Power factor of {energyMeter.powerFactor.toFixed(3)} indicates efficient energy usage
+					{/* Chart Card */}
+					<Card 
+						title={
+							<Space>
+								<LineChartOutlined />
+								<span>{selectedParameter.replace(/([A-Z])/g, ' $1').trim()} Trend</span>
+								<Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}>
+									({selectedDevice.name})
 								</Text>
-							</div>
-							<div>
-								<Badge status="processing" />
-								<Text strong style={{ marginLeft: 8 }}>Peak demand at 2.85 kW</Text>
-								<Text type="secondary" style={{ display: 'block', marginLeft: 28, fontSize: 12 }}>
-									Occurred during daytime hours (6:00 - 22:00)
-								</Text>
-							</div>
-							<div>
-								<Badge status="warning" />
-								<Text strong style={{ marginLeft: 8 }}>Energy consumption increased 2.3%</Text>
-								<Text type="secondary" style={{ display: 'block', marginLeft: 28, fontSize: 12 }}>
-									Compared to previous 24-hour period
-								</Text>
-							</div>
-						</Space>
+							</Space>
+						}
+						bordered={false}
+						style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+						bodyStyle={{ flex: 1, minHeight: 300, padding: '24px' }}
+					>
+						<Line {...config} />
 					</Card>
-				</Col>
-				<Col span={12}>
-					<Card title="System Parameters" bordered>
-						<Space direction="vertical" size={8} style={{ width: '100%' }}>
-							<Row>
-								<Col span={12}><Text type="secondary">Voltage (voltage)</Text></Col>
-								<Col span={12}><Text strong>{energyMeter.voltage} V</Text></Col>
-							</Row>
-							<Divider style={{ margin: '8px 0' }} />
-							<Row>
-								<Col span={12}><Text type="secondary">Current (current)</Text></Col>
-								<Col span={12}><Text strong>{energyMeter.current} A</Text></Col>
-							</Row>
-							<Divider style={{ margin: '8px 0' }} />
-							<Row>
-								<Col span={12}><Text type="secondary">Active Power (active_pwr)</Text></Col>
-								<Col span={12}><Text strong>{energyMeter.activePower} kW</Text></Col>
-							</Row>
-							<Divider style={{ margin: '8px 0' }} />
-							<Row>
-								<Col span={12}><Text type="secondary">Frequency (frequency)</Text></Col>
-								<Col span={12}><Text strong>{energyMeter.frequency} Hz</Text></Col>
-							</Row>
-							<Divider style={{ margin: '8px 0' }} />
-							<Row>
-								<Col span={12}><Text type="secondary">Power Factor (pwr_factor)</Text></Col>
-								<Col span={12}><Text strong>{energyMeter.powerFactor.toFixed(3)}</Text></Col>
-							</Row>
-							<Divider style={{ margin: '8px 0' }} />
-							<Row>
-								<Col span={12}><Text type="secondary">Total Energy (energy_total)</Text></Col>
-								<Col span={12}><Text strong>{energyMeter.energyTotal} kWh</Text></Col>
-							</Row>
-						</Space>
-					</Card>
-				</Col>
-			</Row>
+				</div>
+			) : (
+				<Card bordered={false} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+					<Empty description="Please select a device and parameter to view analysis" />
+				</Card>
+			)}
 		</div>
 	);
 };

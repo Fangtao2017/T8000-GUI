@@ -1,11 +1,14 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import RootLayout from './layouts/RootLayout';
+import CloudLayout from './layouts/CloudLayout';
+import CloudDashboard from './pages/CloudDashboard';
 import Home from "./pages/Home";
+import Monitor from "./pages/Monitor";
 import Alarms from "./pages/Alarms";
 import Log from "./pages/Log";
 import Analysis from "./pages/Analysis";
-import Devices from "./pages/devices";
+import Devices from "./pages/Devices";
 import DeviceAdd from "./pages/DeviceAdd";
 import DeviceRules from "./pages/DeviceRules";
 import AllModels from "./pages/AllModels";
@@ -24,10 +27,16 @@ import SettingsSystem from "./pages/settings/System";
 const App: React.FC = () => {
 return (
 <Routes>
-	{/* 外层使用 RootLayout 包裹，所有子路由显示在其 <Outlet/> 里 */}
-	<Route path="/" element={<RootLayout />}>
+	{/* Cloud Platform Layer */}
+	<Route path="/" element={<CloudLayout />}>
+		<Route index element={<CloudDashboard />} />
+	</Route>
+
+	{/* Device Twin Layer (Existing UI) */}
+	<Route path="/device/:deviceId" element={<RootLayout />}>
 		{/* index 表示与父路径相同（/）时渲染的默认子页面 */}
 		<Route index element={<Home />} />
+		<Route path="monitor" element={<Monitor />} />
 		<Route path="alarms" element={<Alarms />} />
 		<Route path="log" element={<Log />} />
 		<Route path="analysis" element={<Analysis />} />
@@ -59,6 +68,9 @@ return (
 
 		<Route path="*" element={<Navigate to="/" replace />} />
 	</Route>
+
+	{/* Catch all for top-level routes - redirect to Cloud Dashboard */}
+	<Route path="*" element={<Navigate to="/" replace />} />
 </Routes>
 );
 };
