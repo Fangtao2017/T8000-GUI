@@ -170,7 +170,8 @@ const Alarms: React.FC = () => {
 	];
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
+		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
 			 {/* Stats Cards */}
 			<Row gutter={16}>
 				<Col span={6}>
@@ -269,6 +270,7 @@ const Alarms: React.FC = () => {
 					/>
 				</div>
 			</Card>
+			</div>
 		</div>
 	);
 };

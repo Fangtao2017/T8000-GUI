@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Space, Input, DatePicker, Tag, Badge, Segmented } from 'antd';
-import { ExportOutlined, SearchOutlined, ReloadOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Input, DatePicker, Tag, Badge, Segmented, Typography } from 'antd';
+import { 
+	ExportOutlined, 
+	SearchOutlined, 
+	ReloadOutlined, 
+	InfoCircleOutlined
+} from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 
@@ -321,83 +326,126 @@ const Log: React.FC = () => {
 		}
 	};
 
+	const counts = {
+		scheduled: mockScheduled.length,
+		change: mockChange.length,
+		alarm: mockAlarm.length,
+		error: mockError.length,
+		health: mockHealth.length,
+		rule: mockRule.length
+	};
+
 	const filteredData = getData();
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%', overflow: 'hidden' }}>
-			{/* Combined Control Card */}
-			<Card bordered bodyStyle={{ padding: '16px' }}>
-				<div style={{ marginBottom: 16 }}>
-					<Segmented 
-						options={segmentedOptions}
-						value={activeTab}
-						onChange={(val) => {
-							setActiveTab(val as LogType);
-							handleReset();
-						}}
-						block
-						size="large"
-					/>
-					<div style={{ marginTop: 12, color: '#666', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
-						<InfoCircleOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-						<span>
-							<span style={{ fontWeight: 600, color: '#000' }}>{logDescriptions[activeTab].message}: </span>
-							{logDescriptions[activeTab].description}
-						</span>
-					</div>
+		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+				
+				{/* Layer 1: Info Bar */}
+				<div style={{ 
+					backgroundColor: '#fff', 
+					border: '1px solid #d9d9d9',
+					borderRadius: 8,
+					padding: '12px 24px',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					flexWrap: 'wrap',
+					gap: 16,
+					flexShrink: 0
+				}}>
+					<Space size={24} style={{ flexWrap: 'wrap' }}>
+						<Typography.Text strong style={{ fontSize: 16 }}>Log Statistics</Typography.Text>
+						
+						<Space split={<Typography.Text type="secondary">|</Typography.Text>} size={16}>
+							<Typography.Text>Scheduled: <strong>{counts.scheduled}</strong></Typography.Text>
+							<Typography.Text>Changes: <strong>{counts.change}</strong></Typography.Text>
+							<Typography.Text>Alarms: <strong>{counts.alarm}</strong></Typography.Text>
+							<Typography.Text>Errors: <strong>{counts.error}</strong></Typography.Text>
+							<Typography.Text>Health: <strong>{counts.health}</strong></Typography.Text>
+							<Typography.Text>Rules: <strong>{counts.rule}</strong></Typography.Text>
+						</Space>
+					</Space>
 				</div>
 
-				<Space size={16} wrap>
-					{activeTab !== 'log_rule' && (
-						<Input
-							placeholder="Device Name"
-							allowClear
-							prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-							style={{ width: 200 }}
-							value={filterDeviceName}
-							onChange={(e) => setFilterDeviceName(e.target.value)}
+				{/* Layer 2: Toolbar */}
+				<Card bordered bodyStyle={{ padding: '16px' }} style={{ flexShrink: 0 }}>
+					<div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+						<Segmented 
+							options={segmentedOptions}
+							value={activeTab}
+							onChange={(val) => {
+								setActiveTab(val as LogType);
+								handleReset();
+							}}
+							block
+							size="large"
 						/>
-					)}
-					
-					{activeTab !== 'log_health' && (
-						<Input
-							placeholder={activeTab === 'log_rule' ? "Rule Name" : "Parameter Name"}
-							allowClear
-							prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-							style={{ width: 200 }}
-							value={filterParameterName}
-							onChange={(e) => setFilterParameterName(e.target.value)}
-						/>
-					)}
+						
+						<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+							<Space size={16} wrap>
+								{activeTab !== 'log_rule' && (
+									<Input
+										placeholder="Device Name"
+										allowClear
+										prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+										style={{ width: 200 }}
+										value={filterDeviceName}
+										onChange={(e) => setFilterDeviceName(e.target.value)}
+									/>
+								)}
+								
+								{activeTab !== 'log_health' && (
+									<Input
+										placeholder={activeTab === 'log_rule' ? "Rule Name" : "Parameter Name"}
+										allowClear
+										prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+										style={{ width: 200 }}
+										value={filterParameterName}
+										onChange={(e) => setFilterParameterName(e.target.value)}
+									/>
+								)}
 
-					<RangePicker
-						style={{ width: 260 }}
-						value={dateRange}
-						onChange={(dates) => setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null])}
-					/>
+								<RangePicker
+									style={{ width: 260 }}
+									value={dateRange}
+									onChange={(dates) => setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null])}
+								/>
+							</Space>
 
-					<Button icon={<ReloadOutlined />} onClick={handleReset}>Reset</Button>
-					<Button type="primary" icon={<SearchOutlined />} style={{ backgroundColor: '#003A70' }}>Query</Button>
-					<Button icon={<ExportOutlined />}>Export</Button>
-				</Space>
-			</Card>
+							<Space>
+								<Button icon={<ReloadOutlined />} onClick={handleReset}>Reset</Button>
+								<Button type="primary" icon={<SearchOutlined />} style={{ backgroundColor: '#003A70' }}>Query</Button>
+								<Button icon={<ExportOutlined />}>Export</Button>
+							</Space>
+						</div>
+						
+						<div style={{ color: '#666', fontSize: '13px', display: 'flex', alignItems: 'center' }}>
+							<InfoCircleOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+							<span>
+								<span style={{ fontWeight: 600, color: '#000' }}>{logDescriptions[activeTab].message}: </span>
+								{logDescriptions[activeTab].description}
+							</span>
+						</div>
+					</div>
+				</Card>
 
-			{/* Log Table */}
-			<Card 
-				bordered
-				style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
-				bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-			>
-				<div style={{ flex: 1, overflow: 'auto' }}>
+				{/* Layer 3: Table */}
+				<Card 
+					bordered
+					style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+					bodyStyle={{ padding: 0, flex: 1, overflow: 'hidden' }}
+				>
 					<Table
 						columns={getColumns(activeTab)}
 						dataSource={filteredData}
 						pagination={false}
-						size="middle"
+						size="small"
 						rowKey="key"
+						scroll={{ y: 'calc(100vh - 420px)' }}
 					/>
-				</div>
-			</Card>
+				</Card>
+			</div>
 		</div>
 	);
 };

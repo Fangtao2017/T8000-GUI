@@ -150,6 +150,53 @@ const Overview: React.FC = () => {
 		
 		return filtered;
 	}, [searchText, modelFilter, statusFilter]);
+
+	// Controllable devices
+	const controllableDevices = useMemo(() => {
+		return allDevices.filter(d => 
+			d.parameters && Object.keys(d.parameters).some(k => writableConfigs[k])
+		);
+	}, []);
+
+	// Control Modal states
+	const [isControlModalVisible, setIsControlModalVisible] = useState(false);
+	const [controlDevice, setControlDevice] = useState<DeviceData | null>(null);
+	const [pendingControlChanges, setPendingControlChanges] = useState<Record<string, any>>({});
+
+	const handleControlClick = (device: DeviceData) => {
+		setControlDevice(device);
+		// Initialize pending changes with current values
+		const initialChanges: Record<string, any> = {};
+		if (device.parameters) {
+			Object.keys(device.parameters).forEach(key => {
+				if (writableConfigs[key]) {
+					initialChanges[key] = device.parameters![key];
+				}
+			});
+		}
+		setPendingControlChanges(initialChanges);
+		setIsControlModalVisible(true);
+	};
+
+	const handleControlChange = (key: string, value: any) => {
+		setPendingControlChanges(prev => ({
+			...prev,
+			[key]: value
+		}));
+	};
+
+	const submitControlChanges = () => {
+		Modal.confirm({
+			title: 'Confirm Changes',
+			content: `Are you sure you want to apply these changes to ${controlDevice?.name}?`,
+			centered: true,
+			onOk: () => {
+				message.success('Parameters updated successfully');
+				setIsControlModalVisible(false);
+				// Here you would typically call an API to update the device
+			}
+		});
+	};
 	
 	// Notification state
 	const { notifications, updateNotificationStatus } = useNotifications();
@@ -293,7 +340,8 @@ const Overview: React.FC = () => {
 	};
 
 	return (
-		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column' }}>
 			{/* Top Row: Device Info (Full Width) */}
 			<Row gutter={16} style={{ marginBottom: 16, flexShrink: 0 }}>
 				<Col xs={24}>
@@ -449,7 +497,7 @@ const Overview: React.FC = () => {
 			{/* Middle: Notifications + Device Status Pie + Alarm Type Pie */}
 			<Row gutter={16} style={{ flexShrink: 0, marginBottom: 16 }}>
 				{/* Notifications Box with Segmented Filter */}
-				<Col xs={24} lg={12}>
+				<Col xs={24} xl={14}>
 					<Card 
 						title={
 							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
@@ -473,10 +521,10 @@ const Overview: React.FC = () => {
 						bordered 
 						headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }}
 						bodyStyle={{ padding: 0, backgroundColor: '#FFFFFF' }}
-						style={{ height: 340, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
+						style={{ height: 280, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
 					>
 						<div style={{ 
-							height: 268, 
+							height: 220, 
 							overflowY: 'auto',
 							overflowX: 'hidden',
 							borderRadius: '0 0 8px 8px',
@@ -491,37 +539,37 @@ const Overview: React.FC = () => {
 				</Col>
 				
 				{/* Right: Device Status (Merged) */}
-				<Col xs={24} lg={12}>
+				<Col xs={24} xl={10}>
 					<Card 
-						title="Device Status" 
+						title="Sensor Status" 
 						headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }} 
 						bordered 
 						bodyStyle={{ padding: 24, backgroundColor: '#FFFFFF', height: 'calc(100% - 57px)' }} 
-						style={{ height: 340, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
+						style={{ height: 280, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
 					>
 						<Row align="middle" justify="center" style={{ height: '100%' }}>
 							<Col span={10} style={{ display: 'flex', justifyContent: 'center' }}>
 								<Progress
 									type="circle"
 									percent={Math.round((allDevices.filter(d => d.status === 'online').length / allDevices.length) * 100)}
-									size={180}
+									size={140}
 									strokeColor="#8CC63F"
 									trailColor="#D9534F"
 									format={() => (
 										<div style={{ textAlign: 'center' }}>
-											<div style={{ fontSize: 36, fontWeight: 'bold', color: '#003A70' }}>
+											<div style={{ fontSize: 28, fontWeight: 'bold', color: '#003A70' }}>
 												{allDevices.length}
 											</div>
-											<div style={{ fontSize: 16, color: '#999' }}>Total Devices</div>
+											<div style={{ fontSize: 14, color: '#999' }}>Total Sensors</div>
 										</div>
 									)}
 								/>
 							</Col>
 							<Col span={14}>
-								<Space direction="vertical" size="large" style={{ width: '100%', paddingLeft: 24 }}>
+								<Space direction="vertical" size="middle" style={{ width: '100%', paddingLeft: 24 }}>
 									<Popover 
 										placement="right" 
-										title="Online Devices" 
+										title="Online Sensors" 
 										content={
 											<List
 												size="small"
@@ -541,7 +589,7 @@ const Overview: React.FC = () => {
 									>
 										<div style={{ 
 											cursor: 'pointer', 
-											padding: '16px 20px', 
+											padding: '10px 20px', 
 											borderRadius: 12, 
 											border: '1px solid #f0f0f0', 
 											display: 'flex', 
@@ -566,7 +614,7 @@ const Overview: React.FC = () => {
 													<CheckCircleOutlined style={{ color: '#8CC63F', fontSize: 20 }} />
 												</div>
 												<div>
-													<div style={{ fontSize: 15, color: '#888' }}>Online Devices</div>
+													<div style={{ fontSize: 15, color: '#888' }}>Online Sensors</div>
 													<div style={{ fontSize: 28, fontWeight: 'bold', color: '#8CC63F', lineHeight: 1 }}>
 														{allDevices.filter(d => d.status === 'online').length}
 													</div>
@@ -578,7 +626,7 @@ const Overview: React.FC = () => {
 
 									<Popover 
 										placement="right" 
-										title="Offline Devices" 
+										title="Offline Sensors" 
 										content={
 											<List
 												size="small"
@@ -598,7 +646,7 @@ const Overview: React.FC = () => {
 									>
 										<div style={{ 
 											cursor: 'pointer', 
-											padding: '16px 20px', 
+											padding: '10px 20px', 
 											borderRadius: 12, 
 											border: '1px solid #f0f0f0', 
 											display: 'flex', 
@@ -623,7 +671,7 @@ const Overview: React.FC = () => {
 													<DisconnectOutlined style={{ color: '#D9534F', fontSize: 20 }} />
 												</div>
 												<div>
-													<div style={{ fontSize: 15, color: '#888' }}>Offline Devices</div>
+													<div style={{ fontSize: 15, color: '#888' }}>Offline Sensors</div>
 													<div style={{ fontSize: 28, fontWeight: 'bold', color: '#D9534F', lineHeight: 1 }}>
 														{allDevices.filter(d => d.status === 'offline').length}
 													</div>
@@ -639,84 +687,188 @@ const Overview: React.FC = () => {
 				</Col>
 			</Row>
 
-			{/* Bottom: Devices List with filters and scrollbar - takes remaining space */}
+			{/* Bottom: Split View - Sensor List & Controllable Devices */}
 			<div style={{ flex: 1, minHeight: 0 }}>
-				<Card 
-					title={
-						<Space>
-							<span>Devices List</span>
-							<Badge count={filteredAndSortedDevices.length} style={{ backgroundColor: '#003A70' }} />
-						</Space>
-					}
-					bordered 
-					headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }}
-					bodyStyle={{ padding: 0, flex: 1, overflow: 'hidden' }}
-					style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
-					extra={
-						<Space size={8}>
-							<Input
-								placeholder="Search name, type, status..."
-								prefix={<SearchOutlined />}
-								allowClear
-								style={{ width: 240 }}
-								value={searchText}
-								onChange={(e) => setSearchText(e.target.value)}
+				<Row gutter={16} style={{ height: '100%' }}>
+					{/* Left: Sensor List */}
+					<Col xs={24} xl={14} style={{ height: '100%' }}>
+						<Card 
+							title={
+								<Space>
+									<span>Sensor List</span>
+									<Badge count={filteredAndSortedDevices.length} style={{ backgroundColor: '#003A70' }} />
+								</Space>
+							}
+							bordered 
+							headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }}
+							bodyStyle={{ padding: 0, flex: 1, overflow: 'hidden' }}
+							style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
+							extra={
+								<Space size={8}>
+									<Input
+										placeholder="Search..."
+										prefix={<SearchOutlined />}
+										allowClear
+										style={{ width: 150 }}
+										value={searchText}
+										onChange={(e) => setSearchText(e.target.value)}
+									/>
+									<Select
+										value={statusFilter}
+										onChange={setStatusFilter}
+										style={{ width: 100 }}
+										options={[
+											{ label: 'All', value: 'all' },
+											{ label: 'Online', value: 'online' },
+											{ label: 'Offline', value: 'offline' }
+										]}
+									/>
+								</Space>
+							}
+						>
+							<div ref={tableContainerRef} style={{ height: '100%', overflow: 'hidden' }}>
+								<Table
+									size="small"
+									columns={deviceColumns}
+									dataSource={filteredAndSortedDevices}
+									pagination={false}
+									scroll={{ y: tableScrollHeight }}
+									rowClassName={(record) => record.status === 'offline' ? 'offline-row' : ''}
+									onRow={(record) => ({
+										onClick: () => {
+											setSelectedDevice(record);
+											setIsDeviceModalVisible(true);
+										},
+										style: { cursor: 'pointer' }
+									})}
+									locale={{
+										emptyText: 'No devices match the filter criteria'
+									}}
+								/>
+							</div>
+						</Card>
+					</Col>
+
+					{/* Right: Controllable Devices */}
+					<Col xs={24} xl={10} style={{ height: '100%' }}>
+						<Card
+							title={
+								<Space>
+									<span>Controllable Devices</span>
+									<Badge count={controllableDevices.length} style={{ backgroundColor: '#003A70' }} />
+								</Space>
+							}
+							bordered
+							headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }}
+							bodyStyle={{ padding: 0, overflowY: 'auto', height: '100%' }}
+							style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
+						>
+							<List
+								dataSource={controllableDevices}
+								renderItem={item => (
+									<List.Item style={{ padding: '8px 16px' }}>
+										<div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+											<Space size={12} style={{ overflow: 'hidden', flex: 1, marginRight: 8 }}>
+												<div style={{ 
+													width: 32, 
+													height: 32, 
+													borderRadius: 6, 
+													background: '#f0f5ff', 
+													display: 'flex', 
+													alignItems: 'center', 
+													justifyContent: 'center',
+													color: '#003A70',
+													flexShrink: 0
+												}}>
+													<ApiOutlined style={{ fontSize: 16 }} />
+												</div>
+												
+												<div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden', flexWrap: 'nowrap' }}>
+													<Typography.Text strong style={{ whiteSpace: 'nowrap' }}>{item.name}</Typography.Text>
+													<Tag style={{ margin: 0, flexShrink: 0 }}>{item.model}</Tag>
+													<Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+														{item.location}
+													</Typography.Text>
+												</div>
+											</Space>
+
+											<Button 
+												type="primary" 
+												size="small" 
+												icon={<EditOutlined />} 
+												onClick={() => handleControlClick(item)}
+												style={{ backgroundColor: '#003A70', flexShrink: 0 }}
+											>
+												Control
+											</Button>
+										</div>
+									</List.Item>
+								)}
 							/>
-							<Select
-								value={modelFilter}
-								onChange={setModelFilter}
-								style={{ width: 140 }}
-								suffixIcon={<FilterOutlined />}
-								options={[
-									{ label: 'All Models', value: 'all' },
-									...deviceModels.map(model => ({ label: model, value: model }))
-								]}
-							/>
-							<Select
-								value={statusFilter}
-								onChange={setStatusFilter}
-								style={{ width: 120 }}
-								suffixIcon={<FilterOutlined />}
-								options={[
-									{ label: 'All Status', value: 'all' },
-									{ label: 'Online', value: 'online' },
-									{ label: 'Offline', value: 'offline' }
-								]}
-							/>
-						</Space>
-					}
-				>
-					<div ref={tableContainerRef} style={{ height: '100%', overflow: 'hidden' }}>
-						<Table
-							size="small"
-							columns={deviceColumns}
-							dataSource={filteredAndSortedDevices}
-							pagination={false}
-							scroll={{ y: tableScrollHeight }}
-							rowClassName={(record) => record.status === 'offline' ? 'offline-row' : ''}
-							onRow={(record) => ({
-								onClick: () => {
-									setSelectedDevice(record);
-									setIsDeviceModalVisible(true);
-								},
-								style: { cursor: 'pointer' }
-							})}
-							locale={{
-								emptyText: 'No devices match the filter criteria'
-							}}
-						/>
-					</div>
-					<style>{`
-						.offline-row {
-							background-color: #ffffff !important;
-							border-left: 3px solid #D9534F;
-						}
-						.offline-row:hover td {
-							background-color: #fafafa !important;
-						}
-					`}</style>
-				</Card>
+						</Card>
+					</Col>
+				</Row>
 			</div>
+
+			{/* Control Modal */}
+			<Modal
+				title={`Control: ${controlDevice?.name}`}
+				open={isControlModalVisible}
+				onCancel={() => setIsControlModalVisible(false)}
+				onOk={submitControlChanges}
+				centered
+				okText="Apply Changes"
+				okButtonProps={{ style: { backgroundColor: '#003A70' } }}
+			>
+				<div style={{ padding: '16px 0' }}>
+					{controlDevice?.parameters && Object.keys(controlDevice.parameters).filter(k => writableConfigs[k]).map(key => {
+						const config = writableConfigs[key];
+						const value = pendingControlChanges[key];
+						
+						return (
+							<div key={key} style={{ marginBottom: 16 }}>
+								<div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+									<Typography.Text strong>
+										{key.replace(/([A-Z])/g, ' $1').trim()}
+									</Typography.Text>
+									{parameterUnits[key] && (
+										<Typography.Text type="secondary">
+											({parameterUnits[key]})
+										</Typography.Text>
+									)}
+								</div>
+								
+								{config.type === 'number' && (
+									<InputNumber
+										style={{ width: '100%' }}
+										value={value}
+										onChange={(val) => handleControlChange(key, val)}
+									/>
+								)}
+								
+								{config.type === 'select' && (
+									<Select
+										style={{ width: '100%' }}
+										value={value}
+										onChange={(val) => handleControlChange(key, val)}
+									>
+										{config.options?.map(opt => (
+											<Select.Option key={opt} value={opt}>{opt}</Select.Option>
+										))}
+									</Select>
+								)}
+								
+								{config.type === 'switch' && (
+									<Switch
+										checked={Number(value) === 1}
+										onChange={(checked) => handleControlChange(key, checked ? 1 : 0)}
+									/>
+								)}
+							</div>
+						);
+					})}
+				</div>
+			</Modal>
 
 			{/* Notification Details Modal */}
 			<Modal
@@ -1007,6 +1159,7 @@ const Overview: React.FC = () => {
 					</div>
 				)}
 			</Modal>
+			</div>
 		</div>
 	);
 };

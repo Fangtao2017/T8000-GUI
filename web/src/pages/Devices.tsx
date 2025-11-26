@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Card, Table, Button, Space, Tag, Badge, Row, Col, Typography, Progress, Input, Select, Modal, message, List, Switch, Descriptions, InputNumber } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { EyeOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, ArrowRightOutlined, FilterOutlined, ExportOutlined, SearchOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import { type DeviceData, allDevices, parameterUnits, writableConfigs } from '../data/devicesData';
 import type { ColumnsType } from 'antd/es/table';
+
+const { Text } = Typography;
+const { Option } = Select;
 
 const { Search } = Input;
 
@@ -214,6 +218,8 @@ const Devices: React.FC = () => {
 	const totalDevices = filteredDevices.length;
 	const onlineDevices = filteredDevices.filter(d => d.status === 'online').length;
 	const offlineDevices = filteredDevices.filter(d => d.status === 'offline').length;
+	const activeAlarmCount = filteredDevices.filter(d => d.alarm_state === 'Active Alarm').length;
+	const errorStateCount = filteredDevices.filter(d => d.err_state === 'Error').length;
 	const connectionRate = totalDevices > 0 ? Math.round((onlineDevices / totalDevices) * 100) : 0;
 
 	// Helper for interval text
@@ -230,44 +236,35 @@ const Devices: React.FC = () => {
 			title: 'Device Name',
 			dataIndex: 'name',
 			key: 'name',
-			width: 180,
+			width: 160,
 			render: (text: string) => <strong>{text}</strong>,
 		},
 		{
 			title: 'Model',
 			dataIndex: 'model',
 			key: 'model',
-			width: 130,
+			width: 100,
 		},
 		{
 			title: 'Serial Number',
 			dataIndex: 'serialNumber',
 			key: 'serialNumber',
-			width: 160,
+			width: 140,
 		},
 		{
 			title: 'Alarm State',
 			dataIndex: 'alarm_state',
 			key: 'alarm_state',
-			width: 120,
+			width: 100,
 			render: (state: string) => (
-				<Tag>{state}</Tag>
-			),
-		},
-		{
-			title: 'Error State',
-			dataIndex: 'err_state',
-			key: 'err_state',
-			width: 120,
-			render: (state: string) => (
-				<Tag>{state}</Tag>
+				<Tag color={state === 'Active Alarm' ? 'red' : 'default'}>{state}</Tag>
 			),
 		},
 		{
 			title: 'Status',
 			dataIndex: 'status',
 			key: 'status',
-			width: 100,
+			width: 80,
 			render: (status: string) => (
 				<Badge 
 					status={status === 'online' ? 'success' : 'error'}
@@ -279,28 +276,28 @@ const Devices: React.FC = () => {
 			title: 'Location',
 			dataIndex: 'location',
 			key: 'location',
-			width: 160,
+			width: 140,
 		},
 		{
 			title: 'Last Report',
 			dataIndex: 'lastReport',
 			key: 'lastReport',
-			width: 140,
+			width: 110,
 		},
 		{
 			title: 'Enable',
 			dataIndex: 'enabled',
 			key: 'enabled',
-			width: 80,
+			width: 70,
 			render: (enabled: boolean) => <Switch size="small" checked={enabled !== false} />,
 		},
 		{
 			title: 'Actions',
 			key: 'actions',
-			width: 200,
+			width: 160,
 			render: (_: unknown, record: DeviceData) => (
-				<Space size="small">
-					<Button size="small" icon={<EyeOutlined />} onClick={() => handleViewDevice(record)}>View Data</Button>
+				<Space size={2}>
+					<Button size="small" icon={<EyeOutlined />} onClick={() => handleViewDevice(record)} style={{ borderColor: '#003A70', color: '#003A70' }}>DATA</Button>
 					<Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditDevice(record)} style={{ color: '#003A70' }}>Edit</Button>
 					<Button type="link" size="small" danger icon={<DeleteOutlined />}>Delete</Button>
 				</Space>
@@ -309,146 +306,115 @@ const Devices: React.FC = () => {
 	];
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
-			{/* Compact Dashboard - Statistics Cards with Progress */}
-			<Row gutter={16}>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Total Devices</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0 }}>{totalDevices}</Typography.Title>
-							<Progress percent={100} showInfo={false} strokeColor="#003A70" />
+		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+				
+				{/* Layer 1: Info Bar */}
+				<div style={{ 
+					backgroundColor: '#fff', 
+					border: '1px solid #d9d9d9',
+					borderRadius: 8,
+					padding: '12px 24px',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					flexWrap: 'wrap',
+					gap: 16,
+					flexShrink: 0
+				}}>
+					<Space size={24} style={{ flexWrap: 'wrap' }}>
+						<Typography.Text strong style={{ fontSize: 16 }}>Device Statistics</Typography.Text>
+						
+						<Space split={<Typography.Text type="secondary">|</Typography.Text>} size={16}>
+							<Typography.Text>Total: <strong>{totalDevices}</strong></Typography.Text>
+							<Typography.Text>Online: <strong style={{ color: '#52c41a' }}>{onlineDevices}</strong></Typography.Text>
+							<Typography.Text>Offline: <strong style={{ color: '#ff4d4f' }}>{offlineDevices}</strong></Typography.Text>
+							<Typography.Text>Active Alarms: <strong style={{ color: '#ff4d4f' }}>{activeAlarmCount}</strong></Typography.Text>
+							<Typography.Text>Connection Rate: <strong>{connectionRate}%</strong></Typography.Text>
 						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Online</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#52c41a' }}>{onlineDevices}</Typography.Title>
-							<Progress percent={(onlineDevices / totalDevices) * 100} showInfo={false} strokeColor="#52c41a" />
-						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Offline</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#ff4d4f' }}>{offlineDevices}</Typography.Title>
-							<Progress percent={(offlineDevices / totalDevices) * 100} showInfo={false} strokeColor="#ff4d4f" />
-						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Connection Rate</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: connectionRate === 100 ? '#52c41a' : '#ff4d4f' }}>{connectionRate}%</Typography.Title>
-							<Progress percent={connectionRate} showInfo={false} strokeColor={connectionRate === 100 ? '#52c41a' : '#ff4d4f'} />
-						</Space>
-					</Card>
-				</Col>
-			</Row>
-
-			{/* Search and Filter Bar - All on Same Row */}
-			<Card bordered bodyStyle={{ padding: '12px 16px' }}>
-				<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-					<Space size={12}>
-						<Search
-							placeholder="Search by name, S/N, model..."
-							allowClear
-							style={{ width: 300 }}
-							value={searchText}
-							onChange={(e) => setSearchText(e.target.value)}
-						/>
-						<Select
-							placeholder="Status"
-							style={{ width: 130 }}
-							value={filterStatus}
-							onChange={setFilterStatus}
-						>
-							<Select.Option value="all">All Status</Select.Option>
-							<Select.Option value="online">Online</Select.Option>
-							<Select.Option value="offline">Offline</Select.Option>
-						</Select>
-						<Select
-							placeholder="Model"
-							style={{ width: 160 }}
-							value={filterModel}
-							onChange={setFilterModel}
-						>
-							<Select.Option value="all">All Models</Select.Option>
-							{uniqueModels.map(model => (
-								<Select.Option key={model} value={model}>{model}</Select.Option>
-							))}
-						</Select>
-						<Select
-							placeholder="Location"
-							style={{ width: 200 }}
-							value={filterLocation}
-							onChange={setFilterLocation}
-							showSearch
-						>
-							<Select.Option value="all">All Locations</Select.Option>
-							{uniqueLocations.map(location => (
-								<Select.Option key={location} value={location}>{location}</Select.Option>
-							))}
-						</Select>
-						<Typography.Text type="secondary" style={{ fontSize: 12, alignSelf: 'center' }}>
-							{filteredDevices.length} of {allDevices.length} devices
-						</Typography.Text>
 					</Space>
-					<Space size={8}>
-						<Button icon={<ReloadOutlined />} onClick={() => {
-							setSearchText('');
-							setFilterStatus('all');
-							setFilterModel('all');
-							setFilterLocation('all');
-						}}>Reset All Filters</Button>
-						<Button type="primary" icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>
-							Refresh Data
-						</Button>
-						<Button
-							type="primary"
-							icon={<PlusOutlined />}
-							onClick={() => navigate(deviceId ? `/device/${deviceId}/devices/add` : '/devices/add')}
-							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
-						>
-							Add Device
-						</Button>
-					</Space>
-				</Space>
-			</Card>
 
-			{/* Devices Table */}
-			<Card 
-				title={`All Devices (${totalDevices})`} 
-				bordered
-				style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-				bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-			>
-				<div style={{ flex: 1, overflow: 'auto' }}>
-					<Table
-						columns={columns}
-						dataSource={filteredDevices}
+					<Space>
+						<Typography.Text type="secondary">Last Updated: {dayjs().format('YYYY-MM-DD HH:mm:ss')}</Typography.Text>
+						<Button icon={<ReloadOutlined />} type="text" onClick={handleRefresh} loading={refreshing} />
+					</Space>
+				</div>
+
+				{/* Layer 2: Toolbar */}
+				<Card bordered bodyStyle={{ padding: '16px' }} style={{ flexShrink: 0 }}>
+					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+						<Space size="middle">
+							<Input 
+								placeholder="Search devices..." 
+								prefix={<SearchOutlined />} 
+								style={{ width: 240 }}
+								value={searchText}
+								onChange={e => setSearchText(e.target.value)}
+							/>
+							<Select 
+								defaultValue="all" 
+								style={{ width: 120 }}
+								value={filterStatus}
+								onChange={val => setFilterStatus(val)}
+							>
+								<Option value="all">All Status</Option>
+								<Option value="online">Online</Option>
+								<Option value="offline">Offline</Option>
+							</Select>
+							<Select 
+								defaultValue="all" 
+								style={{ width: 150 }}
+								value={filterModel}
+								onChange={val => setFilterModel(val)}
+							>
+								<Option value="all">All Models</Option>
+								{uniqueModels.map(model => (
+									<Option key={model} value={model}>{model}</Option>
+								))}
+							</Select>
+						</Space>
+						<Space>
+							<Button icon={<FilterOutlined />}>Filters</Button>
+							<Button icon={<ExportOutlined />}>Export</Button>
+							<Button 
+								type="primary" 
+								icon={<PlusOutlined />} 
+								onClick={() => navigate(deviceId ? `/device/${deviceId}/devices/add` : '/devices/add')}
+								style={{ backgroundColor: '#003A70' }}
+							>
+								Add Device
+							</Button>
+						</Space>
+					</div>
+				</Card>
+
+				{/* Layer 3: Table */}
+				<Card 
+					bordered
+					style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+					bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+				>
+					<Table 
+						columns={columns} 
+						dataSource={filteredDevices} 
+						rowKey="id"
 						pagination={false}
-						scroll={{ x: 1400 }}
+						scroll={{ x: 1100, y: 'calc(100vh - 350px)' }}
 						size="small"
 					/>
-				</div>
-			</Card>
+				</Card>
 
-			{/* Device Detail Modal */}
-			<Modal
-				title="Device Details"
-				open={isModalVisible}
-				onCancel={() => setIsModalVisible(false)}
-				footer={null}
-				width="95%"
-				style={{ top: 20 }}
-				bodyStyle={{ padding: 0, backgroundColor: '#f0f2f5' }}
-				zIndex={1050}
-			>
+				{/* Device Detail Modal */}
+				<Modal
+					title="Device Details"
+					open={isModalVisible}
+					onCancel={() => setIsModalVisible(false)}
+					footer={null}
+					width="95%"
+					style={{ top: 20 }}
+					bodyStyle={{ padding: 0, backgroundColor: '#f0f2f5' }}
+					zIndex={1050}
+				>
 				{selectedDevice && (
 					<div style={{ padding: '24px' }}>
 						{/* Part 1: Top - Device Information (Merged Basic + Comm) */}
@@ -1152,6 +1118,7 @@ const Devices: React.FC = () => {
 					Future data from this parameter will be linked to this device.
 				</Typography.Paragraph>
 			</Modal>
+		</div>
 		</div>
 	);
 };

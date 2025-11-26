@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Space, Typography, message, Input, Select, DatePicker, Row, Col, Progress, Badge } from 'antd';
+import { Card, Table, Button, Space, Typography, message, Input, Select, DatePicker, Switch, Badge, Tag } from 'antd';
 import { 
 	FireOutlined, 
 	WarningOutlined, 
 	InfoCircleOutlined, 
 	ReloadOutlined,
-	ExportOutlined
+	ExportOutlined,
+	CheckCircleOutlined,
+	BellOutlined
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { useNotifications, type NotificationItem } from '../context/NotificationContext';
+
+dayjs.extend(relativeTime);
 
 const { RangePicker } = DatePicker;
 const { Search } = Input;
@@ -23,6 +28,8 @@ const Monitor: React.FC = () => {
 	const [filterType, setFilterType] = useState<string>('all');
 	const [filterSeverity, setFilterSeverity] = useState<string>('all');
 	const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([null, null]);
+	const [onlyActive, setOnlyActive] = useState(false);
+	const [onlyUnack, setOnlyUnack] = useState(false);
 
 	const handleAction = (id: string, action: 'acknowledged' | 'ignored') => {
 		setLoading(true);
@@ -39,11 +46,17 @@ const Monitor: React.FC = () => {
 		setFilterType('all');
 		setFilterSeverity('all');
 		setDateRange([null, null]);
+		setOnlyActive(false);
+		setOnlyUnack(false);
+	};
+
+	const handleBulkAcknowledge = () => {
+		message.success('Bulk acknowledge action triggered');
 	};
 
 	// Filter logic
 	const filteredData = notifications.filter(item => {
-		// Search Text (Device Name or Title)
+		// Search Text
 		if (searchText && !item.deviceName.toLowerCase().includes(searchText.toLowerCase()) && !item.title.toLowerCase().includes(searchText.toLowerCase())) {
 			return false;
 		}
@@ -67,19 +80,30 @@ const Monitor: React.FC = () => {
 			}
 		}
 
+		// Toggle Filters
+		const isTriggered = item.events[item.events.length - 1].type === 'triggered';
+		if (onlyActive && !isTriggered) return false;
+		if (onlyUnack && item.userStatus !== 'new') return false;
+
 		return true;
 	});
 
-	// Statistics
-	const totalEvents = filteredData.length;
-	const activeTriggers = filteredData.filter(item => item.events[item.events.length - 1].type === 'triggered').length;
-	const criticalEvents = filteredData.filter(item => item.severity === 'critical').length;
-	const acknowledgedEvents = filteredData.filter(item => item.userStatus === 'acknowledged').length;
+	// Info Bar Statistics (Global)
+	const activeEvents = notifications.filter(n => n.events[n.events.length - 1].type === 'triggered');
+	const activeCount = activeEvents.length;
+	const criticalCount = activeEvents.filter(n => n.severity === 'critical').length;
+	const warningCount = activeEvents.filter(n => n.severity === 'warning').length;
+	const unackCount = notifications.filter(n => n.userStatus === 'new').length;
 	
-	// Calculate percentages for progress bars
-	const activeRate = totalEvents > 0 ? (activeTriggers / totalEvents) * 100 : 0;
-	const criticalRate = totalEvents > 0 ? (criticalEvents / totalEvents) * 100 : 0;
-	const ackRate = totalEvents > 0 ? (acknowledgedEvents / totalEvents) * 100 : 0;
+	const sortedByTime = [...notifications].sort((a, b) => {
+		const timeA = a.events[a.events.length - 1].timestamp;
+		const timeB = b.events[b.events.length - 1].timestamp;
+		return timeB - timeA;
+	});
+	const lastAlarm = sortedByTime.length > 0 ? sortedByTime[0] : null;
+	const lastAlarmTimeText = lastAlarm 
+		? dayjs.unix(lastAlarm.events[lastAlarm.events.length - 1].timestamp).fromNow() 
+		: 'No events';
 
 	const columns: ColumnsType<NotificationItem> = [
 		{
@@ -106,9 +130,7 @@ const Monitor: React.FC = () => {
 			key: 'type',
 			width: 100,
 			render: (type: string) => (
-				<Typography.Text style={{ border: '1px solid #d9d9d9', padding: '0 7px', borderRadius: '2px', fontSize: '12px' }}>
-					{type ? type.toUpperCase() : 'ALARM'}
-				</Typography.Text>
+				<Tag>{type ? type.toUpperCase() : 'ALARM'}</Tag>
 			),
 		},
 		{
@@ -142,7 +164,6 @@ const Monitor: React.FC = () => {
 			title: 'Name',
 			dataIndex: 'title',
 			key: 'title',
-			width: 240,
 			render: (text) => (
 				<Typography.Text strong>{text}</Typography.Text>
 			),
@@ -164,29 +185,30 @@ const Monitor: React.FC = () => {
 			},
 		},
 		{
-			title: '',
-			key: 'relativeTime',
-			width: 100,
-			render: (_, record) => (
-				<Typography.Text type="secondary" style={{ fontSize: 12 }}>{record.time}</Typography.Text>
-			),
-		},
-		{
 			title: 'User Action',
 			key: 'userAction',
-			width: 320,
+			width: 280,
 			align: 'right',
 			render: (_, record) => {
 				if (record.userStatus !== 'new') {
+					const isAck = record.userStatus === 'acknowledged';
 					return (
-						<Typography.Text style={{ 
-							color: record.userStatus === 'acknowledged' ? '#003A70' : '#000',
-							padding: '0 8px',
+						<div style={{ 
+							display: 'inline-block',
+							border: `1px solid ${isAck ? '#003A70' : '#d9d9d9'}`,
+							color: isAck ? '#fff' : 'rgba(0, 0, 0, 0.25)',
+							backgroundColor: isAck ? '#003A70' : '#fff',
+							padding: '0 15px',
+							height: '24px',
+							lineHeight: '22px',
 							borderRadius: '2px',
-							fontSize: '12px'
+							fontSize: '12px',
+							textAlign: 'center',
+							cursor: 'default',
+							minWidth: '100px'
 						}}>
 							{record.userStatus.toUpperCase()}
-						</Typography.Text>
+						</div>
 					);
 				}
 
@@ -195,19 +217,12 @@ const Monitor: React.FC = () => {
 						<Button 
 							size="small" 
 							onClick={() => handleAction(record.id, 'ignored')}
-							style={{ 
-								backgroundColor: '#fff',
-								borderColor: '#d9d9d9',
-								color: '#000'
-							}}
 						>
-							Mark as Ignored
+							Ignore
 						</Button>
 						<Button 
-							type="primary" 
 							size="small" 
 							onClick={() => handleAction(record.id, 'acknowledged')}
-							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
 						>
 							Acknowledge
 						</Button>
@@ -218,113 +233,131 @@ const Monitor: React.FC = () => {
 	];
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%', overflow: 'hidden' }}>
-			{/* Statistics Cards */}
-			<Row gutter={16}>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Total Events</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0 }}>{totalEvents}</Typography.Title>
-							<Progress percent={100} showInfo={false} strokeColor="#003A70" />
+		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+				
+				{/* Layer 1: Info Bar */}
+				<div style={{ 
+					backgroundColor: activeCount > 0 ? '#fff2f0' : '#f6ffed', 
+					border: `1px solid ${activeCount > 0 ? '#ffccc7' : '#b7eb8f'}`,
+					borderRadius: 8,
+					padding: '12px 24px',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					flexWrap: 'wrap',
+					gap: 16,
+					flexShrink: 0
+				}}>
+					<Space size={24} style={{ flexWrap: 'wrap' }}>
+						<Space>
+							{activeCount > 0 ? <FireOutlined style={{ color: '#ff4d4f', fontSize: 20 }} /> : <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 20 }} />}
+							<Typography.Text strong style={{ fontSize: 16 }}>
+								{activeCount > 0 ? `${activeCount} Active Alarms` : 'System Normal'}
+							</Typography.Text>
 						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Active Triggers</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#ff4d4f' }}>{activeTriggers}</Typography.Title>
-							<Progress percent={activeRate} showInfo={false} strokeColor="#ff4d4f" />
-						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Critical Severity</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#cf1322' }}>{criticalEvents}</Typography.Title>
-							<Progress percent={criticalRate} showInfo={false} strokeColor="#cf1322" />
-						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Acknowledged</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#003A70' }}>{acknowledgedEvents}</Typography.Title>
-							<Progress percent={ackRate} showInfo={false} strokeColor="#003A70" />
-						</Space>
-					</Card>
-				</Col>
-			</Row>
-
-			{/* Filter Bar */}
-			<Card bordered bodyStyle={{ padding: '12px 16px' }}>
-				<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-					<Space size={12}>
-						<Search
-							placeholder="Search device or message..."
-							allowClear
-							style={{ width: 260 }}
-							value={searchText}
-							onChange={(e) => setSearchText(e.target.value)}
-						/>
 						
-						<Select
-							placeholder="Type"
-							style={{ width: 120 }}
-							value={filterType}
-							onChange={setFilterType}
-						>
-							<Select.Option value="all">All Types</Select.Option>
-							<Select.Option value="alarm">Alarm</Select.Option>
-							<Select.Option value="rule">Rule</Select.Option>
-						</Select>
+						{activeCount > 0 && (
+							<Space split={<Typography.Text type="secondary">|</Typography.Text>}>
+								<Typography.Text>
+									<span style={{ color: '#ff4d4f', fontWeight: 600 }}>{criticalCount}</span> Critical
+								</Typography.Text>
+								<Typography.Text>
+									<span style={{ color: '#faad14', fontWeight: 600 }}>{warningCount}</span> Warning
+								</Typography.Text>
+							</Space>
+						)}
 
-						<Select
-							placeholder="Severity"
-							style={{ width: 120 }}
-							value={filterSeverity}
-							onChange={setFilterSeverity}
-						>
-							<Select.Option value="all">All Severities</Select.Option>
-							<Select.Option value="critical">Critical</Select.Option>
-							<Select.Option value="warning">Warning</Select.Option>
-							<Select.Option value="info">Info</Select.Option>
-						</Select>
-
-						<RangePicker
-							style={{ width: 240 }}
-							value={dateRange}
-							onChange={(dates) => setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null])}
-						/>
+						<Space>
+							<BellOutlined />
+							<Typography.Text>
+								<strong>{unackCount}</strong> Unacknowledged
+							</Typography.Text>
+						</Space>
 					</Space>
 
-					<Space size={8}>
-						<Button icon={<ReloadOutlined />} onClick={handleReset}>Reset</Button>
-						<Button icon={<ExportOutlined />}>Export</Button>
-					</Space>
-				</Space>
-			</Card>
+					<Typography.Text type="secondary">
+						Last event: {lastAlarmTimeText}
+					</Typography.Text>
+				</div>
 
-			{/* Table Card */}
-			<Card 
-				title={`Alarm & Rule Status (${totalEvents})`}
-				bordered
-				style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-				bodyStyle={{ padding: 0, flex: 1, overflow: 'hidden' }}
-			>
-				<Table
-					columns={columns}
-					dataSource={filteredData}
-					rowKey="id"
-					pagination={false}
-					scroll={{ y: 'calc(100vh - 420px)' }}
-					loading={loading}
-					size="middle"
-				/>
-			</Card>
+				{/* Layer 2: Toolbar */}
+				<Card bordered bodyStyle={{ padding: '16px' }} style={{ flexShrink: 0 }}>
+					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+						<Space size={16} wrap>
+							<Search
+								placeholder="Search..."
+								allowClear
+								style={{ width: 240 }}
+								value={searchText}
+								onChange={(e) => setSearchText(e.target.value)}
+							/>
+							<Select
+								placeholder="Type"
+								style={{ width: 120 }}
+								value={filterType}
+								onChange={setFilterType}
+								options={[
+									{ label: 'All Types', value: 'all' },
+									{ label: 'Alarm', value: 'alarm' },
+									{ label: 'Rule', value: 'rule' },
+								]}
+							/>
+							<Select
+								placeholder="Severity"
+								style={{ width: 120 }}
+								value={filterSeverity}
+								onChange={setFilterSeverity}
+								options={[
+									{ label: 'All Severities', value: 'all' },
+									{ label: 'Critical', value: 'critical' },
+									{ label: 'Warning', value: 'warning' },
+									{ label: 'Info', value: 'info' },
+								]}
+							/>
+							<RangePicker
+								style={{ width: 240 }}
+								value={dateRange}
+								onChange={(dates) => setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null])}
+							/>
+							
+							<div style={{ width: 1, height: 24, backgroundColor: '#f0f0f0' }} />
+
+							<Space>
+								<Typography.Text style={{ fontSize: 13 }}>Active Only</Typography.Text>
+								<Switch size="small" checked={onlyActive} onChange={setOnlyActive} />
+							</Space>
+							<Space>
+								<Typography.Text style={{ fontSize: 13 }}>Unacknowledged Only</Typography.Text>
+								<Switch size="small" checked={onlyUnack} onChange={setOnlyUnack} />
+							</Space>
+						</Space>
+
+						<Space>
+							<Button onClick={handleBulkAcknowledge}>Bulk Acknowledge</Button>
+							<Button icon={<ExportOutlined />}>Export</Button>
+							<Button icon={<ReloadOutlined />} onClick={handleReset} />
+						</Space>
+					</div>
+				</Card>
+
+				{/* Layer 3: Table */}
+				<Card 
+					bordered
+					style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+					bodyStyle={{ padding: 0, flex: 1, overflow: 'hidden' }}
+				>
+					<Table
+						columns={columns}
+						dataSource={filteredData}
+						rowKey="id"
+						pagination={false}
+						scroll={{ y: 'calc(100vh - 350px)' }}
+						loading={loading}
+						size="small"
+					/>
+				</Card>
+			</div>
 		</div>
 	);
 };

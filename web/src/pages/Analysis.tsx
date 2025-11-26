@@ -131,7 +131,8 @@ const Analysis: React.FC = () => {
 	};
 
 	return (
-		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
 			<Alert
 				message="Under Development"
 				description="This page is currently under development. Features may be incomplete or subject to change."
@@ -273,6 +274,7 @@ const Analysis: React.FC = () => {
 					<Empty description="Please select a device and parameter to view analysis" />
 				</Card>
 			)}
+			</div>
 		</div>
 	);
 };

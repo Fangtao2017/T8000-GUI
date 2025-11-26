@@ -12,8 +12,7 @@ import {
 	BellOutlined,
 	ControlOutlined,
 	WifiOutlined,
-	ApiOutlined,
-	UserOutlined
+	ApiOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 
@@ -57,23 +56,22 @@ const SecondaryNav: React.FC = () => {
 				{ key: 'device-list', label: 'Sensor', icon: <SettingOutlined />, onClick: () => navigate(getPath('/devices')) },
 				{ key: 'model-setting', label: 'Model', icon: <BlockOutlined />, onClick: () => navigate(getPath('/devices/models')) },
 				{ key: 'parameter-setting', label: 'Parameter', icon: <FormOutlined />, onClick: () => navigate(getPath('/devices/parameters')) },
-				{ key: 'modbus-setting', label: 'Modbus', icon: <ClusterOutlined />, onClick: () => navigate(getPath('/settings/modbus')) },
+				{ key: 'modbus-setting', label: 'Source Interface', icon: <ClusterOutlined />, onClick: () => navigate(getPath('/settings/modbus')) },
 			];
 		}
 
 		if (section === 'logic-configuration') {
 			return [
-				{ key: 'alarm-setting', label: 'Alarm Setting', icon: <BellOutlined />, onClick: () => navigate(getPath('/alarms')) },
-				{ key: 'rules-setting', label: 'Rules Setting', icon: <ControlOutlined />, onClick: () => navigate(getPath('/rules')) },
+				{ key: 'alarm-setting', label: 'Alarm', icon: <BellOutlined />, onClick: () => navigate(getPath('/alarms')) },
+				{ key: 'rules-setting', label: 'Rules', icon: <ControlOutlined />, onClick: () => navigate(getPath('/rules')) },
 			];
 		}
 
 		if (section === 'system-configuration') {
 			return [
-				{ key: 'network-setting', label: 'Network Setting', icon: <WifiOutlined />, onClick: () => navigate(getPath('/settings/network')) },
-				{ key: 'system-setting', label: 'Firmware Settings', icon: <SettingOutlined />, onClick: () => navigate(getPath('/settings/system')) },
-				{ key: 'mqtt-setting', label: 'MQTT Setting', icon: <ApiOutlined />, onClick: () => navigate(getPath('/settings/mqtt')) },
-				{ key: 'account-setting', label: 'Local Account', icon: <UserOutlined />, onClick: () => navigate(getPath('/account')) },
+				{ key: 'network-setting', label: 'Network', icon: <WifiOutlined />, onClick: () => navigate(getPath('/settings/network')) },
+				{ key: 'system-setting', label: 'Firmware', icon: <SettingOutlined />, onClick: () => navigate(getPath('/settings/system')) },
+				{ key: 'mqtt-setting', label: 'MQTT', icon: <ApiOutlined />, onClick: () => navigate(getPath('/settings/mqtt')) },
 			];
 		}
 
@@ -84,14 +82,6 @@ const SecondaryNav: React.FC = () => {
 			{ key: 'log', icon: <FileTextOutlined />, label: 'Log', onClick: () => navigate(getPath('/log')) },
 			{ key: 'monitor', icon: <AlertOutlined />, label: 'Alarm & Rule Status', onClick: () => navigate(getPath('/monitor')) },
 		];
-	};
-
-	const getSectionTitle = () => {
-		const section = getSection();
-		if (section === 'connected-sensor') return 'Connected Sensor';
-		if (section === 'logic-configuration') return 'Logic Configuration';
-		if (section === 'system-configuration') return 'System Configuration';
-		return 'Device Monitor';
 	};
 
 	// Determine selected key based on path
@@ -126,26 +116,70 @@ const SecondaryNav: React.FC = () => {
 		return [];
 	};
 
+	const getBreadcrumb = () => {
+		const path = location.pathname;
+		const relativePath = deviceId ? path.replace(`/device/${deviceId}`, '') : path;
+		const effectivePath = relativePath === '' ? '/' : relativePath;
+
+		// Home (T8000)
+		if (effectivePath === '/') return 'T8000 gateway / T8000 / Overview';
+		if (effectivePath.startsWith('/analysis')) return 'T8000 gateway / T8000 / Analysis';
+		if (effectivePath.startsWith('/log')) return 'T8000 gateway / T8000 / Log';
+		if (effectivePath.startsWith('/monitor')) return 'T8000 gateway / T8000 / Alarm & Rule Status';
+		
+		// Connected Sensor
+		if (effectivePath === '/devices') return 'T8000 gateway / Connected Sensor / Sensor';
+		if (effectivePath === '/devices/models') return 'T8000 gateway / Connected Sensor / Model';
+		if (effectivePath === '/devices/parameters') return 'T8000 gateway / Connected Sensor / Parameter';
+		if (effectivePath === '/settings/modbus') return 'T8000 gateway / Connected Sensor / Source Interface';
+		if (effectivePath === '/devices/add') return 'T8000 gateway / Connected Sensor / Add Device';
+		if (effectivePath === '/configuration/add-model') return 'T8000 gateway / Connected Sensor / Add Model';
+		if (effectivePath === '/configuration/add-parameter') return 'T8000 gateway / Connected Sensor / Add Parameter';
+		
+		// Logic
+		if (effectivePath === '/alarms') return 'T8000 gateway / Logic / Alarm';
+		if (effectivePath === '/rules') return 'T8000 gateway / Logic / Rules';
+		if (effectivePath === '/configuration/add-rule') return 'T8000 gateway / Logic / Add Rule';
+		if (effectivePath === '/configuration/add-alarm') return 'T8000 gateway / Logic / Add Alarm';
+		
+		// System
+		if (effectivePath === '/settings/network') return 'T8000 gateway / System / Network';
+		if (effectivePath === '/settings/system') return 'T8000 gateway / System / Firmware';
+		if (effectivePath === '/settings/mqtt') return 'T8000 gateway / System / MQTT';
+		if (effectivePath.startsWith('/account')) return 'T8000 gateway / System / Local Account';
+		
+		return 'T8000 gateway / T8000 / Overview';
+	};
+
 	return (
 		<div style={{ background: '#ffffff', borderBottom: '1px solid #e8e8e8', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
 			<div style={{ 
-				maxWidth: 1400, 
-				margin: '0 auto', 
+				width: '100%', 
 				display: 'flex', 
 				alignItems: 'center',
-				justifyContent: 'center',
-				padding: '0 24px',
-				height: 48
+				padding: '0 0',
+				height: 48,
+				position: 'relative'
 			}}>
+				{/* Left Section - Fixed Width to align with TopNav */}
 				<div style={{ 
-					fontSize: '16px', 
-					fontWeight: 600, 
-					color: '#232f3e',
-					marginRight: 24,
-					whiteSpace: 'nowrap'
+					width: 420, 
+					height: '100%',
+					display: 'flex',
+					alignItems: 'center',
+					paddingLeft: 20,
+					flexShrink: 0,
+					fontSize: 16, 
+					fontWeight: 500, 
+					color: '#001B34',
+					boxSizing: 'border-box'
 				}}>
-					{getSectionTitle()}
+					{getBreadcrumb()}
 				</div>
+
+				{/* Separator Line - Aligned with TopNav separator */}
+				<div style={{ width: 1, height: 24, backgroundColor: '#001B34', marginRight: 16 }} />
+
 				<ConfigProvider
 					theme={{
 						components: {
@@ -164,10 +198,11 @@ const SecondaryNav: React.FC = () => {
 						style={{ 
 							borderBottom: 'none', 
 							lineHeight: '46px',
-							minWidth: 600,
+							flex: 1,
 							background: 'transparent',
 							fontSize: 16,
-							fontWeight: 500
+							fontWeight: 500,
+							marginLeft: 0
 						}}
 					/>
 				</ConfigProvider>

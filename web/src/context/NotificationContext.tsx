@@ -36,7 +36,7 @@ const initialNotifications: NotificationItem[] = [
 	{ 
 		id: '2', 
 		severity: 'critical', 
-		title: 'Device Offline', 
+		title: 'Sensor Offline', 
 		deviceName: 'Controller C5',
 		parameter: 'Connection',
 		time: '10 min ago',
@@ -75,7 +75,7 @@ const initialNotifications: NotificationItem[] = [
 	{ 
 		id: '6', 
 		severity: 'critical', 
-		title: 'Device Offline', 
+		title: 'T8000 Offline', 
 		deviceName: 'Gateway G2',
 		parameter: 'Connection',
 		time: '2 hours ago',
@@ -148,6 +148,111 @@ const initialNotifications: NotificationItem[] = [
 		type: 'rule',
 		events: [
 			{ timestamp: 1740093800, type: 'triggered', value: 'Completed' }
+		]
+	},
+	// Additional mock data for scroll testing
+	{ 
+		id: '13', 
+		severity: 'warning', 
+		title: 'High CPU Usage', 
+		deviceName: 'Server 1',
+		parameter: 'CPU',
+		time: '11 hours ago',
+		userStatus: 'new',
+		type: 'alarm',
+		events: [
+			{ timestamp: 1740090200, type: 'triggered', value: '92%' }
+		]
+	},
+	{ 
+		id: '14', 
+		severity: 'critical', 
+		title: 'Database Connection Failed', 
+		deviceName: 'DB Server',
+		parameter: 'Connection',
+		time: '12 hours ago',
+		userStatus: 'acknowledged',
+		type: 'alarm',
+		events: [
+			{ timestamp: 1740086600, type: 'triggered', value: 'Failed' }
+		]
+	},
+	{ 
+		id: '15', 
+		severity: 'info', 
+		title: 'Backup Completed', 
+		deviceName: 'Backup System',
+		parameter: 'Backup',
+		time: '13 hours ago',
+		userStatus: 'new',
+		type: 'rule',
+		events: [
+			{ timestamp: 1740083000, type: 'triggered', value: 'Success' }
+		]
+	},
+	{ 
+		id: '16', 
+		severity: 'warning', 
+		title: 'Low Disk Space', 
+		deviceName: 'Server 2',
+		parameter: 'Disk',
+		time: '14 hours ago',
+		userStatus: 'ignored',
+		type: 'alarm',
+		events: [
+			{ timestamp: 1740079400, type: 'triggered', value: '15% Free' }
+		]
+	},
+	{ 
+		id: '17', 
+		severity: 'critical', 
+		title: 'Power Supply Failure', 
+		deviceName: 'UPS 1',
+		parameter: 'Power',
+		time: '15 hours ago',
+		userStatus: 'new',
+		type: 'alarm',
+		events: [
+			{ timestamp: 1740075800, type: 'triggered', value: 'Failure' }
+		]
+	},
+	{ 
+		id: '18', 
+		severity: 'info', 
+		title: 'User Login', 
+		deviceName: 'Admin Panel',
+		parameter: 'Security',
+		time: '16 hours ago',
+		userStatus: 'new',
+		type: 'rule',
+		events: [
+			{ timestamp: 1740072200, type: 'triggered', value: 'Login' }
+		]
+	},
+	{ 
+		id: '19', 
+		severity: 'warning', 
+		title: 'High Network Latency', 
+		deviceName: 'Gateway G1',
+		parameter: 'Network',
+		time: '17 hours ago',
+		userStatus: 'new',
+		type: 'alarm',
+		events: [
+			{ timestamp: 1740068600, type: 'triggered', value: '300ms' }
+		]
+	},
+	{ 
+		id: '20', 
+		severity: 'critical', 
+		title: 'Fire Alarm Triggered', 
+		deviceName: 'Zone 1',
+		parameter: 'Fire',
+		time: '18 hours ago',
+		userStatus: 'acknowledged',
+		type: 'alarm',
+		events: [
+			{ timestamp: 1740065000, type: 'triggered', value: 'Detected' }
 		]
 	},
 ];

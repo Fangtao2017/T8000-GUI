@@ -11,7 +11,6 @@ import {
   WifiOutlined,
   SettingOutlined,
   ApiOutlined,
-  UserOutlined,
   CloseOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
@@ -166,14 +165,6 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, deviceId, onNavigate
       path: '/settings/mqtt',
       description: 'Configure MQTT broker connection details, topics, and authentication for cloud communication.',
       features: ['Broker Connection', 'Topic Mapping', 'Cloud Integration']
-    },
-    {
-      key: 'account-setting',
-      label: 'Local Account',
-      icon: <UserOutlined />,
-      path: '/account',
-      description: 'Manage local user accounts, passwords, and access permissions for system security.',
-      features: ['User Management', 'Access Control', 'Security Settings']
     }
   ];
 
@@ -211,7 +202,10 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, deviceId, onNavigate
         boxShadow: '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)',
         display: 'flex',
         position: 'relative',
-        zIndex: 1000
+        zIndex: 1000,
+        borderBottomLeftRadius: '16px',
+        borderBottomRightRadius: '16px',
+        overflow: 'hidden'
       }}
       onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
     >
@@ -229,7 +223,7 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, deviceId, onNavigate
       />
 
       {/* Left Side: Menu List */}
-      <div style={{ width: 300, borderRight: `1px solid ${token.colorSplit}`, background: '#fafafa', padding: '24px 0' }}>
+      <div style={{ width: 300, borderRight: `1px solid ${token.colorSplit}`, background: '#fafafa', padding: '24px 0', overflowY: 'auto' }}>
         <ConfigProvider
           theme={{
             components: {
@@ -252,7 +246,7 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, deviceId, onNavigate
       </div>
 
       {/* Right Side: Content */}
-      <div style={{ flex: 1, padding: '48px 64px' }}>
+      <div style={{ flex: 1, padding: '48px 64px', overflowY: 'auto' }}>
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column', maxWidth: 800 }}>
           <div>
             <Title level={2} style={{ marginTop: 0, marginBottom: 24, color: '#001B34' }}>

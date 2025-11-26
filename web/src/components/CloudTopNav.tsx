@@ -18,7 +18,7 @@ import tcamLogo from '../assets/tcam-logo.png';
 import NavMegaMenu from './NavMegaMenu';
 import type { MenuSectionType } from './NavMegaMenu';
 
-const TopNav: React.FC = () => {
+const CloudTopNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { deviceId } = useParams<{ deviceId: string }>();
@@ -87,7 +87,7 @@ const TopNav: React.FC = () => {
     const effectivePath = relativePath === '' ? '/' : relativePath;
 
     // Home mapping
-    if (effectivePath === '/' || effectivePath.startsWith('/analysis') || effectivePath.startsWith('/log') || effectivePath.startsWith('/monitor')) {
+    if (effectivePath === '/' || effectivePath.startsWith('/map') || effectivePath.startsWith('/batch-log') || effectivePath.startsWith('/alarm-status') || effectivePath.startsWith('/analysis') || effectivePath.startsWith('/log') || effectivePath.startsWith('/monitor')) {
       return ['home'];
     }
 
@@ -198,8 +198,8 @@ const TopNav: React.FC = () => {
             <Flex align="center" gap={12} style={{ 
               padding: '0 20px', 
               height: '100%',
-              width: 220,
-              minWidth: 220,
+              width: 300, // Increased width for longer title
+              minWidth: 300,
               transition: 'all 0.2s',
             }}>
               <img 
@@ -212,19 +212,11 @@ const TopNav: React.FC = () => {
                 }} 
               />
               <Typography.Title level={4} style={{ margin: 0, fontWeight: 500, color: '#ffffff' }}>
-                T8000 System
+                T8000 Cloud Platform
               </Typography.Title>
             </Flex>
 
-            {/* Return to Cloud Button */}
-            <Button 
-              type="text" 
-              icon={<CloudOutlined />} 
-              style={{ color: '#ffffff', fontSize: 16, fontWeight: 500 }}
-              onClick={() => navigate('/')}
-            >
-              Return to Cloud
-            </Button>
+            {/* Return to Cloud Button REMOVED */}
           </Flex>
 
           {/* Separator Line */}
@@ -232,8 +224,8 @@ const TopNav: React.FC = () => {
 
           {/* Main Navigation Menu */}
           <Flex style={{ flex: 1, height: '100%' }} align="center" justify="flex-start">
-            {renderNavItem('home', 'T8000', <HomeOutlined />, undefined, '/')}
-            {renderNavItem('device-management', 'Connected Sensor', <SettingOutlined />, 'device-management', '/devices')}
+            {renderNavItem('home', 'Home', <HomeOutlined />, undefined, '/')}
+            {renderNavItem('device-management', 'Related T8000', <SettingOutlined />, 'device-management', '/devices')}
             {renderNavItem('logic-management', 'Logic', <ControlOutlined />, 'logic-management', '/alarms')}
             {renderNavItem('communication-management', 'System', <ApiOutlined />, 'communication-management', '/settings/network')}
           </Flex>
@@ -342,4 +334,4 @@ const TopNav: React.FC = () => {
   );
 };
 
-export default TopNav;
+export default CloudTopNav;

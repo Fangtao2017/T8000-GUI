@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Divider, Typography, Row, Col, Switch, message, Tag, Alert } from 'antd';
+import { Card, Form, Input, Button, Space, Divider, Typography, Row, Col, Switch, message, Tag } from 'antd';
 import { SaveOutlined, ReloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface NetworkConfig {
   ipAddress: string;
@@ -52,16 +52,6 @@ const SettingsNetwork: React.FC = () => {
     message.info('Settings reset to current values');
   };
 
-  const handleTestConnection = async () => {
-    message.loading({ content: 'Testing connection...', key: 'test' });
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      message.success({ content: 'Connection test successful!', key: 'test', duration: 2 });
-    } catch {
-      message.error({ content: 'Connection test failed', key: 'test', duration: 2 });
-    }
-  };
-
   React.useEffect(() => {
     form.setFieldsValue({
       ipAddress: '192.168.1.100',
@@ -77,13 +67,6 @@ const SettingsNetwork: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      <Alert
-        message="Under Development"
-        description="This page is currently under development. Features may be incomplete or subject to change."
-        type="warning"
-        showIcon
-        style={{ marginBottom: 24 }}
-      />
       {/* Device Connection Status */}
       <Card 
         bordered 
@@ -104,7 +87,7 @@ const SettingsNetwork: React.FC = () => {
           <Col span={12}>
             <Space direction="vertical" size={4}>
               <Text type="secondary" style={{ fontSize: 12 }}>Current IP Address</Text>
-              <Text strong style={{ fontSize: 16, color: '#1890ff' }}>{currentConfig.ipAddress}</Text>
+              <Text strong style={{ fontSize: 16, color: '#003A70' }}>{currentConfig.ipAddress}</Text>
             </Space>
           </Col>
         </Row>
@@ -112,16 +95,11 @@ const SettingsNetwork: React.FC = () => {
 
       {/* Network Configuration */}
       <Card 
-        title={
-          <Space>
-            <Title level={4} style={{ margin: 0 }}>Network Configuration</Title>
-          </Space>
-        }
         bordered
         extra={
           <Space>
             <Button icon={<ReloadOutlined />} onClick={handleReset}>Reset</Button>
-            <Button type="primary" icon={<SaveOutlined />} loading={loading} onClick={() => form.submit()}>
+            <Button type="primary" icon={<SaveOutlined />} loading={loading} onClick={() => form.submit()} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>
               Save Changes
             </Button>
           </Space>
@@ -253,9 +231,6 @@ const SettingsNetwork: React.FC = () => {
           <Divider />
 
           <Space>
-            <Button type="default" onClick={handleTestConnection}>
-              Test Connection
-            </Button>
             <Text type="secondary" style={{ fontSize: 12 }}>
               Changes will take effect after saving and may require device restart
             </Text>

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Card, Form, Button, Space, Divider, Typography, Row, Col, message, InputNumber, Progress, Upload, Alert } from 'antd';
+import { Card, Form, Button, Space, Divider, Typography, Row, Col, message, InputNumber, Progress, Upload, Tag } from 'antd';
 import { SaveOutlined, ReloadOutlined, CloudUploadOutlined, RocketOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface SystemGeneralConfig {
   nwk_timeout: number;
@@ -20,7 +20,10 @@ const SettingsSystem: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   // Mock current firmware and system configuration
-  const currentFirmware = 'v1.32.3.2';
+  const currentFirmware: string = 'v1.32.3.2';
+  const latestFirmware: string = 'v1.32.3.5'; // Mock latest version
+  const isLatest = currentFirmware === latestFirmware;
+
   const currentConfig: SystemGeneralConfig = {
     nwk_timeout: 3600,
     ack_timeout: 60,
@@ -124,26 +127,24 @@ const SettingsSystem: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      <Alert
-        message="Under Development"
-        description="This page is currently under development. Features may be incomplete or subject to change."
-        type="warning"
-        showIcon
-        style={{ marginBottom: 24 }}
-      />
       {/* Firmware Information */}
       <Card 
         bordered 
         style={{ marginBottom: 16 }}
-        bodyStyle={{ padding: '20px 24px' }}
+        bodyStyle={{ padding: '16px 24px' }}
       >
         <Row gutter={24} align="middle">
           <Col span={12}>
             <Space direction="vertical" size={4}>
               <Text type="secondary" style={{ fontSize: 12 }}>Current Firmware Version</Text>
               <Space align="center">
-                <RocketOutlined style={{ fontSize: 24, color: '#1890ff' }} />
-                <Text strong style={{ fontSize: 20 }}>{currentFirmware}</Text>
+                <RocketOutlined style={{ fontSize: 20, color: '#003A70' }} />
+                <Text strong style={{ fontSize: 16 }}>{currentFirmware}</Text>
+                {!isLatest && (
+                  <Tag color="warning" style={{ marginLeft: 8 }}>
+                    Update Available: {latestFirmware}
+                  </Tag>
+                )}
               </Space>
             </Space>
           </Col>
@@ -152,8 +153,9 @@ const SettingsSystem: React.FC = () => {
               <Button 
                 type="primary" 
                 icon={<CloudUploadOutlined />} 
-                size="large"
+                size="middle"
                 loading={uploading}
+                style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
               >
                 Update Firmware
               </Button>
@@ -173,16 +175,11 @@ const SettingsSystem: React.FC = () => {
 
       {/* System General Configuration */}
       <Card 
-        title={
-          <Space>
-            <Title level={4} style={{ margin: 0 }}>System General Settings</Title>
-          </Space>
-        }
         bordered
         extra={
           <Space>
             <Button icon={<ReloadOutlined />} onClick={handleReset}>Reset</Button>
-            <Button type="primary" icon={<SaveOutlined />} loading={loading} onClick={() => form.submit()}>
+            <Button type="primary" icon={<SaveOutlined />} loading={loading} onClick={() => form.submit()} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>
               Save Changes
             </Button>
           </Space>

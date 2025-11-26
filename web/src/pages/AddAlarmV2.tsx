@@ -18,14 +18,14 @@ interface Condition {
 
 // Mock Data
 const mockDevices = [
-	{ id: 'device-001', name: 'Device-001', model: 'T-RELAY-001' },
-	{ id: 'device-002', name: 'Device-002', model: 'T-TEM-001' },
-	{ id: 'device-003', name: 'Device-003', model: 'T-DIM-001' },
-	{ id: 'device-004', name: 'Device-004', model: 'T-PM-001' },
-	{ id: 'device-005', name: 'Device-005', model: 'T-OXM-001' },
-	{ id: 'device-006', name: 'Device-006', model: 'T-SP-001' },
-	{ id: 'device-007', name: 'Device-007', model: 'T-IR-001' },
-	{ id: 'device-008', name: 'Device-008', model: 'T-EMS-002' },
+	{ id: 'device-001', name: 'Device-001', model: 'T-DIDO-01' },
+	{ id: 'device-002', name: 'Device-002', model: 'T-TEM-01' },
+	{ id: 'device-003', name: 'Device-003', model: 'T-DIM-01' },
+	{ id: 'device-004', name: 'Device-004', model: 'T-ACP-01' },
+	{ id: 'device-005', name: 'Device-005', model: 'T-OCC-01' },
+	{ id: 'device-006', name: 'Device-006', model: 'T-EMS-01' },
+	{ id: 'device-007', name: 'Device-007', model: 'T-TK-01' },
+	{ id: 'device-008', name: 'Device-008', model: 'T-EMS-02' },
 ];
 
 const mockTimers = [

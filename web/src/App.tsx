@@ -30,6 +30,9 @@ return (
 	{/* Cloud Platform Layer */}
 	<Route path="/" element={<CloudLayout />}>
 		<Route index element={<CloudDashboard />} />
+		<Route path="map" element={<CloudDashboard />} />
+		<Route path="batch-log" element={<CloudDashboard />} />
+		<Route path="alarm-status" element={<CloudDashboard />} />
 	</Route>
 
 	{/* Device Twin Layer (Existing UI) */}

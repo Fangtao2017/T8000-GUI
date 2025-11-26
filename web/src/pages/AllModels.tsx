@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Row, Col, Select, Tooltip, Progress } from 'antd';
+import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
 
 const { Search } = Input;
 const { Option } = Select;
@@ -17,6 +21,8 @@ interface ModelData {
 	parameterCount: number;
 	parameters: string[];
 	createdAt: string;
+	updatedAt: string;
+	usageCount: number;
 }
 
 const AllModels: React.FC = () => {
@@ -31,113 +37,237 @@ const AllModels: React.FC = () => {
 	const [models] = useState<ModelData[]>([
 		{
 			key: '1',
-			model: 'T-OXM-001',
-			type: 'Sensor',
-			brand: 'TMAS',
-			icon: '📡',
+			model: 'T8000',
+			type: 'Gateway',
+			brand: 'TCAM',
+			icon: '🌐',
 			description: 'Modbus',
-			parameterCount: 4,
-			parameters: ['Occupancy', 'Light Level', 'Temperature', 'Humidity'],
-			createdAt: '2024-01-15',
+			parameterCount: 0,
+			parameters: [],
+			createdAt: '2024-01-01',
+			updatedAt: '2025-11-20 10:00:00',
+			usageCount: 5,
 		},
 		{
 			key: '2',
-			model: 'T-TEMP-01',
-			type: 'Sensor',
-			brand: 'TMAS',
-			icon: '🌡️',
-			description: 'AI',
-			parameterCount: 3,
-			parameters: ['Temperature', 'Status', 'Battery'],
-			createdAt: '2024-01-20',
+			model: 'T-AOM-01',
+			type: 'Module',
+			brand: 'TCAM',
+			icon: '🎛️',
+			description: 'Modbus',
+			parameterCount: 1,
+			parameters: ['Dimmable Light Control'],
+			createdAt: '2024-01-02',
+			updatedAt: '2025-10-15 14:30:00',
+			usageCount: 12,
 		},
 		{
 			key: '3',
-			model: 'T-HUM-001',
-			type: 'Sensor',
-			brand: 'TMAS',
-			icon: '💧',
+			model: 'T-DIM-01',
+			type: 'Dimmer',
+			brand: 'TCAM',
+			icon: '💡',
 			description: 'Modbus',
-			parameterCount: 2,
-			parameters: ['Humidity', 'Dew Point'],
-			createdAt: '2024-02-01',
+			parameterCount: 1,
+			parameters: ['Dimming Level'],
+			createdAt: '2024-01-03',
+			updatedAt: '2025-09-01 09:15:00',
+			usageCount: 8,
 		},
 		{
 			key: '4',
-			model: 'T-DIM-001',
-			type: 'Dimmer',
-			brand: 'TMAS',
-			icon: '💡',
-			description: 'DO',
-			parameterCount: 4,
-			parameters: ['Brightness', 'Power', 'Fade Rate', 'Current'],
-			createdAt: '2024-02-05',
+			model: 'T-OCC-01',
+			type: 'Sensor',
+			brand: 'TCAM',
+			icon: '🚶',
+			description: 'Modbus',
+			parameterCount: 2,
+			parameters: ['Occupancy', 'Lux'],
+			createdAt: '2024-01-04',
+			updatedAt: '2025-11-24 16:45:00',
+			usageCount: 20,
 		},
 		{
 			key: '5',
-			model: 'T-PM-001',
-			type: 'Panel',
-			brand: 'TMAS',
-			icon: '❄️',
+			model: 'T-FM-01',
+			type: 'Meter',
+			brand: 'TCAM',
+			icon: '💧',
 			description: 'Modbus',
-			parameterCount: 5,
-			parameters: ['Temperature', 'Setpoint', 'Fan Speed', 'Mode', 'Power'],
-			createdAt: '2024-02-10',
+			parameterCount: 1,
+			parameters: ['Flow Rate'],
+			createdAt: '2024-01-05',
+			updatedAt: '2025-08-20 11:20:00',
+			usageCount: 3,
 		},
 		{
 			key: '6',
-			model: 'T-RELAY-001',
-			type: 'Relay',
-			brand: 'TMAS',
-			icon: '🔌',
-			description: 'DO',
-			parameterCount: 4,
-			parameters: ['State', 'Mode', 'Delay', 'Fault'],
-			createdAt: '2024-02-15',
+			model: 'T-TK-01',
+			type: 'Tank',
+			brand: 'TCAM',
+			icon: '🛢️',
+			description: 'Modbus',
+			parameterCount: 1,
+			parameters: ['Level'],
+			createdAt: '2024-01-06',
+			updatedAt: '2025-07-10 13:00:00',
+			usageCount: 0,
 		},
 		{
 			key: '7',
-			model: 'T-SMOKE-001',
-			type: 'Detector',
-			brand: 'TMAS',
-			icon: '🔥',
-			description: 'DI',
-			parameterCount: 4,
-			parameters: ['Smoke Level', 'Alarm', 'Battery', 'Test'],
-			createdAt: '2024-02-20',
+			model: 'T-PP-01',
+			type: 'Pump',
+			brand: 'TCAM',
+			icon: '⛽',
+			description: 'Modbus',
+			parameterCount: 1,
+			parameters: ['Status'],
+			createdAt: '2024-01-07',
+			updatedAt: '2025-06-05 15:40:00',
+			usageCount: 2,
 		},
 		{
 			key: '8',
-			model: 'T-PRESS-001',
+			model: 'T-TEM-01',
 			type: 'Sensor',
-			brand: 'TMAS',
-			icon: '🔧',
-			description: 'AI',
-			parameterCount: 4,
-			parameters: ['Pressure', 'Temperature', 'Max', 'Min'],
-			createdAt: '2024-02-25',
+			brand: 'TCAM',
+			icon: '🌡️',
+			description: 'Modbus',
+			parameterCount: 1,
+			parameters: ['Temperature'],
+			createdAt: '2024-01-08',
+			updatedAt: '2025-11-22 08:30:00',
+			usageCount: 15,
 		},
 		{
 			key: '9',
-			model: 'T-VALVE-001',
-			type: 'Valve',
-			brand: 'TMAS',
-			icon: '🚰',
-			description: 'DO',
-			parameterCount: 4,
-			parameters: ['Position', 'Flow', 'Mode', 'Status'],
-			createdAt: '2024-03-01',
+			model: 'T-TEM-02',
+			type: 'Sensor',
+			brand: 'TCAM',
+			icon: '🌡️',
+			description: 'Modbus',
+			parameterCount: 1,
+			parameters: ['Temperature'],
+			createdAt: '2024-01-09',
+			updatedAt: '2025-11-10 12:10:00',
+			usageCount: 0,
 		},
 		{
 			key: '10',
-			model: 'T-DOOR-001',
-			type: 'Sensor',
-			brand: 'TMAS',
-			icon: '🚪',
+			model: 'T-EMS-01',
+			type: 'Meter',
+			brand: 'TCAM',
+			icon: '⚡',
+			description: 'Modbus',
+			parameterCount: 3,
+			parameters: ['Voltage', 'Current', 'Power'],
+			createdAt: '2024-01-10',
+			updatedAt: '2025-10-01 10:00:00',
+			usageCount: 7,
+		},
+		{
+			key: '11',
+			model: 'T-EMS-02',
+			type: 'Meter',
+			brand: 'TCAM',
+			icon: '⚡',
+			description: 'Modbus',
+			parameterCount: 3,
+			parameters: ['Voltage', 'Current', 'Power'],
+			createdAt: '2024-01-11',
+			updatedAt: '2025-09-15 14:20:00',
+			usageCount: 4,
+		},
+		{
+			key: '12',
+			model: 'T-EMS-03',
+			type: 'Meter',
+			brand: 'TCAM',
+			icon: '⚡',
+			description: 'Modbus',
+			parameterCount: 3,
+			parameters: ['Voltage', 'Current', 'Power'],
+			createdAt: '2024-01-12',
+			updatedAt: '2025-08-05 09:50:00',
+			usageCount: 0,
+		},
+		{
+			key: '13',
+			model: 'T-ACP-01',
+			type: 'Panel',
+			brand: 'TCAM',
+			icon: '❄️',
+			description: 'Modbus',
+			parameterCount: 1,
+			parameters: ['Status'],
+			createdAt: '2024-01-13',
+			updatedAt: '2025-07-20 16:10:00',
+			usageCount: 6,
+		},
+		{
+			key: '14',
+			model: 'T-AIS-001',
+			type: 'Interface',
+			brand: 'TCAM',
+			icon: '🔌',
+			description: 'Modbus',
+			parameterCount: 1,
+			parameters: ['Status'],
+			createdAt: '2024-01-14',
+			updatedAt: '2025-06-30 11:00:00',
+			usageCount: 0,
+		},
+		{
+			key: '15',
+			model: 'T-FP-001',
+			type: 'Alarm',
+			brand: 'TCAM',
+			icon: '🔥',
+			description: 'Modbus',
+			parameterCount: 1,
+			parameters: ['Status'],
+			createdAt: '2024-01-15',
+			updatedAt: '2025-05-15 13:40:00',
+			usageCount: 1,
+		},
+		{
+			key: '16',
+			model: 'T-DIDO-01',
+			type: 'Module',
+			brand: 'TCAM',
+			icon: '🔌',
 			description: 'DI',
-			parameterCount: 4,
-			parameters: ['State', 'Count', 'Tamper', 'Battery'],
-			createdAt: '2024-03-05',
+			parameterCount: 2,
+			parameters: ['Input Status', 'Output Control'],
+			createdAt: '2024-01-16',
+			updatedAt: '2025-04-10 10:30:00',
+			usageCount: 9,
+		},
+		{
+			key: '17',
+			model: 'T-AIR-001',
+			type: 'Module',
+			brand: 'TCAM',
+			icon: '📡',
+			description: 'Modbus',
+			parameterCount: 1,
+			parameters: ['IR Command'],
+			createdAt: '2024-01-17',
+			updatedAt: '2025-03-20 15:15:00',
+			usageCount: 0,
+		},
+		{
+			key: '18',
+			model: 'T-MIU-001',
+			type: 'Interface',
+			brand: 'TCAM',
+			icon: '🔌',
+			description: 'Modbus',
+			parameterCount: 1,
+			parameters: ['Status'],
+			createdAt: '2024-01-18',
+			updatedAt: '2025-02-15 09:00:00',
+			usageCount: 2,
 		},
 	]);
 
@@ -165,7 +295,7 @@ const AllModels: React.FC = () => {
 			dataIndex: 'icon',
 			key: 'icon',
 			width: 60,
-			render: (icon: string) => <span style={{ fontSize: 24 }}>{icon}</span>,
+			render: (icon: string) => <span style={{ fontSize: 16 }}>{icon}</span>,
 		},
 		{
 			title: 'Model',
@@ -216,11 +346,27 @@ const AllModels: React.FC = () => {
 			),
 		},
 		{
-			title: 'Created Date',
-			dataIndex: 'createdAt',
-			key: 'createdAt',
-			width: 120,
-			sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
+			title: 'Usage',
+			dataIndex: 'usageCount',
+			key: 'usageCount',
+			width: 100,
+			sorter: (a, b) => a.usageCount - b.usageCount,
+			render: (count: number) => (
+				<Tag 
+					color={count > 0 ? '#003A70' : 'default'} 
+					style={count > 0 ? { color: '#fff', borderColor: '#003A70' } : {}}
+				>
+					{count} Devices
+				</Tag>
+			),
+		},
+		{
+			title: 'Last Updated',
+			dataIndex: 'updatedAt',
+			key: 'updatedAt',
+			width: 150,
+			sorter: (a, b) => a.updatedAt.localeCompare(b.updatedAt),
+			render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
 		},
 		{
 			title: 'Action',
@@ -264,128 +410,121 @@ const AllModels: React.FC = () => {
 
 	// Statistics
 	const totalModels = models.length;
+	const inUseModels = models.filter(m => m.usageCount > 0).length;
+	const unusedModels = totalModels - inUseModels;
+	const noParamModels = models.filter(m => m.parameterCount === 0).length;
+	
+	// Find latest updated time
+	const sortedByDate = [...models].sort((a, b) => dayjs(b.updatedAt).valueOf() - dayjs(a.updatedAt).valueOf());
+	const lastUpdatedTime = sortedByDate.length > 0 ? dayjs(sortedByDate[0].updatedAt).fromNow() : 'N/A';
+
 	const uniqueTypes = Array.from(new Set(models.map(m => m.type))).sort();
 	const uniqueBrands = Array.from(new Set(models.map(m => m.brand))).sort();
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
-			{/* Statistics Cards */}
-			<Row gutter={16}>
-				<Col span={8}>
-					<Card bordered bodyStyle={{ padding: '20px 16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Total Models</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0 }}>{totalModels}</Typography.Title>
-							<Progress percent={100} showInfo={false} strokeColor="#003A70" />
+		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+				
+				{/* Layer 1: Info Bar */}
+				<div style={{ 
+					backgroundColor: '#fff', 
+					border: '1px solid #d9d9d9',
+					borderRadius: 8,
+					padding: '12px 24px',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					flexWrap: 'wrap',
+					gap: 16,
+					flexShrink: 0
+				}}>
+					<Space size={24} style={{ flexWrap: 'wrap' }}>
+						<Typography.Text strong style={{ fontSize: 16 }}>Model Statistics</Typography.Text>
+						
+						<Space split={<Typography.Text type="secondary">|</Typography.Text>} size={16}>
+							<Typography.Text>Total Models: <strong>{totalModels}</strong></Typography.Text>
+							<Typography.Text>In Use: <strong>{inUseModels}</strong></Typography.Text>
+							<Typography.Text>Unused: <strong>{unusedModels}</strong></Typography.Text>
+							<Typography.Text>No Parameters: <strong>{noParamModels}</strong></Typography.Text>
 						</Space>
-					</Card>
-				</Col>
-				<Col span={16}>
-					<Card bordered bodyStyle={{ padding: '20px 16px' }}>
-						<Row gutter={16} style={{ height: '100%' }} align="middle">
-							<Col span={12}>
-								<Space direction="vertical" size={4} style={{ width: '100%' }}>
-									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Sensors</Typography.Text>
-									<Typography.Title level={2} style={{ margin: 0, color: '#1890ff' }}>
-										{models.filter(m => m.type === 'Sensor').length}
-									</Typography.Title>
-									<Progress 
-										percent={totalModels > 0 ? (models.filter(m => m.type === 'Sensor').length / totalModels) * 100 : 0} 
-										showInfo={false} 
-										strokeColor="#1890ff" 
-									/>
-								</Space>
-							</Col>
-							<Col span={12}>
-								<Space direction="vertical" size={4} style={{ width: '100%' }}>
-									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Others</Typography.Text>
-									<Typography.Title level={2} style={{ margin: 0, color: '#faad14' }}>
-										{totalModels - models.filter(m => m.type === 'Sensor').length}
-									</Typography.Title>
-									<Progress 
-										percent={totalModels > 0 ? ((totalModels - models.filter(m => m.type === 'Sensor').length) / totalModels) * 100 : 0} 
-										showInfo={false} 
-										strokeColor="#faad14" 
-									/>
-								</Space>
-							</Col>
-						</Row>
-					</Card>
-				</Col>
-			</Row>
-
-			{/* Search and Filter Bar */}
-			<Card bordered bodyStyle={{ padding: '12px 16px' }}>
-				<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-					<Space size={12}>
-						<Search
-							placeholder="Search models..."
-							allowClear
-							style={{ width: 240 }}
-							value={searchText}
-							onChange={(e) => setSearchText(e.target.value)}
-						/>
-						<Select
-							value={typeFilter}
-							onChange={setTypeFilter}
-							style={{ width: 140 }}
-							suffixIcon={<FilterOutlined />}
-						>
-							<Option value="all">All Types</Option>
-							{uniqueTypes.map(type => (
-								<Option key={type} value={type}>{type}</Option>
-							))}
-						</Select>
-						<Select
-							value={brandFilter}
-							onChange={setBrandFilter}
-							style={{ width: 140 }}
-							suffixIcon={<FilterOutlined />}
-						>
-							<Option value="all">All Brands</Option>
-							{uniqueBrands.map(brand => (
-								<Option key={brand} value={brand}>{brand}</Option>
-							))}
-						</Select>
-						<Typography.Text type="secondary" style={{ fontSize: 12, alignSelf: 'center' }}>
-							{filteredData.length} of {totalModels} models
-						</Typography.Text>
 					</Space>
-					<Space size={8}>
-						<Button icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
-							Refresh
-						</Button>
-						<Button
-							type="primary"
-							icon={<PlusOutlined />}
-							onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-model` : '/configuration/add-model')}
-							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
-						>
-							Add New Model
-						</Button>
-					</Space>
-				</Space>
-			</Card>
 
-			{/* Models Table */}
-			<Card 
-				title={`All Models (${filteredData.length})`}
-				bordered
-				style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-				bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-			>
-				<div style={{ flex: 1, overflow: 'hidden' }}>
+					<Typography.Text type="secondary">
+						Last Updated: {lastUpdatedTime}
+					</Typography.Text>
+				</div>
+
+				{/* Layer 2: Toolbar */}
+				<Card bordered bodyStyle={{ padding: '16px' }} style={{ flexShrink: 0 }}>
+					<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+						<Space size={12}>
+							<Search
+								placeholder="Search models..."
+								allowClear
+								style={{ width: 240 }}
+								value={searchText}
+								onChange={(e) => setSearchText(e.target.value)}
+							/>
+							<Select
+								value={typeFilter}
+								onChange={setTypeFilter}
+								style={{ width: 140 }}
+								suffixIcon={<FilterOutlined />}
+							>
+								<Option value="all">All Types</Option>
+								{uniqueTypes.map(type => (
+									<Option key={type} value={type}>{type}</Option>
+								))}
+							</Select>
+							<Select
+								value={brandFilter}
+								onChange={setBrandFilter}
+								style={{ width: 140 }}
+								suffixIcon={<FilterOutlined />}
+							>
+								<Option value="all">All Brands</Option>
+								{uniqueBrands.map(brand => (
+									<Option key={brand} value={brand}>{brand}</Option>
+								))}
+							</Select>
+							<Typography.Text type="secondary" style={{ fontSize: 12, alignSelf: 'center' }}>
+								{filteredData.length} of {totalModels} models
+							</Typography.Text>
+						</Space>
+						<Space size={8}>
+							<Button icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
+								Refresh
+							</Button>
+							<Button
+								type="primary"
+								icon={<PlusOutlined />}
+								onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-model` : '/configuration/add-model')}
+								style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+							>
+								Add New Model
+							</Button>
+						</Space>
+					</Space>
+				</Card>
+
+				{/* Layer 3: Table */}
+				<Card 
+					bordered
+					style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+					bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+				>
 					<Table
 						columns={columns}
 						dataSource={filteredData}
 						pagination={false}
 						size="small"
-						scroll={{ y: 'calc(100vh - 450px)' }}
+						scroll={{ y: 'calc(100vh - 350px)' }}
 					/>
-				</div>
-			</Card>
+				</Card>
+			</div>
 		</div>
 	);
 };
 
 export default AllModels;
+

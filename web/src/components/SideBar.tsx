@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, section, onSelect }) => 
 				return [
 					item('Network settings', '/settings/network', <WifiOutlined />),
 					item('MQTT configuration', '/settings/mqtt', <ApiOutlined />),
-					item('Modbus settings', '/settings/modbus', <ClusterOutlined />),
+					item('Source Interface', '/settings/modbus', <ClusterOutlined />),
 					item('Firmware Settings', '/settings/system', <SettingOutlined />),
 				];
 			}

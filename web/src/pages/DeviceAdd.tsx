@@ -15,157 +15,149 @@ interface DeviceTemplate {
 
 // 预定义的设备模板（内置 Model）
 const deviceTemplates: Record<string, DeviceTemplate> = {
-	'T-OXM-001': {
-		model: 'T-OXM-001',
-		type: 'occup_lux_snsr',
-		brand: 'TUAS',
-		parameters: ['occupancy', 'lux_level', 'temperature', 'battery_level'],
-		description: 'Occupancy and light sensor',
-		icon: '👁️'
+	'T8000': {
+		model: 'T8000',
+		type: 'gateway',
+		brand: 'TCAM',
+		parameters: [],
+		description: 'Gateway',
+		icon: '🌐'
 	},
-	'T-DIM-001': {
-		model: 'T-DIM-001',
+	'T-AOM-01': {
+		model: 'T-AOM-01',
+		type: 'module',
+		brand: 'TCAM',
+		parameters: ['dimmable_light_control'],
+		description: 'Analog Output Module (dimmable light control)',
+		icon: '🎛️'
+	},
+	'T-DIM-01': {
+		model: 'T-DIM-01',
 		type: 'dimmer',
-		brand: 'TUAS',
-		parameters: ['brightness', 'power_state', 'fade_rate', 'load_current'],
-		description: 'Lighting dimmer control',
+		brand: 'TCAM',
+		parameters: ['dimming_level'],
+		description: 'Light Dimmer',
 		icon: '💡'
 	},
-	'T-PM-001': {
-		model: 'T-PM-001',
-		type: 'aircon_panel',
-		brand: 'TUAS',
-		parameters: ['temperature', 'setpoint', 'fan_speed', 'mode', 'power_state'],
-		description: 'Air conditioning control panel',
-		icon: '❄️'
+	'T-OCC-01': {
+		model: 'T-OCC-01',
+		type: 'sensor',
+		brand: 'TCAM',
+		parameters: ['occupancy', 'lux'],
+		description: 'Occupancy-lux sensor',
+		icon: '🚶'
 	},
-	'T-IR-001': {
-		model: 'T-IR-001',
-		type: 'tank',
-		brand: 'TUAS',
-		parameters: ['level', 'volume', 'flow_rate', 'alarm_status'],
-		description: 'Water tank level sensor',
+	'T-FM-01': {
+		model: 'T-FM-01',
+		type: 'meter',
+		brand: 'TCAM',
+		parameters: ['flow_rate'],
+		description: 'Flow meter',
 		icon: '💧'
 	},
-	'T-SP-001': {
-		model: 'T-SP-001',
-		type: 'elec_meter',
-		brand: 'TUAS',
-		parameters: ['voltage', 'current', 'power', 'energy_total', 'frequency', 'pwr_factor'],
-		description: 'Single phase electric meter',
-		icon: '⚡'
+	'T-TK-01': {
+		model: 'T-TK-01',
+		type: 'tank',
+		brand: 'TCAM',
+		parameters: ['level'],
+		description: 'Tank',
+		icon: '🛢️'
 	},
-	'T-EMS-002': {
-		model: 'T-EMS-002',
-		type: '3p_ct_energy_mtr',
-		brand: 'TUAS',
-		parameters: ['voltage_l1', 'voltage_l2', 'voltage_l3', 'current_l1', 'current_l2', 'current_l3', 'power_total', 'energy_total'],
-		description: '3-phase energy meter',
-		icon: '⚡'
+	'T-PP-01': {
+		model: 'T-PP-01',
+		type: 'pump',
+		brand: 'TCAM',
+		parameters: ['status'],
+		description: 'Pump',
+		icon: '⛽'
 	},
-	'T-TEM-001': {
-		model: 'T-TEM-001',
-		type: 'temp_snsr',
-		brand: 'TUAS',
-		parameters: ['temperature', 'humidity', 'dew_point'],
-		description: 'Temperature and humidity sensor',
+	'T-TEM-01': {
+		model: 'T-TEM-01',
+		type: 'sensor',
+		brand: 'TCAM',
+		parameters: ['temperature'],
+		description: 'Temperature sensor',
 		icon: '🌡️'
 	},
-	'T-RELAY-001': {
-		model: 'T-RELAY-001',
-		type: 'relay_module',
-		brand: 'TUAS',
-		parameters: ['relay_state', 'trigger_mode', 'delay_time', 'fault_status'],
-		description: 'Multi-channel relay module',
+	'T-TEM-02': {
+		model: 'T-TEM-02',
+		type: 'sensor',
+		brand: 'TCAM',
+		parameters: ['temperature'],
+		description: 'Temperature sensor',
+		icon: '🌡️'
+	},
+	'T-EMS-01': {
+		model: 'T-EMS-01',
+		type: 'meter',
+		brand: 'TCAM',
+		parameters: ['voltage', 'current', 'power'],
+		description: 'Single-phase Energy meter',
+		icon: '⚡'
+	},
+	'T-EMS-02': {
+		model: 'T-EMS-02',
+		type: 'meter',
+		brand: 'TCAM',
+		parameters: ['voltage', 'current', 'power'],
+		description: 'Three-phase CT Energy meter',
+		icon: '⚡'
+	},
+	'T-EMS-03': {
+		model: 'T-EMS-03',
+		type: 'meter',
+		brand: 'TCAM',
+		parameters: ['voltage', 'current', 'power'],
+		description: 'Three-phase Energy meter',
+		icon: '⚡'
+	},
+	'T-ACP-01': {
+		model: 'T-ACP-01',
+		type: 'panel',
+		brand: 'TCAM',
+		parameters: ['status'],
+		description: 'Aircon Panel (Existing Panel in Server/LAN room)',
+		icon: '❄️'
+	},
+	'T-AIS-001': {
+		model: 'T-AIS-001',
+		type: 'interface',
+		brand: 'TCAM',
+		parameters: ['status'],
+		description: 'Aircon Interface Card',
 		icon: '🔌'
 	},
-	'T-SMOKE-001': {
-		model: 'T-SMOKE-001',
-		type: 'smoke_detector',
-		brand: 'TUAS',
-		parameters: ['smoke_level', 'alarm_state', 'battery_voltage', 'self_test'],
-		description: 'Smoke and fire detector',
+	'T-FP-001': {
+		model: 'T-FP-001',
+		type: 'alarm',
+		brand: 'TCAM',
+		parameters: ['status'],
+		description: 'Fire alarm',
 		icon: '🔥'
 	},
-	'T-CO2-001': {
-		model: 'T-CO2-001',
-		type: 'co2_sensor',
-		brand: 'TUAS',
-		parameters: ['co2_level', 'temperature', 'humidity', 'alarm_threshold'],
-		description: 'Carbon dioxide sensor',
-		icon: '💨'
+	'T-DIDO-01': {
+		model: 'T-DIDO-01',
+		type: 'module',
+		brand: 'TCAM',
+		parameters: ['input_status', 'output_control'],
+		description: 'Digital Input/Output Module (non-dimmable light monitoring and control)',
+		icon: '🔌'
 	},
-	'T-PRESS-001': {
-		model: 'T-PRESS-001',
-		type: 'pressure_sensor',
-		brand: 'TUAS',
-		parameters: ['pressure', 'temperature', 'max_pressure', 'min_pressure'],
-		description: 'Industrial pressure sensor',
-		icon: '🔧'
+	'T-AIR-001': {
+		model: 'T-AIR-001',
+		type: 'module',
+		brand: 'TCAM',
+		parameters: ['ir_command'],
+		description: 'Aircon Universal IR Module',
+		icon: '📡'
 	},
-	'T-VALVE-001': {
-		model: 'T-VALVE-001',
-		type: 'smart_valve',
-		brand: 'TUAS',
-		parameters: ['valve_position', 'flow_rate', 'control_mode', 'status'],
-		description: 'Motorized control valve',
-		icon: '🚰'
-	},
-	'T-PIR-001': {
-		model: 'T-PIR-001',
-		type: 'motion_sensor',
-		brand: 'TUAS',
-		parameters: ['motion_detected', 'sensitivity', 'detection_range', 'battery_level'],
-		description: 'Passive infrared motion sensor',
-		icon: '👤'
-	},
-	'T-DOOR-001': {
-		model: 'T-DOOR-001',
-		type: 'door_sensor',
-		brand: 'TUAS',
-		parameters: ['door_state', 'open_count', 'tamper_alert', 'battery_voltage'],
-		description: 'Magnetic door/window sensor',
-		icon: '🚪'
-	},
-	'T-LEAK-001': {
-		model: 'T-LEAK-001',
-		type: 'water_leak_sensor',
-		brand: 'TUAS',
-		parameters: ['leak_detected', 'water_present', 'alarm_state', 'battery_level'],
-		description: 'Water leak detection sensor',
-		icon: '💦'
-	},
-	'T-SOUND-001': {
-		model: 'T-SOUND-001',
-		type: 'sound_sensor',
-		brand: 'TUAS',
-		parameters: ['noise_level', 'peak_db', 'average_db', 'alarm_threshold'],
-		description: 'Sound level monitoring sensor',
-		icon: '🔊'
-	},
-	'T-BLIND-001': {
-		model: 'T-BLIND-001',
-		type: 'blind_controller',
-		brand: 'TUAS',
-		parameters: ['blind_position', 'tilt_angle', 'control_mode', 'motor_status'],
-		description: 'Motorized blind/curtain controller',
-		icon: '🪟'
-	},
-	'T-LOCK-001': {
-		model: 'T-LOCK-001',
-		type: 'smart_lock',
-		brand: 'TUAS',
-		parameters: ['lock_state', 'access_code', 'battery_level', 'unlock_history'],
-		description: 'Electronic smart lock',
-		icon: '🔐'
-	},
-	'T-SIREN-001': {
-		model: 'T-SIREN-001',
-		type: 'alarm_siren',
-		brand: 'TUAS',
-		parameters: ['siren_state', 'volume_level', 'pattern', 'battery_backup'],
-		description: 'Alarm siren and strobe',
-		icon: '🚨'
+	'T-MIU-001': {
+		model: 'T-MIU-001',
+		type: 'interface',
+		brand: 'TCAM',
+		parameters: ['status'],
+		description: 'Aircon Multi-Interface Unit',
+		icon: '🔌'
 	}
 };
 

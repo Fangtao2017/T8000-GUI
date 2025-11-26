@@ -10,7 +10,7 @@ const { Header, Content } = Layout;
 
 const RootLayout: React.FC = () => {
 	return (
-		<Layout style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+		<Layout style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflowX: 'auto', overflowY: 'hidden', minWidth: 1000 }}>
 			{/* 顶部区域：放 Logo、标题、右侧占位（用户、设置等） */}
 			<Header style={{ 
 				padding: 0, 
@@ -23,7 +23,7 @@ const RootLayout: React.FC = () => {
 				display: 'flex',
 				flexDirection: 'column'
 			}}>
-				<div style={{ height: 64, flex: '0 0 64px' }}>
+				<div style={{ height: 56, flex: '0 0 56px' }}>
 					<TopNav />
 				</div>
 				<SecondaryNav />
@@ -32,9 +32,9 @@ const RootLayout: React.FC = () => {
 			{/* 内容区：承载子路由页面 */}
 			<Content style={{ 
 				padding: '16px', 
-				background: '#E8EDF2', 
+				background: '#ffffff', 
 				flex: '1 1 auto', 
-				overflow: 'hidden',
+				overflow: 'auto',
 				position: 'relative'
 			}}>
 				{/* Outlet 渲染 <Route path="/"> 的子路由页面 */}

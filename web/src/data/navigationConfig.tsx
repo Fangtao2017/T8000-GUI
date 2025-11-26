@@ -13,8 +13,7 @@ import {
   BellOutlined,
   ControlOutlined,
   ApiOutlined,
-  WifiOutlined,
-  UserOutlined
+  WifiOutlined
 } from '@ant-design/icons';
 
 export type SectionKey = 'home' | 'connected' | 'logic' | 'system';
@@ -59,7 +58,7 @@ export const navSections: Record<SectionKey, NavSection> = {
       { key: 'device-list', label: 'Device List', path: '/devices', icon: <UnorderedListOutlined /> },
       { key: 'model-setting', label: 'Model Setting', path: '/devices/models', icon: <BlockOutlined /> },
       { key: 'parameter-setting', label: 'Parameter Setting', path: '/devices/parameters', icon: <FormOutlined /> },
-      { key: 'modbus-setting', label: 'Modbus Setting', path: '/settings/modbus', icon: <ClusterOutlined /> },
+      { key: 'modbus-setting', label: 'Source Interface', path: '/settings/modbus', icon: <ClusterOutlined /> },
       { key: 'add-model', label: 'Add Model', path: '/configuration/add-model', icon: <BlockOutlined /> },
       { key: 'add-device', label: 'Add Sub-Device', path: '/devices/add', icon: <AppstoreAddOutlined /> },
       { key: 'supplement-add-parameter', label: 'Supplement Add Parameter', path: '/configuration/add-parameter', icon: <FormOutlined /> },
@@ -88,7 +87,6 @@ export const navSections: Record<SectionKey, NavSection> = {
       { key: 'network-setting', label: 'Network Setting', path: '/settings/network', icon: <WifiOutlined /> },
       { key: 'system-setting', label: 'Firmware Settings', path: '/settings/system', icon: <SettingOutlined /> },
       { key: 'mqtt-setting', label: 'MQTT Setting', path: '/settings/mqtt', icon: <ApiOutlined /> },
-      { key: 'account-setting', label: 'Local Account', path: '/account', icon: <UserOutlined /> },
     ],
   },
 };

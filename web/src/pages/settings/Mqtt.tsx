@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Divider, Typography, Row, Col, Switch, message, Tag, InputNumber, Alert } from 'antd';
+import { Card, Form, Input, Button, Space, Divider, Typography, Row, Col, Switch, message, Tag, InputNumber } from 'antd';
 import { SaveOutlined, ReloadOutlined, CheckCircleOutlined, DisconnectOutlined } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
-const { TextArea } = Input;
+const { Text } = Typography;
 
 interface MqttConfig {
   enabled: boolean;
@@ -27,7 +26,6 @@ interface MqttConfig {
 const SettingsMqtt: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [mqttEnabled, setMqttEnabled] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connected');
 
   // Mock current MQTT configuration
@@ -73,26 +71,7 @@ const SettingsMqtt: React.FC = () => {
 
   const handleReset = () => {
     form.setFieldsValue(currentConfig);
-    setMqttEnabled(currentConfig.enabled);
     message.info('Settings reset to current values');
-  };
-
-  const handleTestConnection = async () => {
-    setConnectionStatus('connecting');
-    message.loading({ content: 'Testing MQTT connection...', key: 'test' });
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setConnectionStatus('connected');
-      message.success({ content: 'MQTT connection test successful!', key: 'test', duration: 2 });
-    } catch {
-      setConnectionStatus('disconnected');
-      message.error({ content: 'MQTT connection test failed', key: 'test', duration: 2 });
-    }
-  };
-
-  const handleDisconnect = async () => {
-    setConnectionStatus('disconnected');
-    message.info('MQTT disconnected');
   };
 
   React.useEffect(() => {
@@ -136,13 +115,6 @@ const SettingsMqtt: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      <Alert
-        message="Under Development"
-        description="This page is currently under development. Features may be incomplete or subject to change."
-        type="warning"
-        showIcon
-        style={{ marginBottom: 24 }}
-      />
       {/* MQTT Connection Status */}
       <Card 
         bordered 
@@ -167,7 +139,7 @@ const SettingsMqtt: React.FC = () => {
           <Col span={8}>
             <Space direction="vertical" size={4}>
               <Text type="secondary" style={{ fontSize: 12 }}>Broker Address</Text>
-              <Text strong style={{ fontSize: 16, color: '#1890ff' }}>{currentConfig.broker}:{currentConfig.port}</Text>
+              <Text strong style={{ fontSize: 16, color: '#003A70' }}>{currentConfig.broker}:{currentConfig.port}</Text>
             </Space>
           </Col>
           <Col span={8}>
@@ -181,16 +153,11 @@ const SettingsMqtt: React.FC = () => {
 
       {/* MQTT Configuration */}
       <Card 
-        title={
-          <Space>
-            <Title level={4} style={{ margin: 0 }}>MQTT Configuration</Title>
-          </Space>
-        }
         bordered
         extra={
           <Space>
             <Button icon={<ReloadOutlined />} onClick={handleReset}>Reset</Button>
-            <Button type="primary" icon={<SaveOutlined />} loading={loading} onClick={() => form.submit()}>
+            <Button type="primary" icon={<SaveOutlined />} loading={loading} onClick={() => form.submit()} style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}>
               Save Changes
             </Button>
           </Space>
@@ -202,281 +169,158 @@ const SettingsMqtt: React.FC = () => {
           onFinish={handleSave}
           initialValues={currentConfig}
         >
-          {/* MQTT Enable Toggle */}
-          <Form.Item 
-            label="Enable MQTT" 
-            name="enabled"
-            valuePropName="checked"
-          >
-            <Switch 
-              checked={mqttEnabled}
-              onChange={setMqttEnabled}
-              checkedChildren="Enabled"
-              unCheckedChildren="Disabled"
-            />
-          </Form.Item>
-
-          <Divider orientation="left">Broker Configuration</Divider>
+          <Divider orientation="left" style={{ marginTop: 0 }}>Broker Configuration</Divider>
 
           <Row gutter={16}>
             <Col span={16}>
               <Form.Item
                 label="Broker Address"
                 name="broker"
-                rules={[
-                  { required: mqttEnabled, message: 'Please input broker address' },
-                ]}
+                rules={[{ required: true, message: 'Required' }]}
               >
-                <Input 
-                  placeholder="mqtt.example.com or 192.168.1.100" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                />
+                <Input placeholder="mqtt.example.com" />
               </Form.Item>
             </Col>
             <Col span={8}>
               <Form.Item
                 label="Port"
                 name="port"
-                rules={[
-                  { required: mqttEnabled, message: 'Please input port' },
-                ]}
+                rules={[{ required: true, message: 'Required' }]}
               >
-                <InputNumber 
-                  placeholder="1883" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                  style={{ width: '100%' }}
-                  min={1}
-                  max={65535}
-                />
+                <InputNumber placeholder="1883" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>
-
-          <Divider orientation="left">Authentication</Divider>
-
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                label="Client ID"
-                name="clientId"
-                rules={[
-                  { required: mqttEnabled, message: 'Please input client ID' },
-                ]}
-              >
-                <Input 
-                  placeholder="Unique client identifier" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Username"
-                name="username"
-              >
-                <Input 
-                  placeholder="MQTT username (optional)" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Password"
-                name="password"
-              >
-                <Input.Password 
-                  placeholder="MQTT password (optional)" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Divider orientation="left">Connection Settings</Divider>
-
-          <Row gutter={16}>
-            <Col span={6}>
-              <Form.Item
-                label="Keep Alive (seconds)"
-                name="keepAlive"
-                tooltip="Time interval to send ping to broker"
-              >
-                <InputNumber 
-                  placeholder="60" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                  style={{ width: '100%' }}
-                  min={1}
-                  max={3600}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item
-                label="QoS Level"
-                name="qos"
-                tooltip="Quality of Service: 0=At most once, 1=At least once, 2=Exactly once"
-              >
-                <InputNumber 
-                  placeholder="1" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                  style={{ width: '100%' }}
-                  min={0}
-                  max={2}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item
-                label="Reconnect Interval (s)"
-                name="reconnectInterval"
-                tooltip="Seconds to wait before reconnecting"
-              >
-                <InputNumber 
-                  placeholder="5" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                  style={{ width: '100%' }}
-                  min={1}
-                  max={300}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item
-                label="Connect Timeout (s)"
-                name="connectTimeout"
-                tooltip="Maximum time to wait for connection"
-              >
-                <InputNumber 
-                  placeholder="30" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                  style={{ width: '100%' }}
-                  min={5}
-                  max={300}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item 
-                label="Clean Session" 
-                name="cleanSession"
-                valuePropName="checked"
-                tooltip="Start a clean session without persistent data"
-              >
-                <Switch 
-                  disabled={!mqttEnabled}
-                  checkedChildren="Yes"
-                  unCheckedChildren="No"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item 
-                label="Retain Messages" 
-                name="retain"
-                valuePropName="checked"
-                tooltip="Broker retains last message for topic"
-              >
-                <Switch 
-                  disabled={!mqttEnabled}
-                  checkedChildren="Yes"
-                  unCheckedChildren="No"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Divider orientation="left">Last Will and Testament (LWT)</Divider>
 
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label="Will Topic"
-                name="willTopic"
-                tooltip="Topic for will message when device disconnects unexpectedly"
+                label="Client ID"
+                name="clientId"
+                rules={[{ required: true, message: 'Required' }]}
               >
-                <Input 
-                  placeholder="device/status" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                />
+                <Input placeholder="Client ID" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Username"
+                name="username"
+              >
+                <Input placeholder="Username" />
+              </Form.Item>
+            </Col>
+          </Row>
+          
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Password"
+                name="password"
+              >
+                <Input.Password placeholder="Password" />
+              </Form.Item>
+            </Col>
+             <Col span={6}>
+              <Form.Item
+                label="Keep Alive (s)"
+                name="keepAlive"
+              >
+                <InputNumber placeholder="60" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={6}>
               <Form.Item
-                label="Will QoS"
-                name="willQos"
+                label="QoS"
+                name="qos"
               >
-                <InputNumber 
-                  placeholder="1" 
-                  disabled={!mqttEnabled}
-                  size="large"
-                  style={{ width: '100%' }}
-                  min={0}
-                  max={2}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item 
-                label="Will Retain" 
-                name="willRetain"
-                valuePropName="checked"
-              >
-                <Switch 
-                  disabled={!mqttEnabled}
-                  checkedChildren="Yes"
-                  unCheckedChildren="No"
-                />
+                <InputNumber placeholder="1" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item
-            label="Will Message"
-            name="willMessage"
-            tooltip="Message sent when device disconnects unexpectedly"
-          >
-            <TextArea 
-              placeholder="offline" 
-              disabled={!mqttEnabled}
-              rows={2}
-            />
-          </Form.Item>
+          <Divider orientation="left" style={{ margin: '12px 0' }}>Connection Settings</Divider>
+
+          <Row gutter={16}>
+            <Col span={6}>
+              <Form.Item
+                label="Reconnect (s)"
+                name="reconnectInterval"
+              >
+                <InputNumber placeholder="5" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                label="Timeout (s)"
+                name="connectTimeout"
+              >
+                <InputNumber placeholder="30" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item 
+                label="Clean Session" 
+                name="cleanSession" 
+                valuePropName="checked"
+              >
+                <Switch checkedChildren="Yes" unCheckedChildren="No" />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item 
+                label="Retain" 
+                name="retain" 
+                valuePropName="checked"
+              >
+                <Switch checkedChildren="Yes" unCheckedChildren="No" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Divider orientation="left" style={{ margin: '12px 0' }}>Last Will (LWT)</Divider>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item
+                label="Will Topic"
+                name="willTopic"
+              >
+                <Input placeholder="Topic" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                label="Will Message"
+                name="willMessage"
+              >
+                <Input placeholder="Message" />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item
+                label="Will QoS"
+                name="willQos"
+              >
+                <InputNumber placeholder="1" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item 
+                label="Will Retain" 
+                name="willRetain" 
+                valuePropName="checked"
+              >
+                <Switch checkedChildren="Yes" unCheckedChildren="No" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Divider />
 
-          <Space size={12}>
-            <Button 
-              type="default" 
-              onClick={handleTestConnection}
-              disabled={!mqttEnabled || connectionStatus === 'connecting'}
-            >
-              Test Connection
-            </Button>
-            {connectionStatus === 'connected' && (
-              <Button 
-                danger
-                onClick={handleDisconnect}
-                disabled={!mqttEnabled}
-              >
-                Disconnect
-              </Button>
-            )}
+          <Space>
             <Text type="secondary" style={{ fontSize: 12 }}>
-              Changes will take effect after saving and reconnecting
+              Changes will take effect after saving and may require device restart
             </Text>
           </Space>
         </Form>
