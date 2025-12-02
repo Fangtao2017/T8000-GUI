@@ -35,7 +35,6 @@ import {
 	RedoOutlined,
 	PoweroffOutlined,
 	SearchOutlined,
-	FilterOutlined,
 	RightOutlined,
 	ClockCircleOutlined,
 	EditOutlined
@@ -83,7 +82,6 @@ const Overview: React.FC = () => {
 	
 	// Filter states
 	const [searchText, setSearchText] = useState('');
-	const [modelFilter, setModelFilter] = useState<string>('all');
 	const [statusFilter, setStatusFilter] = useState<string>('all');
 
 	// Device Modal states
@@ -110,13 +108,6 @@ const Overview: React.FC = () => {
 	const mqttConnected = true;
 	const networkOk = true;
 	
-	// Get unique device models for filter options
-	const deviceModels = useMemo(() => {
-		const models = new Set(allDevices.map(d => d.model));
-		return Array.from(models).sort();
-	}, []);
-
-	
 	// Filter and sort devices
 	const filteredAndSortedDevices = useMemo(() => {
 		let filtered = [...allDevices];
@@ -129,11 +120,6 @@ const Overview: React.FC = () => {
 				device.model.toLowerCase().includes(search) ||
 				device.status.toLowerCase().includes(search)
 			);
-		}
-		
-		// Apply model filter
-		if (modelFilter !== 'all') {
-			filtered = filtered.filter(device => device.model === modelFilter);
 		}
 		
 		// Apply status filter
@@ -149,7 +135,7 @@ const Overview: React.FC = () => {
 		});
 		
 		return filtered;
-	}, [searchText, modelFilter, statusFilter]);
+	}, [searchText, statusFilter]);
 
 	// Controllable devices
 	const controllableDevices = useMemo(() => {

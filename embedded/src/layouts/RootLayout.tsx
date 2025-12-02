@@ -1,7 +1,7 @@
 // 逐行讲解版 RootLayout.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Layout } from 'antd'; // Antd 布局组件：Header/Sider/Content
-import { Outlet } from 'react-router-dom'; // 渲染子路由
+import { Outlet, useNavigate } from 'react-router-dom'; // 渲染子路由
 import SecondaryNav from '../components/SecondaryNav'; // 二级导航
 import TopNav from '../components/TopNav'; // 顶部导航
 
@@ -9,6 +9,15 @@ import TopNav from '../components/TopNav'; // 顶部导航
 const { Header, Content } = Layout;
 
 const RootLayout: React.FC = () => {
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		const user = localStorage.getItem('currentUser');
+		if (!user) {
+			navigate('/login');
+		}
+	}, [navigate]);
+
 	return (
 		<Layout style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 			{/* 顶部区域：放 Logo、标题、右侧占位（用户、设置等） */}

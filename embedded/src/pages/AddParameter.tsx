@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Space, Row, Col, Typography, message, Select, InputNumber, Divider, Steps } from 'antd';
-import { PlusOutlined, SettingOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, SettingOutlined, InfoCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -91,6 +92,7 @@ const doDefaultOptions = [
 
 const AddParameter: React.FC = () => {
 	const [form] = Form.useForm();
+	const navigate = useNavigate();
 	const [loading, setLoading] = useState(false);
 	const [currentStep, setCurrentStep] = useState(0);
 	const sourceType = Form.useWatch('sourceType', form);
@@ -455,9 +457,17 @@ const AddParameter: React.FC = () => {
 		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#fff' }}>
 			<div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
 				<div style={{ maxWidth: 1200, margin: '0 auto' }}>
-					<Title level={3}>
-						<PlusOutlined /> Supplement Add Parameter
-					</Title>
+					<div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+						<Button 
+							type="link" 
+							icon={<ArrowLeftOutlined style={{ fontSize: '20px' }} />} 
+							onClick={() => navigate('/devices/parameters')} 
+							style={{ color: '#000', marginRight: 8, padding: 0 }} 
+						/>
+						<Title level={3} style={{ margin: 0 }}>
+							<PlusOutlined /> Supplement Add Parameter
+						</Title>
+					</div>
 					<Paragraph type="secondary">
 						Add a single parameter to an existing model.
 					</Paragraph>

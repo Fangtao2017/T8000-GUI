@@ -87,23 +87,28 @@ const TopNav: React.FC = () => {
     const effectivePath = relativePath === '' ? '/' : relativePath;
 
     // Home mapping
-    if (effectivePath === '/' || effectivePath.startsWith('/analysis') || effectivePath.startsWith('/log') || effectivePath.startsWith('/monitor')) {
+    if (effectivePath === '/') {
       return ['home'];
     }
 
-    // Device Management
+    // Report
+    if (effectivePath.startsWith('/analysis') || effectivePath.startsWith('/log')) {
+      return ['report'];
+    }
+
+    // Sensor Setting (was Device Management)
     if (effectivePath.startsWith('/devices') || effectivePath.startsWith('/settings/modbus') || effectivePath.startsWith('/configuration/add-model') || effectivePath.startsWith('/configuration/add-parameter')) {
-      return ['device-management'];
+      return ['sensor-setting'];
     }
     
-    // Logic Management
-    if (effectivePath.startsWith('/alarms') || effectivePath.startsWith('/rules') || effectivePath.startsWith('/configuration/add-rule') || effectivePath.startsWith('/configuration/add-alarm')) {
-      return ['logic-management'];
+    // Monitor & Control (was Logic Management)
+    if (effectivePath.startsWith('/monitor') || effectivePath.startsWith('/alarms') || effectivePath.startsWith('/rules') || effectivePath.startsWith('/configuration/add-rule') || effectivePath.startsWith('/configuration/add-alarm')) {
+      return ['monitor-control'];
     }
     
     // System Configuration
     if (effectivePath.startsWith('/settings') || effectivePath.startsWith('/account')) {
-      return ['communication-management'];
+      return ['system-configuration'];
     }
 
     return [];
@@ -232,10 +237,11 @@ const TopNav: React.FC = () => {
 
           {/* Main Navigation Menu */}
           <Flex style={{ flex: 1, height: '100%' }} align="center" justify="flex-start">
-            {renderNavItem('home', 'T8000', <HomeOutlined />, undefined, '/')}
-            {renderNavItem('device-management', 'Connected Sensor', <SettingOutlined />, 'device-management', '/devices')}
-            {renderNavItem('logic-management', 'Logic', <ControlOutlined />, 'logic-management', '/alarms')}
-            {renderNavItem('communication-management', 'System', <ApiOutlined />, 'communication-management', '/settings/network')}
+            {renderNavItem('home', 'Home', <HomeOutlined />, undefined, '/')}
+            {renderNavItem('report', 'Report', <SettingOutlined />, 'report', '/analysis')}
+            {renderNavItem('sensor-setting', 'Sensor Setting', <SettingOutlined />, 'sensor-setting', '/devices')}
+            {renderNavItem('monitor-control', 'Monitor & Control', <ControlOutlined />, 'monitor-control', '/monitor')}
+            {renderNavItem('system-configuration', 'System', <ApiOutlined />, 'system-configuration', '/settings/network')}
           </Flex>
         </Flex>
         

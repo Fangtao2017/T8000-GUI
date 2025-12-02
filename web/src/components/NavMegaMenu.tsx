@@ -18,7 +18,7 @@ import type { MenuProps } from 'antd';
 const { Title, Paragraph } = Typography;
 const { useToken } = theme;
 
-export type MenuSectionType = 'device-management' | 'logic-management' | 'communication-management';
+export type MenuSectionType = 'report' | 'sensor-setting' | 'monitor-control' | 'system-configuration';
 
 interface SubPageItem {
   key: string;
@@ -47,7 +47,26 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, deviceId, onNavigate
   };
 
   // Data Definitions
-  const deviceManagementItems: SubPageItem[] = [
+  const reportItems: SubPageItem[] = [
+    {
+      key: 'analysis',
+      label: 'Analysis',
+      icon: <ArrowRightOutlined />, // Using generic icon as LineChartOutlined is not imported
+      path: '/analysis',
+      description: 'Analyze device data trends and historical performance.',
+      features: ['Trend Analysis', 'Historical Data', 'Performance Metrics']
+    },
+    {
+      key: 'log',
+      label: 'Log',
+      icon: <ArrowRightOutlined />, // Using generic icon
+      path: '/log',
+      description: 'View system and device logs for troubleshooting and auditing.',
+      features: ['System Logs', 'Device Logs', 'Audit Trail']
+    }
+  ];
+
+  const sensorSettingItems: SubPageItem[] = [
     {
       key: 'device-list',
       label: 'Sensor',
@@ -74,7 +93,7 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, deviceId, onNavigate
     },
     {
       key: 'modbus-setting',
-      label: 'Modbus',
+      label: 'Source Interface',
       icon: <ClusterOutlined />,
       path: '/settings/modbus',
       description: 'Configure Modbus communication parameters including baud rate, parity, and slave IDs for industrial integration.',
@@ -106,7 +125,15 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, deviceId, onNavigate
     }
   ];
 
-  const logicManagementItems: SubPageItem[] = [
+  const monitorControlItems: SubPageItem[] = [
+    {
+      key: 'monitor',
+      label: 'Alarm & Rule Status',
+      icon: <BellOutlined />,
+      path: '/monitor',
+      description: 'Monitor the status of alarms and rules in real-time.',
+      features: ['Sensor Monitoring', 'Status Overview']
+    },
     {
       key: 'alarm-setting',
       label: 'Alarm Setting',
@@ -141,7 +168,7 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, deviceId, onNavigate
     }
   ];
 
-  const communicationManagementItems: SubPageItem[] = [
+  const systemConfigurationItems: SubPageItem[] = [
     {
       key: 'network-setting',
       label: 'Network Setting',
@@ -171,9 +198,10 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, deviceId, onNavigate
   // Determine items based on section
   const getItems = () => {
     switch (section) {
-      case 'device-management': return deviceManagementItems;
-      case 'logic-management': return logicManagementItems;
-      case 'communication-management': return communicationManagementItems;
+      case 'report': return reportItems;
+      case 'sensor-setting': return sensorSettingItems;
+      case 'monitor-control': return monitorControlItems;
+      case 'system-configuration': return systemConfigurationItems;
       default: return [];
     }
   };

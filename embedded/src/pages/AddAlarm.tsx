@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Card, Form, Input, Button, Space, Row, Col, Typography, message, Select, AutoComplete, Divider } from 'antd';
-import { InfoCircleOutlined, BellOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined, BellOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { mockDevices, mockParameters, operatorOptions } from '../data/mockData';
 
 const { Title, Text, Paragraph } = Typography;
 
 const AddAlarm: React.FC = () => {
 	const [form] = Form.useForm();
+	const navigate = useNavigate();
 	const [parameterOptions, setParameterOptions] = useState<{ value: string; label: string }[]>([]);
 
 	const handleDeviceSearch = (value: string) => {
@@ -40,9 +42,17 @@ const AddAlarm: React.FC = () => {
 		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#fff' }}>
 			<div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
 				<div style={{ maxWidth: 1200, margin: '0 auto' }}>
-					<Title level={3}>
-						<BellOutlined /> Add Alarm
-					</Title>
+					<div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+						<Button 
+							type="link" 
+							icon={<ArrowLeftOutlined style={{ fontSize: '20px' }} />} 
+							onClick={() => navigate('/alarms')} 
+							style={{ color: '#000', marginRight: 8, padding: 0 }} 
+						/>
+						<Title level={3} style={{ margin: 0 }}>
+							<BellOutlined /> Add Alarm
+						</Title>
+					</div>
 					<Paragraph type="secondary">
 						Create monitoring alarms for device parameters
 					</Paragraph>
@@ -142,6 +152,9 @@ const AddAlarm: React.FC = () => {
 
 								<div style={{ marginTop: 24, textAlign: 'right' }}>
 									<Space>
+										<Button size="large" onClick={() => navigate('/configuration/add-rule')}>
+											Advanced?
+										</Button>
 										<Button size="large" onClick={handleReset}>
 											Reset
 										</Button>

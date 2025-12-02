@@ -33,14 +33,17 @@ const SecondaryNav: React.FC = () => {
 		const relativePath = deviceId ? path.replace(`/device/${deviceId}`, '') : path;
 		const effectivePath = relativePath === '' ? '/' : relativePath;
 
-		if (effectivePath === '/' || effectivePath.startsWith('/analysis') || effectivePath.startsWith('/log') || effectivePath.startsWith('/monitor')) {
+		if (effectivePath === '/') {
 			return 'home';
 		}
-		if (effectivePath.startsWith('/devices') || effectivePath.startsWith('/settings/modbus') || effectivePath.startsWith('/configuration/add-model') || effectivePath.startsWith('/configuration/add-parameter')) {
-			return 'connected-sensor';
+		if (effectivePath.startsWith('/analysis') || effectivePath.startsWith('/log')) {
+			return 'report';
 		}
-		if (effectivePath.startsWith('/alarms') || effectivePath.startsWith('/rules') || effectivePath.startsWith('/configuration/add-rule') || effectivePath.startsWith('/configuration/add-alarm')) {
-			return 'logic-configuration';
+		if (effectivePath.startsWith('/devices') || effectivePath.startsWith('/settings/modbus') || effectivePath.startsWith('/configuration/add-model') || effectivePath.startsWith('/configuration/add-parameter')) {
+			return 'sensor-setting';
+		}
+		if (effectivePath.startsWith('/monitor') || effectivePath.startsWith('/alarms') || effectivePath.startsWith('/rules') || effectivePath.startsWith('/configuration/add-rule') || effectivePath.startsWith('/configuration/add-alarm')) {
+			return 'monitor-control';
 		}
 		if (effectivePath.startsWith('/settings') || effectivePath.startsWith('/account')) {
 			return 'system-configuration';
@@ -51,7 +54,18 @@ const SecondaryNav: React.FC = () => {
 	const getMenuItems = () => {
 		const section = getSection();
 
-		if (section === 'connected-sensor') {
+		if (section === 'home') {
+			return [];
+		}
+
+		if (section === 'report') {
+			return [
+				{ key: 'analysis', icon: <LineChartOutlined />, label: 'Analysis', onClick: () => navigate(getPath('/analysis')) },
+				{ key: 'log', icon: <FileTextOutlined />, label: 'Log', onClick: () => navigate(getPath('/log')) },
+			];
+		}
+
+		if (section === 'sensor-setting') {
 			return [
 				{ key: 'device-list', label: 'Sensor', icon: <SettingOutlined />, onClick: () => navigate(getPath('/devices')) },
 				{ key: 'model-setting', label: 'Model', icon: <BlockOutlined />, onClick: () => navigate(getPath('/devices/models')) },
@@ -60,8 +74,9 @@ const SecondaryNav: React.FC = () => {
 			];
 		}
 
-		if (section === 'logic-configuration') {
+		if (section === 'monitor-control') {
 			return [
+				{ key: 'monitor', icon: <AlertOutlined />, label: 'Alarm & Rule Status', onClick: () => navigate(getPath('/monitor')) },
 				{ key: 'alarm-setting', label: 'Alarm', icon: <BellOutlined />, onClick: () => navigate(getPath('/alarms')) },
 				{ key: 'rules-setting', label: 'Rules', icon: <ControlOutlined />, onClick: () => navigate(getPath('/rules')) },
 			];
@@ -75,13 +90,7 @@ const SecondaryNav: React.FC = () => {
 			];
 		}
 
-		// Default Home items
-		return [
-			{ key: 'overview', icon: <HomeOutlined />, label: 'Overview', onClick: () => navigate(getPath('/')) },
-			{ key: 'analysis', icon: <LineChartOutlined />, label: 'Analysis', onClick: () => navigate(getPath('/analysis')) },
-			{ key: 'log', icon: <FileTextOutlined />, label: 'Log', onClick: () => navigate(getPath('/log')) },
-			{ key: 'monitor', icon: <AlertOutlined />, label: 'Alarm & Rule Status', onClick: () => navigate(getPath('/monitor')) },
-		];
+		return [];
 	};
 
 	// Determine selected key based on path
@@ -121,26 +130,28 @@ const SecondaryNav: React.FC = () => {
 		const relativePath = deviceId ? path.replace(`/device/${deviceId}`, '') : path;
 		const effectivePath = relativePath === '' ? '/' : relativePath;
 
-		// Home (T8000)
-		if (effectivePath === '/') return 'T8000 gateway / T8000 / Overview';
-		if (effectivePath.startsWith('/analysis')) return 'T8000 gateway / T8000 / Analysis';
-		if (effectivePath.startsWith('/log')) return 'T8000 gateway / T8000 / Log';
-		if (effectivePath.startsWith('/monitor')) return 'T8000 gateway / T8000 / Alarm & Rule Status';
+		// Home
+		if (effectivePath === '/') return 'T8000 gateway / Home / Overview';
 		
-		// Connected Sensor
-		if (effectivePath === '/devices') return 'T8000 gateway / Connected Sensor / Sensor';
-		if (effectivePath === '/devices/models') return 'T8000 gateway / Connected Sensor / Model';
-		if (effectivePath === '/devices/parameters') return 'T8000 gateway / Connected Sensor / Parameter';
-		if (effectivePath === '/settings/modbus') return 'T8000 gateway / Connected Sensor / Source Interface';
-		if (effectivePath === '/devices/add') return 'T8000 gateway / Connected Sensor / Add Device';
-		if (effectivePath === '/configuration/add-model') return 'T8000 gateway / Connected Sensor / Add Model';
-		if (effectivePath === '/configuration/add-parameter') return 'T8000 gateway / Connected Sensor / Add Parameter';
+		// Report
+		if (effectivePath.startsWith('/analysis')) return 'T8000 gateway / Report / Analysis';
+		if (effectivePath.startsWith('/log')) return 'T8000 gateway / Report / Log';
 		
-		// Logic
-		if (effectivePath === '/alarms') return 'T8000 gateway / Logic / Alarm';
-		if (effectivePath === '/rules') return 'T8000 gateway / Logic / Rules';
-		if (effectivePath === '/configuration/add-rule') return 'T8000 gateway / Logic / Add Rule';
-		if (effectivePath === '/configuration/add-alarm') return 'T8000 gateway / Logic / Add Alarm';
+		// Sensor Setting
+		if (effectivePath === '/devices') return 'T8000 gateway / Sensor Setting / Sensor';
+		if (effectivePath === '/devices/models') return 'T8000 gateway / Sensor Setting / Model';
+		if (effectivePath === '/devices/parameters') return 'T8000 gateway / Sensor Setting / Parameter';
+		if (effectivePath === '/settings/modbus') return 'T8000 gateway / Sensor Setting / Source Interface';
+		if (effectivePath === '/devices/add') return 'T8000 gateway / Sensor Setting / Add Device';
+		if (effectivePath === '/configuration/add-model') return 'T8000 gateway / Sensor Setting / Add Model';
+		if (effectivePath === '/configuration/add-parameter') return 'T8000 gateway / Sensor Setting / Add Parameter';
+		
+		// Monitor & Control
+		if (effectivePath.startsWith('/monitor')) return 'T8000 gateway / Monitor & Control / Alarm & Rule Status';
+		if (effectivePath === '/alarms') return 'T8000 gateway / Monitor & Control / Alarm';
+		if (effectivePath === '/rules') return 'T8000 gateway / Monitor & Control / Rules';
+		if (effectivePath === '/configuration/add-rule') return 'T8000 gateway / Monitor & Control / Add Rule';
+		if (effectivePath === '/configuration/add-alarm') return 'T8000 gateway / Monitor & Control / Add Alarm';
 		
 		// System
 		if (effectivePath === '/settings/network') return 'T8000 gateway / System / Network';
@@ -148,8 +159,13 @@ const SecondaryNav: React.FC = () => {
 		if (effectivePath === '/settings/mqtt') return 'T8000 gateway / System / MQTT';
 		if (effectivePath.startsWith('/account')) return 'T8000 gateway / System / Local Account';
 		
-		return 'T8000 gateway / T8000 / Overview';
+		return 'T8000 gateway / Home / Overview';
 	};
+
+	const section = getSection();
+	if (section === 'home') {
+		return null;
+	}
 
 	return (
 		<div style={{ background: '#ffffff', borderBottom: '1px solid #e8e8e8', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>

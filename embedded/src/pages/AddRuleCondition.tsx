@@ -1,6 +1,7 @@
 import React from 'react';
 import { Form, Input, Button, Space, Row, Col, Typography, Select, AutoComplete, Divider } from 'antd';
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import type { FormInstance } from 'antd/es/form';
 import { mockDevices, mockParameters, timerStateOptions, operatorOptions, mockSavedConditions } from '../data/mockData';
 
@@ -23,6 +24,8 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 	onNext,
 	onReset
 }) => {
+	const navigate = useNavigate();
+
 	return (
 		<>
 			<Title level={4}>Step 1: Set Trigger Conditions</Title>
@@ -412,6 +415,9 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 
 			<div style={{ marginTop: 24, textAlign: 'right' }}>
 				<Space>
+					<Button size="large" onClick={() => navigate('/configuration/add-alarm')}>
+						Basic Alarm?
+					</Button>
 					<Button size="large" onClick={onReset}>
 						Reset
 					</Button>

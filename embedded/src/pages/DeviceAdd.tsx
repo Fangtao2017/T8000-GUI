@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Form, Input, Button, Space, Steps, Row, Col, Tag, Typography, Divider, message, Table } from 'antd';
-import { PlusOutlined, CheckCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, CheckCircleOutlined, InfoCircleOutlined, ArrowLeftOutlined, GlobalOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -10,7 +11,7 @@ interface DeviceTemplate {
 	brand: string;
 	parameters: string[];
 	description: string;
-	icon: string;
+	icon: React.ReactNode;
 }
 
 // 预定义的设备模板（内置 Model）
@@ -21,7 +22,7 @@ const deviceTemplates: Record<string, DeviceTemplate> = {
 		brand: 'TCAM',
 		parameters: [],
 		description: 'Gateway',
-		icon: '🌐'
+		icon: <GlobalOutlined style={{ color: '#1890ff' }} />
 	},
 	'T-AOM-01': {
 		model: 'T-AOM-01',
@@ -163,6 +164,7 @@ const deviceTemplates: Record<string, DeviceTemplate> = {
 
 const DeviceAdd: React.FC = () => {
 	const [form] = Form.useForm();
+	const navigate = useNavigate();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [selectedModel, setSelectedModel] = useState<string>('');
 	const [loading, setLoading] = useState(false);
@@ -290,9 +292,17 @@ const DeviceAdd: React.FC = () => {
 					display: currentStep === 0 ? 'flex' : 'block',
 					flexDirection: 'column'
 				}}>
-					<Title level={3}>
-						<PlusOutlined /> Add New Device
-					</Title>
+					<div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+						<Button 
+							type="link" 
+							icon={<ArrowLeftOutlined style={{ fontSize: '20px' }} />} 
+							onClick={() => navigate('/devices')} 
+							style={{ color: '#000', marginRight: 8, padding: 0 }} 
+						/>
+						<Title level={3} style={{ margin: 0 }}>
+							<PlusOutlined /> Add New Device
+						</Title>
+					</div>
 					<Paragraph type="secondary">
 						Simplified device onboarding - Select a model, fill basic info, and we'll auto-configure all parameters and mappings for you.
 					</Paragraph>
@@ -333,7 +343,6 @@ const DeviceAdd: React.FC = () => {
 									}}
 								>
 								<Space size={12} align="center" style={{ width: '100%' }}>
-									<div style={{ fontSize: 24, lineHeight: 1 }}>{template.icon}</div>
 									<Text strong style={{ fontSize: 14, minWidth: 100 }}>
 										{template.model}
 									</Text>
@@ -418,7 +427,7 @@ const DeviceAdd: React.FC = () => {
 								<Space direction="vertical" size="small" style={{ width: '100%' }}>
 									<Text strong>Selected Model:</Text>
 									<Tag style={{ fontSize: 14, background: '#f0f0f0', border: '1px solid #d9d9d9', color: '#595959' }}>
-										{selectedTemplate?.icon} {selectedTemplate?.model}
+										{selectedTemplate?.model}
 									</Tag>
 
 									<Divider style={{ margin: '12px 0' }} />										<Text strong>Parameters to be auto-linked:</Text>

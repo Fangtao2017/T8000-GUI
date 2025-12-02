@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Flex, Typography, Dropdown, Avatar, Button, ConfigProvider } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Flex, Typography, Dropdown, Avatar, ConfigProvider } from 'antd';
 import { 
   UserOutlined,
   LogoutOutlined,
@@ -9,10 +9,9 @@ import {
   GlobalOutlined,
   DownOutlined,
   HomeOutlined,
-  CloudOutlined,
   LineChartOutlined
 } from '@ant-design/icons';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { MenuProps } from 'antd';
 import tcamLogo from '../assets/tcam-logo.png';
 
@@ -22,6 +21,14 @@ const TopNav: React.FC = () => {
   // const { deviceId } = useParams<{ deviceId: string }>(); // Not needed in embedded
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   const getPath = (path: string) => {
     return path;
@@ -30,11 +37,14 @@ const TopNav: React.FC = () => {
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     if (key === 'profile') {
       navigate(getPath('/account'));
+    } else if (key === 'user-management') {
+      navigate(getPath('/user-management'));
     } else if (key === 'settings') {
       navigate(getPath('/settings'));
     } else if (key === 'logout') {
       // Handle logout logic
       console.log('Logout clicked');
+      localStorage.removeItem('currentUser');
       navigate('/login'); // Redirect to login instead of cloud
     }
   };
@@ -54,8 +64,8 @@ const TopNav: React.FC = () => {
       key: 'user-info',
       label: (
         <div style={{ padding: '4px 0', minWidth: 150 }}>
-          <Typography.Text strong style={{ display: 'block', fontSize: 14 }}>Admin User</Typography.Text>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>Administrator</Typography.Text>
+          <Typography.Text strong style={{ display: 'block', fontSize: 14 }}>{currentUser?.fullName || 'Guest'}</Typography.Text>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>{currentUser?.role?.toUpperCase() || 'Visitor'}</Typography.Text>
         </div>
       ),
       disabled: true,
@@ -66,9 +76,14 @@ const TopNav: React.FC = () => {
     },
     {
       key: 'profile',
-      label: 'Account Settings',
+      label: 'Security',
       icon: <SettingOutlined />
     },
+    ...(currentUser?.role === 'admin' ? [{
+      key: 'user-management',
+      label: 'User Management',
+      icon: <UserOutlined />
+    }] : []),
     {
       key: 'logout',
       label: 'Sign Out',

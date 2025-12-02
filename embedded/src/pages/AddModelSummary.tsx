@@ -91,10 +91,6 @@ const AddModelSummary: React.FC<AddModelSummaryProps> = ({ form, onPrevious, onS
 				<Descriptions.Item label="Brand">{values.brand}</Descriptions.Item>
 				<Descriptions.Item label="Model Name">{values.model}</Descriptions.Item>
 				<Descriptions.Item label="Device Type">{values.dev_type}</Descriptions.Item>
-				<Descriptions.Item label="Hardware Interface">
-					{values.interface}
-				</Descriptions.Item>
-				<Descriptions.Item label="Icon">{values.icon}</Descriptions.Item>
 			</Descriptions>
 
 			<Divider />

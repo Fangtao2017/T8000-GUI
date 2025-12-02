@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Steps, Form, message, Typography, Button } from 'antd';
-import { PlusOutlined, InfoCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, InfoCircleOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import AddModelBasic from './AddModelBasic';
 import AddModelParameters from './AddModelParameters';
 import AddModelSummary from './AddModelSummary';
@@ -10,12 +11,13 @@ const { Title, Paragraph } = Typography;
 const AddModel: React.FC = () => {
 	const [currentStep, setCurrentStep] = useState(0);
 	const [form] = Form.useForm();
+	const navigate = useNavigate();
 
 	const next = async () => {
 		try {
 			// Validate fields for the current step before moving forward
 			if (currentStep === 0) {
-				await form.validateFields(['brand', 'model', 'dev_type', 'interface', 'icon']);
+				await form.validateFields(['brand', 'model', 'dev_type']);
 			}
 			// Step 1 (Parameters) validation is handled within the component or loosely here
 			// We might want to ensure at least one parameter is added?
@@ -106,9 +108,17 @@ const AddModel: React.FC = () => {
 		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#fff' }}>
 			<div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
 				<div style={{ maxWidth: 1200, margin: '0 auto' }}>
-					<Title level={3}>
-						<PlusOutlined /> Add Model
-					</Title>
+					<div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+						<Button 
+							type="link" 
+							icon={<ArrowLeftOutlined style={{ fontSize: '20px' }} />} 
+							onClick={() => navigate('/devices/models')} 
+							style={{ color: '#000', marginRight: 8, padding: 0 }} 
+						/>
+						<Title level={3} style={{ margin: 0 }}>
+							<PlusOutlined /> Add Model
+						</Title>
+					</div>
 					<Paragraph type="secondary">
 						Create a new device model template with parameters configuration.
 					</Paragraph>
@@ -119,7 +129,7 @@ const AddModel: React.FC = () => {
 						<Steps.Step title="Summary" description="Review and create" icon={<CheckCircleOutlined />} />
 					</Steps>
 						
-					<Form form={form} layout="vertical" initialValues={{ icon: '💡', parameters: [] }}>
+					<Form form={form} layout="vertical" initialValues={{ parameters: [] }}>
 						<div className="steps-content">
 							{steps[currentStep].content}
 						</div>

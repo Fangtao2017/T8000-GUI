@@ -160,3 +160,30 @@ export const mockSavedControls = [
 		}
 	},
 ];
+
+export const mockUsers = [
+	{
+		id: 'user-001',
+		username: 'admin',
+		password: 'password123',
+		fullName: 'System Administrator',
+		role: 'admin',
+		permissions: ['all']
+	},
+	{
+		id: 'user-002',
+		username: 'operator1',
+		password: 'password123',
+		fullName: 'Operator One',
+		role: 'operator',
+		permissions: ['read', 'control']
+	},
+	{
+		id: 'user-003',
+		username: 'viewer1',
+		password: 'password123',
+		fullName: 'Viewer One',
+		role: 'readonly',
+		permissions: ['read']
+	}
+];

@@ -22,10 +22,13 @@ import SettingsNetwork from "./pages/settings/Network";
 import SettingsMqtt from "./pages/settings/Mqtt";
 import SettingsModbus from "./pages/settings/Modbus";
 import SettingsSystem from "./pages/settings/System";
+import Login from "./pages/Login";
+import UserManagement from "./pages/UserManagement";
 
 const App: React.FC = () => {
 return (
 <Routes>
+	<Route path="/login" element={<Login />} />
 	{/* Embedded Web - Single Device Layer */}
 	<Route path="/" element={<RootLayout />}>
 		<Route index element={<Home />} />
@@ -59,6 +62,7 @@ return (
 
 		{/* Account 页面 */}
 		<Route path="account" element={<Account />} />
+		<Route path="user-management" element={<UserManagement />} />
 
 		<Route path="*" element={<Navigate to="/" replace />} />
 	</Route>

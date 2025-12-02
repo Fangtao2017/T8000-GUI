@@ -5,7 +5,6 @@ import {
   BlockOutlined,
   FormOutlined,
   ClusterOutlined,
-  AppstoreAddOutlined,
   BellOutlined,
   ControlOutlined,
   WifiOutlined,
@@ -120,7 +119,7 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, onNavigate, onClose 
   const monitorControlItems: SubPageItem[] = [
     {
       key: 'realtime-monitor',
-      label: 'Real-time Monitoring',
+      label: 'Sensor Monitoring',
       icon: <DashboardOutlined />,
       path: '/realtime',
       description: 'Visualize real-time sensor data grouped by location or sensor type.',
@@ -132,7 +131,7 @@ const NavMegaMenu: React.FC<NavMegaMenuProps> = ({ section, onNavigate, onClose 
       icon: <BellOutlined />,
       path: '/monitor',
       description: 'Monitor the status of alarms and rules in real-time.',
-      features: ['Real-time Monitoring', 'Status Overview']
+      features: ['Sensor Monitoring', 'Status Overview']
     }
   ];
 

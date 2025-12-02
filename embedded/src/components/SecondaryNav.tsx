@@ -1,7 +1,6 @@
 import React from 'react';
 import { Menu, ConfigProvider } from 'antd';
 import { 
-	HomeOutlined, 
 	LineChartOutlined, 
 	FileTextOutlined, 
 	AlertOutlined,
@@ -15,7 +14,7 @@ import {
 	ApiOutlined,
 	DashboardOutlined
 } from '@ant-design/icons';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const SecondaryNav: React.FC = () => {
 	const navigate = useNavigate();
@@ -76,7 +75,7 @@ const SecondaryNav: React.FC = () => {
 
 		if (section === 'monitor-control') {
 			return [
-				{ key: 'realtime-monitor', icon: <DashboardOutlined />, label: 'Real-time Monitoring', onClick: () => navigate(getPath('/realtime')) },
+				{ key: 'realtime-monitor', icon: <DashboardOutlined />, label: 'Sensor Monitoring', onClick: () => navigate(getPath('/realtime')) },
 				{ key: 'monitor', icon: <AlertOutlined />, label: 'Alarm & Rule Status', onClick: () => navigate(getPath('/monitor')) },
 			];
 		}
@@ -149,7 +148,7 @@ const SecondaryNav: React.FC = () => {
 		if (effectivePath === '/configuration/add-alarm') return 'Sensor Setting / Add Alarm';
 		
 		// Monitor & Control
-		if (effectivePath === '/realtime') return 'Monitor & Control / Real-time Monitoring';
+		if (effectivePath === '/realtime') return 'Monitor & Control / Sensor Monitoring';
 		if (effectivePath.startsWith('/monitor')) return 'Monitor & Control / Alarm & Rule Status';
 		
 		// System

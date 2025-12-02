@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import t8000Icon from '../assets/T8000 outlined.png';
 
 dayjs.extend(relativeTime);
 
@@ -16,7 +17,7 @@ interface ModelData {
 	model: string;
 	type: string;
 	brand: string;
-	icon: string;
+	icon: React.ReactNode;
 	description: string;
 	parameterCount: number;
 	parameters: string[];
@@ -40,7 +41,7 @@ const AllModels: React.FC = () => {
 			model: 'T8000',
 			type: 'Gateway',
 			brand: 'TCAM',
-			icon: '🌐',
+			icon: t8000Icon,
 			description: 'Modbus',
 			parameterCount: 0,
 			parameters: [],
@@ -291,13 +292,6 @@ const AllModels: React.FC = () => {
 
 	const columns: ColumnsType<ModelData> = [
 		{
-			title: 'Icon',
-			dataIndex: 'icon',
-			key: 'icon',
-			width: 60,
-			render: (icon: string) => <span style={{ fontSize: 16 }}>{icon}</span>,
-		},
-		{
 			title: 'Model',
 			dataIndex: 'model',
 			key: 'model',
@@ -316,12 +310,6 @@ const AllModels: React.FC = () => {
 			title: 'Brand',
 			dataIndex: 'brand',
 			key: 'brand',
-		},
-		{
-			title: 'Hardware Interface',
-			dataIndex: 'description',
-			key: 'description',
-			render: (text: string) => <Tag>{text}</Tag>,
 		},
 		{
 			title: 'Parameters',

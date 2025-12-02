@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Form, Typography, Steps } from 'antd';
-import { InfoCircleOutlined, ControlOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Form, Typography, Steps, Button } from 'antd';
+import { InfoCircleOutlined, ControlOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import AddRuleCondition from './AddRuleCondition';
 import AddRuleControl from './AddRuleControl';
 import AddRuleSummary from './AddRuleSummary';
@@ -11,6 +12,7 @@ type ConditionType = 'device' | 'timer';
 
 const AddRule: React.FC = () => {
 	const [form] = Form.useForm();
+	const navigate = useNavigate();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [conditionType, setConditionType] = useState<ConditionType>('device');
 	const [controlType, setControlType] = useState<ConditionType>('device');
@@ -59,9 +61,17 @@ const AddRule: React.FC = () => {
 		<div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#fff' }}>
 			<div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
 				<div style={{ maxWidth: 1200, margin: '0 auto' }}>
-					<Title level={3}>
-						<ControlOutlined /> Add Rule
-					</Title>
+					<div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+						<Button 
+							type="link" 
+							icon={<ArrowLeftOutlined style={{ fontSize: '20px' }} />} 
+							onClick={() => navigate('/rules')} 
+							style={{ color: '#000', marginRight: 8, padding: 0 }} 
+						/>
+						<Title level={3} style={{ margin: 0 }}>
+							<ControlOutlined /> Add Rule
+						</Title>
+					</div>
 					<Paragraph type="secondary">
 						Create complex automation rules with conditions and actions
 					</Paragraph>

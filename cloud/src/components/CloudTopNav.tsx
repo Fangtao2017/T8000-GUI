@@ -1,45 +1,35 @@
 import React, { useState } from 'react';
-import { Flex, Typography, Dropdown, Avatar, Button, ConfigProvider } from 'antd';
+import { Flex, Typography, Dropdown, Avatar, ConfigProvider } from 'antd';
 import { 
   UserOutlined,
   LogoutOutlined,
   SettingOutlined,
+  DashboardOutlined,
+  DatabaseOutlined,
+  LineChartOutlined,
   ControlOutlined,
-  ApiOutlined,
+  TeamOutlined,
   GlobalOutlined,
-  DownOutlined,
-  HomeOutlined,
-  CloudOutlined
+  DownOutlined
 } from '@ant-design/icons';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { MenuProps } from 'antd';
 import tcamLogo from '../assets/tcam-logo.png';
-
-import NavMegaMenu from './NavMegaMenu';
-import type { MenuSectionType } from './NavMegaMenu';
 
 const CloudTopNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { deviceId } = useParams<{ deviceId: string }>();
-  const [activeMegaMenu, setActiveMegaMenu] = useState<MenuSectionType | null>(null);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
 
-  const getPath = (path: string) => {
-    if (!deviceId) return path;
-    return `/device/${deviceId}${path}`;
-  };
-
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     if (key === 'profile') {
-      navigate(getPath('/account'));
+      // navigate('/account');
     } else if (key === 'settings') {
-      navigate(getPath('/settings'));
+      // navigate('/settings');
     } else if (key === 'logout') {
-      // Handle logout logic
       console.log('Logout clicked');
-      navigate('/'); // Go back to cloud dashboard on logout
+      navigate('/'); 
     }
   };
 
@@ -83,40 +73,20 @@ const CloudTopNav: React.FC = () => {
   // Determine selected key based on path
   const getSelectedKey = () => {
     const path = location.pathname;
-    const relativePath = deviceId ? path.replace(`/device/${deviceId}`, '') : path;
-    const effectivePath = relativePath === '' ? '/' : relativePath;
-
-    // Home mapping
-    if (effectivePath === '/' || effectivePath.startsWith('/map') || effectivePath.startsWith('/batch-log') || effectivePath.startsWith('/alarm-status') || effectivePath.startsWith('/analysis') || effectivePath.startsWith('/log') || effectivePath.startsWith('/monitor')) {
-      return ['home'];
-    }
-
-    // Device Management
-    if (effectivePath.startsWith('/devices') || effectivePath.startsWith('/settings/modbus') || effectivePath.startsWith('/configuration/add-model') || effectivePath.startsWith('/configuration/add-parameter')) {
-      return ['device-management'];
-    }
     
-    // Logic Management
-    if (effectivePath.startsWith('/alarms') || effectivePath.startsWith('/rules') || effectivePath.startsWith('/configuration/add-rule') || effectivePath.startsWith('/configuration/add-alarm')) {
-      return ['logic-management'];
-    }
-    
-    // System Configuration
-    if (effectivePath.startsWith('/settings') || effectivePath.startsWith('/account')) {
-      return ['communication-management'];
-    }
+    if (path.startsWith('/home') || path === '/') return ['home'];
+    if (path.startsWith('/monitor')) return ['monitor'];
+    if (path.startsWith('/devices')) return ['devices'];
+    if (path.startsWith('/rules')) return ['rules'];
+    if (path.startsWith('/report')) return ['report'];
+    if (path.startsWith('/admin')) return ['admin'];
 
-    return [];
+    return ['home'];
   };
 
   const activeKeys = getSelectedKey();
 
-  const handleNavClick = (section: MenuSectionType, defaultPath: string) => {
-    navigate(getPath(defaultPath));
-    setActiveMegaMenu(section);
-  };
-
-  const renderNavItem = (key: string, label: string, icon: React.ReactNode, section?: MenuSectionType, path?: string) => {
+  const renderNavItem = (key: string, label: string, icon: React.ReactNode, path: string) => {
     const isActive = activeKeys.includes(key);
     const color = isActive ? '#8CC63F' : '#ffffff';
     
@@ -135,12 +105,7 @@ const CloudTopNav: React.FC = () => {
           transition: 'all 0.3s'
         }}
         onClick={() => {
-          if (section && path) {
-            handleNavClick(section, path);
-          } else if (path) {
-            navigate(getPath(path));
-            setActiveMegaMenu(null);
-          }
+          navigate(path);
         }}
       >
         {icon}
@@ -167,20 +132,6 @@ const CloudTopNav: React.FC = () => {
           .dropdown-trigger:hover {
             background-color: rgba(255,255,255,0.1);
           }
-          @keyframes slideDown {
-            from {
-              opacity: 0;
-              transform: translateY(-10px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
         `}
       </style>
       <Flex align="center" justify="space-between" style={{ 
@@ -198,7 +149,7 @@ const CloudTopNav: React.FC = () => {
             <Flex align="center" gap={12} style={{ 
               padding: '0 20px', 
               height: '100%',
-              width: 300, // Increased width for longer title
+              width: 300, 
               minWidth: 300,
               transition: 'all 0.2s',
             }}>
@@ -215,8 +166,6 @@ const CloudTopNav: React.FC = () => {
                 T8000 Cloud Platform
               </Typography.Title>
             </Flex>
-
-            {/* Return to Cloud Button REMOVED */}
           </Flex>
 
           {/* Separator Line */}
@@ -224,10 +173,12 @@ const CloudTopNav: React.FC = () => {
 
           {/* Main Navigation Menu */}
           <Flex style={{ flex: 1, height: '100%' }} align="center" justify="flex-start">
-            {renderNavItem('home', 'Home', <HomeOutlined />, undefined, '/')}
-            {renderNavItem('device-management', 'Related T8000', <SettingOutlined />, 'device-management', '/devices')}
-            {renderNavItem('logic-management', 'Logic', <ControlOutlined />, 'logic-management', '/alarms')}
-            {renderNavItem('communication-management', 'System', <ApiOutlined />, 'communication-management', '/settings/network')}
+            {renderNavItem('home', 'Home', <DashboardOutlined />, '/home')}
+            {renderNavItem('monitor', 'Monitor & Control', <GlobalOutlined />, '/monitor')}
+            {renderNavItem('devices', 'Devices', <DatabaseOutlined />, '/devices')}
+            {renderNavItem('rules', 'Rules & Alarms', <ControlOutlined />, '/rules')}
+            {renderNavItem('report', 'Report', <LineChartOutlined />, '/report')}
+            {renderNavItem('admin', 'Admin', <TeamOutlined />, '/admin')}
           </Flex>
         </Flex>
         
@@ -289,47 +240,6 @@ const CloudTopNav: React.FC = () => {
           </Dropdown>
         </Flex>
       </Flex>
-
-      {/* Mega Menu Overlay */}
-      {activeMegaMenu && (
-        <>
-          {/* Backdrop to close on click outside */}
-          <div 
-            style={{ 
-              position: 'fixed', 
-              top: '56px', 
-              left: 0, 
-              right: 0, 
-              bottom: 0, 
-              background: 'rgba(0,0,0,0.3)',
-              backdropFilter: 'blur(10px)',
-              zIndex: 998,
-              animation: 'fadeIn 0.3s ease-out'
-            }}
-            onClick={() => setActiveMegaMenu(null)}
-          />
-
-          <div style={{ 
-            position: 'absolute', 
-            top: '56px', // Height of TopNav
-            left: 0, 
-            right: 0, 
-            zIndex: 999,
-            animation: 'slideDown 0.3s ease-out',
-            transformOrigin: 'top center'
-          }}>
-            <NavMegaMenu 
-              section={activeMegaMenu} 
-              deviceId={deviceId} 
-              onNavigate={(p) => {
-                navigate(p);
-                setActiveMegaMenu(null);
-              }}
-              onClose={() => setActiveMegaMenu(null)}
-            />
-          </div>
-        </>
-      )}
     </>
   );
 };

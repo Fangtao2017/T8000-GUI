@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Card, Table, Button, Space, Tag, Badge, Row, Col, Typography, Progress, Input, Select, Modal, message, List, Switch, Descriptions, InputNumber } from 'antd';
+import { Card, Table, Button, Space, Tag, Badge, Row, Col, Typography, Input, Select, Modal, message, List, Switch, Descriptions, InputNumber } from 'antd';
 import { EyeOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, ArrowRightOutlined, FilterOutlined, ExportOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { type DeviceData, allDevices, parameterUnits, writableConfigs } from '../data/devicesData';
 import type { ColumnsType } from 'antd/es/table';
 
-const { Text } = Typography;
 const { Option } = Select;
 
 const { Search } = Input;
@@ -18,7 +17,7 @@ const Devices: React.FC = () => {
 	const [searchText, setSearchText] = useState('');
 	const [filterStatus, setFilterStatus] = useState<string>('all');
 	const [filterModel, setFilterModel] = useState<string>('all');
-	const [filterLocation, setFilterLocation] = useState<string>('all');
+	const [filterLocation] = useState<string>('all');
 	const [refreshing, setRefreshing] = useState(false);
 	
 	// Modal states
@@ -212,14 +211,12 @@ const Devices: React.FC = () => {
 
 	// Get unique values for filter options
 	const uniqueModels = Array.from(new Set(allDevices.map(d => d.model))).sort();
-	const uniqueLocations = Array.from(new Set(allDevices.map(d => d.location))).sort();
 
 	// Statistics based on filtered data
 	const totalDevices = filteredDevices.length;
 	const onlineDevices = filteredDevices.filter(d => d.status === 'online').length;
 	const offlineDevices = filteredDevices.filter(d => d.status === 'offline').length;
 	const activeAlarmCount = filteredDevices.filter(d => d.alarm_state === 'Active Alarm').length;
-	const errorStateCount = filteredDevices.filter(d => d.err_state === 'Error').length;
 	const connectionRate = totalDevices > 0 ? Math.round((onlineDevices / totalDevices) * 100) : 0;
 
 	// Helper for interval text
