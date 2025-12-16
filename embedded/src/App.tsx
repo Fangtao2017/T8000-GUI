@@ -18,6 +18,7 @@ import AddAlarm from "./pages/AddAlarm";
 import AddRule from "./pages/AddRule";
 import Settings from "./pages/Settings";
 import Account from "./pages/Account";
+import AccountDetails from "./pages/AccountDetails";
 import SettingsNetwork from "./pages/settings/Network";
 import SettingsMqtt from "./pages/settings/Mqtt";
 import SettingsModbus from "./pages/settings/Modbus";
@@ -62,6 +63,7 @@ return (
 
 		{/* Account 页面 */}
 		<Route path="account" element={<Account />} />
+		<Route path="account/details" element={<AccountDetails />} />
 		<Route path="user-management" element={<UserManagement />} />
 
 		<Route path="*" element={<Navigate to="/" replace />} />

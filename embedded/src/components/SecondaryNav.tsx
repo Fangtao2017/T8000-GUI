@@ -42,8 +42,11 @@ const SecondaryNav: React.FC = () => {
 		if (effectivePath.startsWith('/monitor') || effectivePath.startsWith('/realtime')) {
 			return 'monitor-control';
 		}
-		if (effectivePath.startsWith('/settings') || effectivePath.startsWith('/account')) {
+		if (effectivePath.startsWith('/settings')) {
 			return 'system-configuration';
+		}
+		if (effectivePath.startsWith('/account') || effectivePath.startsWith('/user-management')) {
+			return 'account';
 		}
 		return 'home';
 	};
@@ -82,8 +85,8 @@ const SecondaryNav: React.FC = () => {
 
 		if (section === 'system-configuration') {
 			return [
+				{ key: 'system-setting', label: 'T8000 Setting', icon: <SettingOutlined />, onClick: () => navigate(getPath('/settings/system')) },
 				{ key: 'network-setting', label: 'Network', icon: <WifiOutlined />, onClick: () => navigate(getPath('/settings/network')) },
-				{ key: 'system-setting', label: 'Firmware', icon: <SettingOutlined />, onClick: () => navigate(getPath('/settings/system')) },
 				{ key: 'mqtt-setting', label: 'MQTT', icon: <ApiOutlined />, onClick: () => navigate(getPath('/settings/mqtt')) },
 			];
 		}
@@ -153,7 +156,7 @@ const SecondaryNav: React.FC = () => {
 		
 		// System
 		if (effectivePath === '/settings/network') return 'System / Network';
-		if (effectivePath === '/settings/system') return 'System / Firmware';
+		if (effectivePath === '/settings/system') return 'System / T8000 Setting';
 		if (effectivePath === '/settings/mqtt') return 'System / MQTT';
 		if (effectivePath.startsWith('/account')) return 'System / Local Account';
 		
@@ -161,7 +164,7 @@ const SecondaryNav: React.FC = () => {
 	};
 
 	const section = getSection();
-	if (section === 'home') {
+	if (section === 'home' || section === 'account') {
 		return null;
 	}
 

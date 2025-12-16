@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flex, Typography, Dropdown, Avatar, ConfigProvider } from 'antd';
+import { Flex, Typography, Dropdown, Avatar, ConfigProvider, Tag } from 'antd';
 import { 
   UserOutlined,
   LogoutOutlined,
@@ -9,7 +9,9 @@ import {
   GlobalOutlined,
   DownOutlined,
   HomeOutlined,
-  LineChartOutlined
+  LineChartOutlined,
+  IdcardOutlined,
+  SafetyCertificateOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { MenuProps } from 'antd';
@@ -35,7 +37,9 @@ const TopNav: React.FC = () => {
   };
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
-    if (key === 'profile') {
+    if (key === 'account-details') {
+      navigate(getPath('/account/details'));
+    } else if (key === 'profile') {
       navigate(getPath('/account'));
     } else if (key === 'user-management') {
       navigate(getPath('/user-management'));
@@ -61,33 +65,75 @@ const TopNav: React.FC = () => {
 
   const userMenuItems: MenuProps['items'] = [
     {
-      key: 'user-info',
+      key: 'user-header',
       label: (
-        <div style={{ padding: '4px 0', minWidth: 150 }}>
-          <Typography.Text strong style={{ display: 'block', fontSize: 14 }}>{currentUser?.fullName || 'Guest'}</Typography.Text>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>{currentUser?.role?.toUpperCase() || 'Visitor'}</Typography.Text>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <Avatar 
+            size={48} 
+            icon={<UserOutlined />} 
+            style={{ 
+              backgroundColor: '#003A70',
+              flexShrink: 0,
+              marginTop: 2
+            }} 
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Typography.Text strong style={{ fontSize: 16, lineHeight: 1.2, color: '#001B34' }}>
+                {currentUser?.fullName || 'Guest'}
+              </Typography.Text>
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                {currentUser?.companyName || 'TCAM Technology'}
+              </Typography.Text>
+            </div>
+            
+            <div>
+              <Tag 
+                color={currentUser?.role === 'admin' ? 'volcano' : 'blue'} 
+                style={{ margin: 0, border: 'none', padding: '0 8px', fontSize: 11 }}
+              >
+                {currentUser?.role?.toUpperCase() || 'VISITOR'}
+              </Tag>
+            </div>
+          </div>
         </div>
       ),
       disabled: true,
-      style: { cursor: 'default', opacity: 1 }
+      style: { 
+        cursor: 'default', 
+        opacity: 1, 
+        padding: '24px 24px 20px', 
+        backgroundColor: '#fff'
+      }
     },
+    { type: 'divider', style: { margin: '4px 0' } },
     {
-      type: 'divider',
+      key: 'account-details',
+      label: 'Account Details',
+      icon: <IdcardOutlined style={{ fontSize: 16, width: 16 }} />,
+      style: { padding: '10px 24px', fontSize: 14 }
     },
     {
       key: 'profile',
-      label: 'Security',
-      icon: <SettingOutlined />
+      label: 'Security Settings',
+      icon: <SafetyCertificateOutlined style={{ fontSize: 16, width: 16 }} />,
+      style: { padding: '10px 24px', fontSize: 14 }
     },
-    ...(currentUser?.role === 'admin' ? [{
-      key: 'user-management',
-      label: 'User Management',
-      icon: <UserOutlined />
-    }] : []),
+    ...(currentUser?.role === 'admin' ? [
+      {
+        key: 'user-management',
+        label: 'User Management',
+        icon: <UserOutlined style={{ fontSize: 16, width: 16 }} />,
+        style: { padding: '10px 24px', fontSize: 14 }
+      }
+    ] : []),
+    { type: 'divider', style: { margin: '4px 0' } },
     {
       key: 'logout',
       label: 'Sign Out',
-      icon: <LogoutOutlined />
+      icon: <LogoutOutlined style={{ fontSize: 16, width: 16 }} />,
+      danger: true,
+      style: { padding: '10px 24px', fontSize: 14 }
     },
   ];
 
@@ -117,7 +163,7 @@ const TopNav: React.FC = () => {
     }
     
     // System Configuration
-    if (effectivePath.startsWith('/settings') || effectivePath.startsWith('/account')) {
+    if (effectivePath.startsWith('/settings')) {
       return ['system-configuration'];
     }
 
@@ -125,6 +171,7 @@ const TopNav: React.FC = () => {
   };
 
   const activeKeys = getSelectedKey();
+  const isAccountActive = location.pathname.startsWith('/account') || location.pathname.startsWith('/user-management');
 
   const renderNavItem = (key: string, label: string, icon: React.ReactNode, path: string) => {
     const isActive = activeKeys.includes(key);
@@ -233,7 +280,7 @@ const TopNav: React.FC = () => {
             {renderNavItem('monitor-control', 'Monitor & Control', <ControlOutlined />, '/realtime')}
             {renderNavItem('sensor-setting', 'Configuration', <ApiOutlined />, '/devices')}
             {renderNavItem('report', 'Report', <LineChartOutlined />, '/analysis')}
-            {renderNavItem('system-configuration', 'System', <SettingOutlined />, '/settings/network')}
+            {renderNavItem('system-configuration', 'System', <SettingOutlined />, '/settings/system')}
           </Flex>
         </Flex>
         
@@ -288,9 +335,32 @@ const TopNav: React.FC = () => {
           </ConfigProvider>
 
           {/* Account */}
-          <Dropdown menu={{ items: userMenuItems, onClick: handleMenuClick }} placement="bottomRight" arrow>
+          <Dropdown 
+            menu={{ items: userMenuItems, onClick: handleMenuClick }} 
+            placement="bottomRight" 
+            arrow
+            overlayStyle={{ minWidth: 260 }}
+            dropdownRender={(menu) => (
+              <div style={{ 
+                backgroundColor: '#fff', 
+                borderRadius: 12, 
+                boxShadow: '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)',
+                overflow: 'hidden'
+              }}>
+                {React.cloneElement(menu as React.ReactElement<any>, { style: { boxShadow: 'none', borderRadius: 0 } })}
+              </div>
+            )}
+          >
             <div style={{ cursor: 'pointer' }}>
-              <Avatar size="default" icon={<UserOutlined />} style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+              <Avatar 
+                size="default" 
+                icon={<UserOutlined />} 
+                style={{ 
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  border: isAccountActive ? '2px solid #8CC63F' : 'none',
+                  boxSizing: 'border-box'
+                }} 
+              />
             </div>
           </Dropdown>
         </Flex>

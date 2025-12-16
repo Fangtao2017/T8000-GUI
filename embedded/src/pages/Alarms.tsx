@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Space, Tag, Row, Col, Typography, Input, Select, Progress, message, Modal, Switch } from 'antd';
+import { Card, Table, Button, Space, Tag, Typography, Input, Select, message, Modal, Switch } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined, FireOutlined, WarningOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
@@ -73,7 +73,10 @@ const Alarms: React.FC = () => {
 	const warningAlarms = data.filter(a => a.severity === 'Warning').length;
 	const infoAlarms = data.filter(a => a.severity === 'Info').length;
 
-	const columns: ColumnsType<AlarmDefinition> = [
+	// Find latest updated time (mock)
+  // const lastUpdatedTime = 'Just now';
+  
+  const columns: ColumnsType<AlarmDefinition> = [
 		{
 			title: 'Alarm Name',
 			dataIndex: 'name',
@@ -144,6 +147,7 @@ const Alarms: React.FC = () => {
 			title: 'Actions',
 			key: 'actions',
 			width: 150,
+			fixed: 'right',
 			render: (_, record) => (
 				<Space size="small">
 					<Button 
@@ -172,104 +176,86 @@ const Alarms: React.FC = () => {
 	return (
 		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
 			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
-			 {/* Stats Cards */}
-			<Row gutter={16}>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Enabled</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#003A70' }}>{enabledAlarms}</Typography.Title>
-							<Progress percent={totalAlarms > 0 ? (enabledAlarms / totalAlarms) * 100 : 0} showInfo={false} strokeColor="#003A70" />
+				
+				{/* Layer 1: Info Bar */}
+				<div style={{ 
+					backgroundColor: '#fff', 
+					border: '1px solid #d9d9d9',
+					borderRadius: 8,
+					padding: '8px 24px',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					flexWrap: 'wrap',
+					gap: 12,
+					flexShrink: 0
+				}}>
+					<Space size={24} style={{ flexWrap: 'wrap' }}>
+						<Typography.Text strong style={{ fontSize: 16 }}>Alarm Statistics</Typography.Text>
+						
+						<Space split={<Typography.Text type="secondary">|</Typography.Text>} size={16}>
+							<Typography.Text>Total Alarms: <strong>{totalAlarms}</strong></Typography.Text>
+							<Typography.Text>Enabled: <strong>{enabledAlarms}</strong></Typography.Text>
+							<Typography.Text>Critical: <strong style={{ color: '#ff4d4f' }}>{criticalAlarms}</strong></Typography.Text>
+							<Typography.Text>Warning: <strong style={{ color: '#faad14' }}>{warningAlarms}</strong></Typography.Text>
+							<Typography.Text>Info: <strong style={{ color: '#52c41a' }}>{infoAlarms}</strong></Typography.Text>
 						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Critical</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#ff4d4f' }}>{criticalAlarms}</Typography.Title>
-							<Progress percent={totalAlarms > 0 ? (criticalAlarms / totalAlarms) * 100 : 0} showInfo={false} strokeColor="#ff4d4f" />
-						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Warning</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#faad14' }}>{warningAlarms}</Typography.Title>
-							<Progress percent={totalAlarms > 0 ? (warningAlarms / totalAlarms) * 100 : 0} showInfo={false} strokeColor="#faad14" />
-						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Info</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#52c41a' }}>{infoAlarms}</Typography.Title>
-							<Progress percent={totalAlarms > 0 ? (infoAlarms / totalAlarms) * 100 : 0} showInfo={false} strokeColor="#52c41a" />
-						</Space>
-					</Card>
-				</Col>
-			</Row>
-
-			{/* Filter Bar */}
-			<Card bordered bodyStyle={{ padding: '12px 16px' }}>
-				<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-					<Space size={12}>
-						<Search
-							placeholder="Search alarms..."
-							allowClear
-							style={{ width: 300 }}
-							value={searchText}
-							onChange={(e) => setSearchText(e.target.value)}
-						/>
-						<Select
-							placeholder="Severity"
-							style={{ width: 150 }}
-							value={filterSeverity}
-							onChange={setFilterSeverity}
-						>
-							<Select.Option value="all">All Severities</Select.Option>
-							<Select.Option value="Critical">Critical</Select.Option>
-							<Select.Option value="Warning">Warning</Select.Option>
-							<Select.Option value="Info">Info</Select.Option>
-						</Select>
-						<Typography.Text type="secondary" style={{ fontSize: 12, alignSelf: 'center' }}>
-							{filteredData.length} definitions
-						</Typography.Text>
 					</Space>
-					<Space size={8}>
-						<Button icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
-							Refresh
-						</Button>
-						<Button
-							type="primary"
-							icon={<PlusOutlined />}
-							onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-alarm` : '/configuration/add-alarm')}
-							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
-						>
-							Add Alarm
-						</Button>
-					</Space>
-				</Space>
-			</Card>
+				</div>
 
-			{/* Table */}
-			<Card 
-				title="Alarm Definitions" 
-				bordered 
-				style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-				bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-			>
-				<div style={{ flex: 1, overflow: 'auto' }}>
+				{/* Layer 2: Toolbar */}
+				<Card bordered bodyStyle={{ padding: '12px' }} style={{ flexShrink: 0 }}>
+					<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+						<Space size={12}>
+							<Search
+								placeholder="Search alarms..."
+								allowClear
+								style={{ width: 300 }}
+								value={searchText}
+								onChange={(e) => setSearchText(e.target.value)}
+							/>
+							<Select
+								placeholder="Severity"
+								style={{ width: 150 }}
+								value={filterSeverity}
+								onChange={setFilterSeverity}
+							>
+								<Select.Option value="all">All Severities</Select.Option>
+								<Select.Option value="Critical">Critical</Select.Option>
+								<Select.Option value="Warning">Warning</Select.Option>
+								<Select.Option value="Info">Info</Select.Option>
+							</Select>
+						</Space>
+						<Space size={8}>
+							<Button icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
+								Refresh
+							</Button>
+							<Button
+								type="primary"
+								icon={<PlusOutlined />}
+								onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-alarm` : '/configuration/add-alarm')}
+								style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+							>
+								Add Alarm
+							</Button>
+						</Space>
+					</Space>
+				</Card>
+
+				{/* Layer 3: Table */}
+				<Card 
+					bordered 
+					style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+					bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+				>
 					<Table
 						columns={columns}
 						dataSource={filteredData}
 						pagination={false}
 						size="small"
+						scroll={{ y: 'calc(100vh - 380px)', x: 'max-content' }}
 					/>
-				</div>
-			</Card>
+				</Card>
 			</div>
 		</div>
 	);

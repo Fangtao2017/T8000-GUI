@@ -90,11 +90,11 @@ export const navSections: Record<SectionKey, NavSection> = {
     key: 'system',
     label: 'System Configuration',
     title: 'System Configuration',
-    defaultPath: '/settings/network',
+    defaultPath: '/settings/system',
     icon: <ApiOutlined />,
     items: [
+      { key: 'system-setting', label: 'T8000 Setting', path: '/settings/system', icon: <SettingOutlined /> },
       { key: 'network-setting', label: 'Network Setting', path: '/settings/network', icon: <WifiOutlined /> },
-      { key: 'system-setting', label: 'Firmware Settings', path: '/settings/system', icon: <SettingOutlined /> },
       { key: 'mqtt-setting', label: 'MQTT Setting', path: '/settings/mqtt', icon: <ApiOutlined /> },
     ],
   },

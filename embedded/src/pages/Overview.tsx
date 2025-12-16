@@ -13,7 +13,6 @@ import {
 	Button,
 	message,
 	Input,
-	Select,
 	Progress,
 	Modal,
 	Timeline,
@@ -21,10 +20,10 @@ import {
 	Popover,
 	Descriptions,
 	InputNumber,
-	Switch
+	Switch,
+	Select
 } from 'antd';
 import {
-	LaptopOutlined,
 	ApiOutlined,
 	InfoCircleOutlined,
 	WarningOutlined,
@@ -32,52 +31,24 @@ import {
 	CheckCircleOutlined,
 	FireOutlined,
 	ReloadOutlined,
-	RedoOutlined,
-	PoweroffOutlined,
 	SearchOutlined,
 	RightOutlined,
 	ClockCircleOutlined,
 	EditOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
-import { type DeviceData, allDevices, parameterUnits, writableConfigs } from '../data/devicesData';
+import { type DeviceData, parameterUnits, writableConfigs } from '../data/devicesData';
+import { fetchDevices } from '../api/deviceApi';
 import { useNotifications, type NotificationItem } from '../context/NotificationContext';
+import { useNavigate } from 'react-router-dom';
+
+dayjs.extend(relativeTime);
 
 // deviceColumns moved inside component
-const deviceColumns = [
-	{
-		title: 'Name',
-		dataIndex: 'name',
-		key: 'name',
-		render: (text: string) => <Typography.Text>{text}</Typography.Text>,
-	},
-	{
-		title: 'Model',
-		dataIndex: 'model',
-		key: 'model',
-			render: (text: string) => <Tag>{text}</Tag>,
-	},
-	{
-		title: 'Status',
-		dataIndex: 'status',
-		key: 'status',
-		render: (_: string, row: DeviceData) => {
-			const statusText = row.status === 'online' ? 'Online' : 'Offline';
-			const statusColor = row.status === 'online' ? 'success' : 'error';
-			return <Badge status={statusColor} text={statusText} />;
-		},
-	},
-	{
-		title: 'Last seen',
-		dataIndex: 'lastReport',
-		key: 'lastReport',
-			render: (text: string) => <Typography.Text>{text}</Typography.Text>,
-	},
-];
-
 const Overview: React.FC = () => {
-	// const navigate = useNavigate(); // Removed navigation
+	const navigate = useNavigate();
 	const [refreshing, setRefreshing] = useState(false);
 	
 	// Filter states
@@ -87,21 +58,71 @@ const Overview: React.FC = () => {
 	// Device Modal states
 	const [isDeviceModalVisible, setIsDeviceModalVisible] = useState(false);
 	const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null);
+    
+    // System Info State
+    const [systemInfo, setSystemInfo] = useState({
+        device_count: 0,
+        serial_number: 'Loading...',
+        firmware_version: 'Loading...',
+        hardware_version: 'Loading...',
+        network_ip: 'Loading...',
+        mac_address: 'Loading...',
+        cpu_usage: 0,
+        memory_usage: 0,
+        disk_usage: 0,
+        rtc: 'Loading...'
+    });
+
+    // Devices State
+    const [devices, setDevices] = useState<DeviceData[]>([]);
+
+    // Fetch System Info
+    const fetchSystemInfo = async () => {
+        try {
+            // Determine API URL based on environment (same logic as deviceApi)
+            const baseUrl = import.meta.env.DEV 
+              ? 'http://192.168.10.189:9000' 
+              : `http://${window.location.hostname}:9000`;
+            
+            const response = await fetch(`${baseUrl}/api/overview`);
+            if (response.ok) {
+                const data = await response.json();
+                setSystemInfo(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch system info", error);
+        }
+    };
+
+    // Fetch Devices
+    const loadDevices = async () => {
+        try {
+            const data = await fetchDevices();
+            setDevices(data);
+        } catch (error) {
+            console.error("Failed to fetch devices", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchSystemInfo();
+        loadDevices();
+    }, []);
 	
 	// Mocked data – replace with real API data later
 	const device = {
 		model: 'T8000',
-		sn: '200310000092',
-		firmware: 'v1.32.3.2',
-		hwVersion: 'v2.1.0',
-		location: 'Floor 2 / Zone 3',
+		sn: systemInfo.serial_number,
+		firmware: systemInfo.firmware_version,
+		hwVersion: systemInfo.hardware_version,
+		location: 'Floor 2 / Zone 3', // Placeholder as API doesn't provide system location yet
 		lastCommunication: '1 minutes ago',
-		ipAddress: '192.168.1.100',
-		macAddress: '04:a3:16:b0:93:b8',
-		rtc: '19/11/2025 13:06:01 GMT+08',
-		cpuUsage: 45,
-		memoryUsage: 62,
-		diskUsage: 38,
+		ipAddress: systemInfo.network_ip,
+		macAddress: systemInfo.mac_address,
+		rtc: systemInfo.rtc,
+		cpuUsage: systemInfo.cpu_usage,
+		memoryUsage: systemInfo.memory_usage,
+		diskUsage: systemInfo.disk_usage,
 	};
 
 	const systemRunning = true; // T8000 running status
@@ -110,61 +131,62 @@ const Overview: React.FC = () => {
 	
 	// Filter and sort devices
 	const filteredAndSortedDevices = useMemo(() => {
-		let filtered = [...allDevices];
+		let filtered = [...devices];
 		
 		// Apply search filter
 		if (searchText) {
 			const search = searchText.toLowerCase();
 			filtered = filtered.filter(device => 
 				device.name.toLowerCase().includes(search) ||
-				device.model.toLowerCase().includes(search) ||
-				device.status.toLowerCase().includes(search)
+				device.modelName.toLowerCase().includes(search)
 			);
 		}
 		
 		// Apply status filter
 		if (statusFilter !== 'all') {
-			filtered = filtered.filter(device => device.status === statusFilter);
+            const statusVal = statusFilter === 'online' ? 1 : 0;
+			filtered = filtered.filter(device => device.nwkStatus === statusVal);
 		}
 		
 		// Sort: offline first
 		filtered.sort((a, b) => {
-			if (a.status === 'offline' && b.status === 'online') return -1;
-			if (a.status === 'online' && b.status === 'offline') return 1;
+			if (a.nwkStatus === 0 && b.nwkStatus === 1) return -1;
+			if (a.nwkStatus === 1 && b.nwkStatus === 0) return 1;
 			return 0;
 		});
 		
 		return filtered;
-	}, [searchText, statusFilter]);
+	}, [searchText, statusFilter, devices]);
 
 	// Controllable devices
-	const controllableDevices = useMemo(() => {
-		return allDevices.filter(d => 
-			d.parameters && Object.keys(d.parameters).some(k => writableConfigs[k])
-		);
-	}, []);
+	// const controllableDevices = useMemo(() => {
+	// 	return allDevices.filter(d => 
+	// 		d.parameters && Object.keys(d.parameters).some(k => writableConfigs[k])
+	// 	);
+	// }, []);
 
 	// Control Modal states
 	const [isControlModalVisible, setIsControlModalVisible] = useState(false);
-	const [controlDevice, setControlDevice] = useState<DeviceData | null>(null);
-	const [pendingControlChanges, setPendingControlChanges] = useState<Record<string, any>>({});
+	// const [controlDevice, setControlDevice] = useState<DeviceData | null>(null);
+	const [controlDevice] = useState<DeviceData | null>(null);
+	const [pendingControlChanges, setPendingControlChanges] = useState<Record<string, number | string | null>>({});
 
-	const handleControlClick = (device: DeviceData) => {
-		setControlDevice(device);
-		// Initialize pending changes with current values
-		const initialChanges: Record<string, any> = {};
-		if (device.parameters) {
-			Object.keys(device.parameters).forEach(key => {
-				if (writableConfigs[key]) {
-					initialChanges[key] = device.parameters![key];
-				}
-			});
-		}
-		setPendingControlChanges(initialChanges);
-		setIsControlModalVisible(true);
-	};
+	// const handleControlClick = (device: DeviceData) => {
+	// 	setControlDevice(device);
+	// 	// Initialize pending changes with current values
+	// 	const initialChanges: Record<string, any> = {};
+	// 	if (device.parameters) {
+	// 		Object.keys(device.parameters).forEach(key => {
+	// 			if (writableConfigs[key]) {
+	// 				initialChanges[key] = device.parameters![key];
+	// 			}
+	// 		});
+	// 	}
+	// 	setPendingControlChanges(initialChanges);
+	// 	setIsControlModalVisible(true);
+	// };
 
-	const handleControlChange = (key: string, value: any) => {
+	const handleControlChange = (key: string, value: number | string | null) => {
 		setPendingControlChanges(prev => ({
 			...prev,
 			[key]: value
@@ -183,6 +205,42 @@ const Overview: React.FC = () => {
 			}
 		});
 	};
+
+	const deviceColumns = [
+		{
+			title: 'Name',
+			dataIndex: 'name',
+			key: 'name',
+			render: (text: string) => <Typography.Text>{text}</Typography.Text>,
+		},
+		{
+			title: 'Model',
+			dataIndex: 'modelName',
+			key: 'modelName',
+				render: (text: string) => <Tag>{text}</Tag>,
+		},
+		{
+			title: 'Status',
+			dataIndex: 'nwkStatus',
+			key: 'nwkStatus',
+			render: (status: number) => {
+				const statusText = status === 1 ? 'Online' : 'Offline';
+				const statusColor = status === 1 ? 'success' : 'error';
+				return <Badge status={statusColor} text={statusText} />;
+			},
+		},
+		{
+			title: 'Last seen',
+			dataIndex: 'lastSeen',
+			key: 'lastSeen',
+				render: (timestamp: number) => {
+                    if (!timestamp) return <Typography.Text type="secondary">Never</Typography.Text>;
+                    // Convert unix timestamp (seconds) to dayjs object
+                    return <Typography.Text>{dayjs.unix(timestamp).fromNow()}</Typography.Text>;
+                },
+		}
+	];
+
 	
 	// Notification state
 	const { notifications, updateNotificationStatus } = useNotifications();
@@ -234,6 +292,9 @@ const Overview: React.FC = () => {
 		setRefreshing(true);
 		message.loading('Refreshing overview...', 0.5);
 		
+        fetchSystemInfo();
+        loadDevices();
+
 		// Simulate API call
 		setTimeout(() => {
 			setRefreshing(false);
@@ -242,14 +303,6 @@ const Overview: React.FC = () => {
 	};
 	
 	// Quick actions handlers
-	const handleRestartT8000 = () => {
-		message.warning('Restart T8000 - This feature will be implemented');
-	};
-
-	const handleShutdown = () => {
-		message.warning('Shutdown - This feature will be implemented');
-	};
-
 	// Notification handlers
 	const handleNotificationClick = (item: NotificationItem) => {
 		setSelectedNotification(item);
@@ -282,7 +335,7 @@ const Overview: React.FC = () => {
 		return (
 			<List.Item
 				style={{
-					padding: '12px 16px',
+					padding: '8px 12px',
 					background: '#ffffff',
 					borderLeft: `3px solid ${getBorderColor(item.severity)}`,
 					borderBottom: '1px solid #f0f0f0',
@@ -297,15 +350,15 @@ const Overview: React.FC = () => {
 						{iconMap[item.severity]}
 					</div>
 					<div style={{ flex: 1 }}>
-						<div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-							<Typography.Text strong style={{ fontSize: 16 }}>{item.title}</Typography.Text>
-							<Typography.Text type="secondary" style={{ fontSize: 14 }}>{item.time}</Typography.Text>
+						<div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+							<Typography.Text strong style={{ fontSize: 14 }}>{item.title}</Typography.Text>
+							<Typography.Text type="secondary" style={{ fontSize: 12 }}>{item.time}</Typography.Text>
 						</div>
 						<div style={{ display: 'flex', gap: 16 }}>
-							<Typography.Text type="secondary" style={{ fontSize: 14 }}>
+							<Typography.Text type="secondary" style={{ fontSize: 12 }}>
 								Device: <Typography.Text strong>{item.deviceName}</Typography.Text>
 							</Typography.Text>
-							<Typography.Text type="secondary" style={{ fontSize: 14 }}>
+							<Typography.Text type="secondary" style={{ fontSize: 12 }}>
 								Parameter: <Typography.Text strong>{item.parameter}</Typography.Text>
 							</Typography.Text>
 						</div>
@@ -317,24 +370,33 @@ const Overview: React.FC = () => {
 	};
 
 	// Helper for interval text
-	const getIntervalText = (val?: number) => {
+	const getIntervalText = (val?: number | null) => {
+		if (val === null || val === undefined) return '';
 		const map: Record<number, string> = {
 			0: 'Disabled', 1: '10min', 2: '15min', 3: '30min', 
 			4: '1hour', 5: '6hour', 6: '12hour', 7: 'daily'
 		};
-		return val !== undefined ? map[val] || val.toString() : 'NULL';
+		return map[val] || val.toString();
+	};
+
+	const formatCoords = (x: unknown, y: unknown) => {
+		const xVal = x ?? '';
+		const yVal = y ?? '';
+		if (xVal === '' && yVal === '') return '';
+		if (xVal === '') return String(yVal);
+		if (yVal === '') return String(xVal);
+		return `${String(xVal)}, ${String(yVal)}`;
 	};
 
 	return (
-		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
-			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column' }}>
+		<>
 			{/* Top Row: Device Info (Full Width) */}
-			<Row gutter={16} style={{ marginBottom: 16, flexShrink: 0 }}>
+			<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
 				<Col xs={24}>
 					<Card 
 						title="Device Information" 
 						bordered 
-						headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }} 
+						headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED', minHeight: '40px', padding: '0 16px' }} 
 						bodyStyle={{ padding: 16, backgroundColor: '#FFFFFF' }} 
 						style={{ height: '100%', backgroundColor: '#FFFFFF', borderColor: '#E1E8ED' }}
 						extra={
@@ -348,44 +410,10 @@ const Overview: React.FC = () => {
 								>
 									Refresh
 								</Button>
-								<Button 
-									type="primary"
-									icon={<PoweroffOutlined />}
-									onClick={handleShutdown}
-									style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
-								>
-									Shutdown
-								</Button>
-								<Button 
-									type="primary"
-									icon={<RedoOutlined />}
-									onClick={handleRestartT8000}
-									style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
-								>
-									Restart T8000
-								</Button>
 							</Space>
 						}
 					>
 						<Row gutter={24} align="middle">
-							{/* Left: Device Icon */}
-							<Col flex="none">
-								<div
-									style={{
-										width: 64,
-										height: 64,
-										borderRadius: 8,
-										background: 'linear-gradient(135deg, rgba(0,58,112,0.12) 0%, rgba(0,58,112,0.05) 100%)',
-										display: 'flex',
-										alignItems: 'center',
-										justifyContent: 'center',
-										border: '1px solid rgba(0,58,112,0.2)',
-									}}
-								>
-									<LaptopOutlined style={{ fontSize: 32, color: '#003A70' }} />
-								</div>
-							</Col>
-							
 							{/* Middle: Device Info - Optimized Layout */}
 							<Col flex="auto">
 								<Row gutter={[16, 16]}>
@@ -480,10 +508,11 @@ const Overview: React.FC = () => {
 				</Col>
 			</Row>
 
-			{/* Middle: Notifications + Device Status Pie + Alarm Type Pie */}
-			<Row gutter={16} style={{ flexShrink: 0, marginBottom: 16 }}>
-				{/* Notifications Box with Segmented Filter */}
-				<Col xs={24} xl={14}>
+			{/* Main Content Grid */}
+			<Row gutter={[16, 16]}>
+				{/* Left Column: Notifications + Sensor Status */}
+				<Col xs={24} lg={14}>
+					{/* System Notifications */}
 					<Card 
 						title={
 							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
@@ -505,12 +534,12 @@ const Overview: React.FC = () => {
 							</div>
 						}
 						bordered 
-						headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }}
+						headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED', minHeight: '40px', padding: '0 16px' }}
 						bodyStyle={{ padding: 0, backgroundColor: '#FFFFFF' }}
-						style={{ height: 280, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
+						style={{ height: 220, marginBottom: 16, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
 					>
 						<div style={{ 
-							height: 220, 
+							height: 179, 
 							overflowY: 'auto',
 							overflowX: 'hidden',
 							borderRadius: '0 0 8px 8px',
@@ -522,50 +551,48 @@ const Overview: React.FC = () => {
 							/>
 						</div>
 					</Card>
-				</Col>
-				
-				{/* Right: Device Status (Merged) */}
-				<Col xs={24} xl={10}>
+					
+					{/* Sensor Status */}
 					<Card 
 						title="Sensor Status" 
-						headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }} 
+						headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED', minHeight: '40px', padding: '0 16px' }} 
 						bordered 
-						bodyStyle={{ padding: 24, backgroundColor: '#FFFFFF', height: 'calc(100% - 57px)' }} 
-						style={{ height: 280, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
+						bodyStyle={{ padding: 12, backgroundColor: '#FFFFFF', height: 'calc(100% - 41px)' }} 
+						style={{ height: 180, backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
 					>
 						<Row align="middle" justify="center" style={{ height: '100%' }}>
 							<Col span={10} style={{ display: 'flex', justifyContent: 'center' }}>
 								<Progress
 									type="circle"
-									percent={Math.round((allDevices.filter(d => d.status === 'online').length / allDevices.length) * 100)}
-									size={140}
+									percent={devices.length > 0 ? Math.round((devices.filter(d => d.nwkStatus === 1).length / devices.length) * 100) : 0}
+									size={90}
 									strokeColor="#8CC63F"
 									trailColor="#D9534F"
 									format={() => (
 										<div style={{ textAlign: 'center' }}>
-											<div style={{ fontSize: 28, fontWeight: 'bold', color: '#003A70' }}>
-												{allDevices.length}
+											<div style={{ fontSize: 24, fontWeight: 'bold', color: '#003A70' }}>
+												{devices.length}
 											</div>
-											<div style={{ fontSize: 14, color: '#999' }}>Total Sensors</div>
+											<div style={{ fontSize: 12, color: '#999' }}>Total Sensors</div>
 										</div>
 									)}
 								/>
 							</Col>
 							<Col span={14}>
-								<Space direction="vertical" size="middle" style={{ width: '100%', paddingLeft: 24 }}>
+								<Space direction="vertical" size={12} style={{ width: '100%', paddingLeft: 12 }}>
 									<Popover 
 										placement="right" 
 										title="Online Sensors" 
 										content={
 											<List
 												size="small"
-												dataSource={allDevices.filter(d => d.status === 'online')}
+												dataSource={devices.filter(d => d.nwkStatus === 1)}
 												renderItem={item => (
 													<List.Item style={{ padding: '8px 12px' }}>
 														<Space>
 															<Badge status="success" />
 															<Typography.Text>{item.name}</Typography.Text>
-															<Tag style={{ marginLeft: 8 }}>{item.model}</Tag>
+															<Tag style={{ marginLeft: 8 }}>{item.modelName}</Tag>
 														</Space>
 													</List.Item>
 												)}
@@ -575,7 +602,7 @@ const Overview: React.FC = () => {
 									>
 										<div style={{ 
 											cursor: 'pointer', 
-											padding: '10px 20px', 
+											padding: '6px 16px', 
 											borderRadius: 12, 
 											border: '1px solid #f0f0f0', 
 											display: 'flex', 
@@ -587,26 +614,26 @@ const Overview: React.FC = () => {
 										onMouseEnter={(e) => e.currentTarget.style.borderColor = '#8CC63F'}
 										onMouseLeave={(e) => e.currentTarget.style.borderColor = '#f0f0f0'}
 										>
-											<Space size={16}>
+											<Space size={12}>
 												<div style={{ 
-													width: 40, 
-													height: 40, 
+													width: 32, 
+													height: 32, 
 													borderRadius: '50%', 
 													background: 'rgba(140, 198, 63, 0.1)', 
 													display: 'flex', 
 													alignItems: 'center', 
 													justifyContent: 'center' 
 												}}>
-													<CheckCircleOutlined style={{ color: '#8CC63F', fontSize: 20 }} />
+													<CheckCircleOutlined style={{ color: '#8CC63F', fontSize: 16 }} />
 												</div>
 												<div>
-													<div style={{ fontSize: 15, color: '#888' }}>Online Sensors</div>
-													<div style={{ fontSize: 28, fontWeight: 'bold', color: '#8CC63F', lineHeight: 1 }}>
-														{allDevices.filter(d => d.status === 'online').length}
+													<div style={{ fontSize: 13, color: '#888' }}>Online Sensors</div>
+													<div style={{ fontSize: 20, fontWeight: 'bold', color: '#8CC63F', lineHeight: 1 }}>
+														{devices.filter(d => d.nwkStatus === 1).length}
 													</div>
 												</div>
 											</Space>
-											<RightOutlined style={{ fontSize: 14, color: '#ccc' }} />
+											<RightOutlined style={{ fontSize: 12, color: '#ccc' }} />
 										</div>
 									</Popover>
 
@@ -616,13 +643,13 @@ const Overview: React.FC = () => {
 										content={
 											<List
 												size="small"
-												dataSource={allDevices.filter(d => d.status === 'offline')}
+												dataSource={devices.filter(d => d.nwkStatus === 0)}
 												renderItem={item => (
 													<List.Item style={{ padding: '8px 12px' }}>
 														<Space>
 															<Badge status="error" />
 															<Typography.Text>{item.name}</Typography.Text>
-															<Tag style={{ marginLeft: 8 }}>{item.model}</Tag>
+															<Tag style={{ marginLeft: 8 }}>{item.modelName}</Tag>
 														</Space>
 													</List.Item>
 												)}
@@ -632,7 +659,7 @@ const Overview: React.FC = () => {
 									>
 										<div style={{ 
 											cursor: 'pointer', 
-											padding: '10px 20px', 
+											padding: '6px 16px', 
 											borderRadius: 12, 
 											border: '1px solid #f0f0f0', 
 											display: 'flex', 
@@ -644,26 +671,26 @@ const Overview: React.FC = () => {
 										onMouseEnter={(e) => e.currentTarget.style.borderColor = '#D9534F'}
 										onMouseLeave={(e) => e.currentTarget.style.borderColor = '#f0f0f0'}
 										>
-											<Space size={16}>
+											<Space size={12}>
 												<div style={{ 
-													width: 40, 
-													height: 40, 
+													width: 32, 
+													height: 32, 
 													borderRadius: '50%', 
 													background: 'rgba(217, 83, 79, 0.1)', 
 													display: 'flex', 
 													alignItems: 'center', 
 													justifyContent: 'center' 
 												}}>
-													<DisconnectOutlined style={{ color: '#D9534F', fontSize: 20 }} />
+													<DisconnectOutlined style={{ color: '#D9534F', fontSize: 16 }} />
 												</div>
 												<div>
-													<div style={{ fontSize: 15, color: '#888' }}>Offline Sensors</div>
-													<div style={{ fontSize: 28, fontWeight: 'bold', color: '#D9534F', lineHeight: 1 }}>
-														{allDevices.filter(d => d.status === 'offline').length}
+													<div style={{ fontSize: 13, color: '#888' }}>Offline Sensors</div>
+													<div style={{ fontSize: 20, fontWeight: 'bold', color: '#D9534F', lineHeight: 1 }}>
+														{devices.filter(d => d.nwkStatus === 0).length}
 													</div>
 												</div>
 											</Space>
-											<RightOutlined style={{ fontSize: 14, color: '#ccc' }} />
+											<RightOutlined style={{ fontSize: 12, color: '#ccc' }} />
 										</div>
 									</Popover>
 								</Space>
@@ -671,130 +698,77 @@ const Overview: React.FC = () => {
 						</Row>
 					</Card>
 				</Col>
-			</Row>
 
-			{/* Bottom: Split View - Sensor List & Controllable Devices */}
-			<div style={{ flex: 1, minHeight: 0 }}>
-				<Row gutter={16} style={{ height: '100%' }}>
-					{/* Left: Sensor List */}
-					<Col xs={24} xl={14} style={{ height: '100%' }}>
-						<Card 
-							title={
-								<Space>
-									<span>Sensor List</span>
-									<Badge count={filteredAndSortedDevices.length} style={{ backgroundColor: '#003A70' }} />
-								</Space>
-							}
-							bordered 
-							headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }}
-							bodyStyle={{ padding: 0, flex: 1, overflow: 'hidden' }}
-							style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
-							extra={
-								<Space size={8}>
-									<Input
-										placeholder="Search..."
-										prefix={<SearchOutlined />}
-										allowClear
-										style={{ width: 150 }}
-										value={searchText}
-										onChange={(e) => setSearchText(e.target.value)}
-									/>
-									<Select
-										value={statusFilter}
-										onChange={setStatusFilter}
-										style={{ width: 100 }}
-										options={[
-											{ label: 'All', value: 'all' },
-											{ label: 'Online', value: 'online' },
-											{ label: 'Offline', value: 'offline' }
-										]}
-									/>
-								</Space>
-							}
-						>
-							<div ref={tableContainerRef} style={{ height: '100%', overflow: 'hidden' }}>
-								<Table
+				{/* Right Column: Sensor List */}
+				<Col xs={24} lg={10}>
+					<Card 
+						title={
+							<Space>
+								<span>Sensor List</span>
+								<Badge count={filteredAndSortedDevices.length} style={{ backgroundColor: '#003A70' }} />
+							</Space>
+						}
+						bordered 
+						headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED', minHeight: '36px', padding: '0 16px' }}
+						bodyStyle={{ padding: 0, flex: 1, overflow: 'hidden' }}
+						style={{ height: 416, display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
+						extra={
+							<Space size={8}>
+								<Button 
+									type="primary" 
 									size="small"
-									columns={deviceColumns}
-									dataSource={filteredAndSortedDevices}
-									pagination={false}
-									scroll={{ y: tableScrollHeight }}
-									rowClassName={(record) => record.status === 'offline' ? 'offline-row' : ''}
-									onRow={(record) => ({
-										onClick: () => {
-											setSelectedDevice(record);
-											setIsDeviceModalVisible(true);
-										},
-										style: { cursor: 'pointer' }
-									})}
-									locale={{
-										emptyText: 'No devices match the filter criteria'
-									}}
+									onClick={() => navigate('/monitor')}
+									style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+								>
+									Control Sensor
+								</Button>
+								<Input
+									size="small"
+									placeholder="Search..."
+									prefix={<SearchOutlined />}
+									allowClear
+									style={{ width: 150 }}
+									value={searchText}
+									onChange={(e) => setSearchText(e.target.value)}
 								/>
-							</div>
-						</Card>
-					</Col>
-
-					{/* Right: Controllable Devices */}
-					<Col xs={24} xl={10} style={{ height: '100%' }}>
-						<Card
-							title={
-								<Space>
-									<span>Controllable Devices</span>
-									<Badge count={controllableDevices.length} style={{ backgroundColor: '#003A70' }} />
-								</Space>
-							}
-							bordered
-							headStyle={{ backgroundColor: '#FAFBFC', borderBottom: '1px solid #E1E8ED' }}
-							bodyStyle={{ padding: 0, overflowY: 'auto', height: '100%' }}
-							style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF', borderColor: '#E1E8ED', borderRadius: 8 }}
-						>
-							<List
-								dataSource={controllableDevices}
-								renderItem={item => (
-									<List.Item style={{ padding: '8px 16px' }}>
-										<div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
-											<Space size={12} style={{ overflow: 'hidden', flex: 1, marginRight: 8 }}>
-												<div style={{ 
-													width: 32, 
-													height: 32, 
-													borderRadius: 6, 
-													background: '#f0f5ff', 
-													display: 'flex', 
-													alignItems: 'center', 
-													justifyContent: 'center',
-													color: '#003A70',
-													flexShrink: 0
-												}}>
-													<ApiOutlined style={{ fontSize: 16 }} />
-												</div>
-												
-												<div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden', flexWrap: 'nowrap' }}>
-													<Typography.Text strong style={{ whiteSpace: 'nowrap' }}>{item.name}</Typography.Text>
-													<Tag style={{ margin: 0, flexShrink: 0 }}>{item.model}</Tag>
-													<Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-														{item.location}
-													</Typography.Text>
-												</div>
-											</Space>
-
-											<Button 
-												type="primary" 
-												size="small" 
-												icon={<EditOutlined />} 
-												onClick={() => handleControlClick(item)}
-												style={{ backgroundColor: '#003A70', flexShrink: 0 }}
-											>
-												Control
-											</Button>
-										</div>
-									</List.Item>
-								)}
+								<Select
+									size="small"
+									value={statusFilter}
+									onChange={setStatusFilter}
+									style={{ width: 100 }}
+									options={[
+										{ label: 'All', value: 'all' },
+										{ label: 'Online', value: 'online' },
+										{ label: 'Offline', value: 'offline' }
+									]}
+								/>
+							</Space>
+						}
+					>
+						<div ref={tableContainerRef} style={{ height: '100%', overflow: 'hidden' }}>
+							<Table
+								className="sensor-list-table"
+								size="small"
+								columns={deviceColumns}
+								dataSource={filteredAndSortedDevices}
+								pagination={false}
+								scroll={{ y: tableScrollHeight }}
+								rowClassName={(record) => record.nwkStatus === 0 ? 'offline-row' : ''}
+								onRow={(record) => ({
+									onClick: () => {
+										setSelectedDevice(record);
+										setIsDeviceModalVisible(true);
+									},
+									style: { cursor: 'pointer' }
+								})}
+								locale={{
+									emptyText: 'No devices match the filter criteria'
+								}}
 							/>
-						</Card>
-					</Col>
-				</Row>
-			</div>
+						</div>
+					</Card>
+				</Col>
+			</Row>
 
 			{/* Control Modal */}
 			<Modal
@@ -947,49 +921,56 @@ const Overview: React.FC = () => {
 							<Row gutter={[24, 16]}>
 								<Col span={6}>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Device Name</Typography.Text>
-									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.name}</div>
+									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.name || ''}</div>
 								</Col>
 								<Col span={6}>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Model</Typography.Text>
-									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.model}</div>
+									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.modelName || ''}</div>
 								</Col>
 								<Col span={6}>
-									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Serial Number</Typography.Text>
-									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.serialNumber}</div>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Enabled</Typography.Text>
+									<div style={{ fontSize: 16, fontWeight: 500 }}>
+                                        <Badge 
+                                            status={selectedDevice.enabled === 1 ? 'success' : 'default'} 
+                                            text={selectedDevice.enabled === 1 ? 'Enabled' : 'Disabled'} 
+                                        />
+                                    </div>
 								</Col>
 								<Col span={6}>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Firmware Version</Typography.Text>
-									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.fw_ver ?? 'NULL'}</div>
+									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.fw_ver || ''}</div>
 								</Col>
 
 								<Col span={6}>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Status</Typography.Text>
-									<div><Badge status={selectedDevice.status === 'online' ? 'success' : 'error'} text={selectedDevice.status} /></div>
+									<div><Badge status={selectedDevice.nwkStatus === 1 ? 'success' : 'error'} text={selectedDevice.nwkStatus === 1 ? 'Online' : 'Offline'} /></div>
 								</Col>
 								<Col span={6}>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Alarm State</Typography.Text>
-									<div><Tag>{selectedDevice.alarm_state}</Tag></div>
+									<div><Tag>{selectedDevice.alarm_state || '---'}</Tag></div>
 								</Col>
 								<Col span={6}>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Error State</Typography.Text>
-									<div><Tag>{selectedDevice.err_state}</Tag></div>
+									<div><Tag>{selectedDevice.err_state || '---'}</Tag></div>
 								</Col>
 								<Col span={6}>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Last Report</Typography.Text>
-									<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.lastReport}</div>
+									<div style={{ fontSize: 16, fontWeight: 500 }}>
+                                        {selectedDevice.lastSeen ? dayjs.unix(selectedDevice.lastSeen).fromNow() : 'Never'}
+                                    </div>
 								</Col>
 
 								<Col span={6}>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Modbus Address</Typography.Text>
-									<div style={{ fontSize: 14 }}>Pri: {selectedDevice.pri_addr ?? 'NULL'}</div>
+									<div style={{ fontSize: 14 }}>{selectedDevice.priAddr ?? ''}</div>
 								</Col>
 								<Col span={6}>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Secondary Address</Typography.Text>
-									<div style={{ fontSize: 14 }}>{selectedDevice.sec_addr ?? 'NULL'}</div>
+									<div style={{ fontSize: 14 }}>{selectedDevice.sec_addr ?? ''}</div>
 								</Col>
 								<Col span={6}>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Tertiary Address</Typography.Text>
-									<div style={{ fontSize: 14 }}>{selectedDevice.ter_addr ?? 'NULL'}</div>
+									<div style={{ fontSize: 14 }}>{selectedDevice.ter_addr ?? ''}</div>
 								</Col>
 								<Col span={6}>
 									{/* Empty spacer */}
@@ -1015,17 +996,17 @@ const Overview: React.FC = () => {
 							<Col span={8}>
 								<Card title="Location Information" bordered={false} style={{ height: '100%' }}>
 									<Descriptions column={1} size="small" bordered>
-										<Descriptions.Item label="Location ID">{selectedDevice.loc_id ?? 'NULL'}</Descriptions.Item>
-										<Descriptions.Item label="Location Name">{selectedDevice.loc_name ?? 'NULL'}</Descriptions.Item>
-										<Descriptions.Item label="Subname">{selectedDevice.loc_subname ?? 'NULL'}</Descriptions.Item>
-										<Descriptions.Item label="Block">{selectedDevice.loc_blk ?? 'NULL'}</Descriptions.Item>
-										<Descriptions.Item label="Unit">{selectedDevice.loc_unit ?? 'NULL'}</Descriptions.Item>
-										<Descriptions.Item label="Postal Code">{selectedDevice.postal_code ?? 'NULL'}</Descriptions.Item>
-										<Descriptions.Item label="Address">{selectedDevice.loc_addr ?? 'NULL'}</Descriptions.Item>
+										<Descriptions.Item label="Location ID">{selectedDevice.loc_id || ''}</Descriptions.Item>
+										<Descriptions.Item label="Location Name">{selectedDevice.loc_name || ''}</Descriptions.Item>
+										<Descriptions.Item label="Subname">{selectedDevice.loc_subname || ''}</Descriptions.Item>
+										<Descriptions.Item label="Block">{selectedDevice.loc_blk || ''}</Descriptions.Item>
+										<Descriptions.Item label="Unit">{selectedDevice.loc_unit || ''}</Descriptions.Item>
+										<Descriptions.Item label="Postal Code">{selectedDevice.postal_code || ''}</Descriptions.Item>
+										<Descriptions.Item label="Address">{selectedDevice.loc_addr || ''}</Descriptions.Item>
 										<Descriptions.Item label="Coordinates (X, Y)">
-											{selectedDevice.x ?? 'NULL'}, {selectedDevice.y ?? 'NULL'}
+											{formatCoords(selectedDevice.x, selectedDevice.y)}
 										</Descriptions.Item>
-										<Descriptions.Item label="Height (H)">{selectedDevice.h ?? 'NULL'}</Descriptions.Item>
+										<Descriptions.Item label="Height (H)">{selectedDevice.h ?? ''}</Descriptions.Item>
 									</Descriptions>
 								</Card>
 							</Col>
@@ -1145,8 +1126,7 @@ const Overview: React.FC = () => {
 					</div>
 				)}
 			</Modal>
-			</div>
-		</div>
+		</>
 	);
 };
 

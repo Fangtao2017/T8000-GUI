@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Divider, Typography, Row, Col, Switch, message, Tag, InputNumber } from 'antd';
+import { Card, Form, Input, Button, Space, Typography, Row, Col, Switch, message, Tag, InputNumber } from 'antd';
 import { SaveOutlined, ReloadOutlined, CheckCircleOutlined, DisconnectOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
@@ -169,10 +169,8 @@ const SettingsMqtt: React.FC = () => {
           onFinish={handleSave}
           initialValues={currentConfig}
         >
-          <Divider orientation="left" style={{ marginTop: 0 }}>Broker Configuration</Divider>
-
-          <Row gutter={16}>
-            <Col span={16}>
+          <Row gutter={[16, 0]}>
+            <Col span={8}>
               <Form.Item
                 label="Broker Address"
                 name="broker"
@@ -190,10 +188,7 @@ const SettingsMqtt: React.FC = () => {
                 <InputNumber placeholder="1883" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="Client ID"
                 name="clientId"
@@ -202,7 +197,8 @@ const SettingsMqtt: React.FC = () => {
                 <Input placeholder="Client ID" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+
+            <Col span={8}>
               <Form.Item
                 label="Username"
                 name="username"
@@ -210,10 +206,7 @@ const SettingsMqtt: React.FC = () => {
                 <Input placeholder="Username" />
               </Form.Item>
             </Col>
-          </Row>
-          
-          <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="Password"
                 name="password"
@@ -221,7 +214,7 @@ const SettingsMqtt: React.FC = () => {
                 <Input.Password placeholder="Password" />
               </Form.Item>
             </Col>
-             <Col span={6}>
+             <Col span={8}>
               <Form.Item
                 label="Keep Alive (s)"
                 name="keepAlive"
@@ -229,7 +222,8 @@ const SettingsMqtt: React.FC = () => {
                 <InputNumber placeholder="60" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={6}>
+
+            <Col span={8}>
               <Form.Item
                 label="QoS"
                 name="qos"
@@ -237,12 +231,7 @@ const SettingsMqtt: React.FC = () => {
                 <InputNumber placeholder="1" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-          </Row>
-
-          <Divider orientation="left" style={{ margin: '12px 0' }}>Connection Settings</Divider>
-
-          <Row gutter={16}>
-            <Col span={6}>
+            <Col span={8}>
               <Form.Item
                 label="Reconnect (s)"
                 name="reconnectInterval"
@@ -250,7 +239,7 @@ const SettingsMqtt: React.FC = () => {
                 <InputNumber placeholder="5" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col span={8}>
               <Form.Item
                 label="Timeout (s)"
                 name="connectTimeout"
@@ -258,29 +247,7 @@ const SettingsMqtt: React.FC = () => {
                 <InputNumber placeholder="30" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={6}>
-              <Form.Item 
-                label="Clean Session" 
-                name="cleanSession" 
-                valuePropName="checked"
-              >
-                <Switch checkedChildren="Yes" unCheckedChildren="No" />
-              </Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item 
-                label="Retain" 
-                name="retain" 
-                valuePropName="checked"
-              >
-                <Switch checkedChildren="Yes" unCheckedChildren="No" />
-              </Form.Item>
-            </Col>
-          </Row>
 
-          <Divider orientation="left" style={{ margin: '12px 0' }}>Last Will (LWT)</Divider>
-
-          <Row gutter={16}>
             <Col span={8}>
               <Form.Item
                 label="Will Topic"
@@ -297,7 +264,7 @@ const SettingsMqtt: React.FC = () => {
                 <Input placeholder="Message" />
               </Form.Item>
             </Col>
-            <Col span={4}>
+            <Col span={8}>
               <Form.Item
                 label="Will QoS"
                 name="willQos"
@@ -305,7 +272,26 @@ const SettingsMqtt: React.FC = () => {
                 <InputNumber placeholder="1" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={4}>
+
+            <Col span={8}>
+              <Form.Item 
+                label="Clean Session" 
+                name="cleanSession" 
+                valuePropName="checked"
+              >
+                <Switch checkedChildren="Yes" unCheckedChildren="No" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item 
+                label="Retain" 
+                name="retain" 
+                valuePropName="checked"
+              >
+                <Switch checkedChildren="Yes" unCheckedChildren="No" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
               <Form.Item 
                 label="Will Retain" 
                 name="willRetain" 
@@ -315,14 +301,6 @@ const SettingsMqtt: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-
-          <Divider />
-
-          <Space>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              Changes will take effect after saving and may require device restart
-            </Text>
-          </Space>
         </Form>
       </Card>
     </div>

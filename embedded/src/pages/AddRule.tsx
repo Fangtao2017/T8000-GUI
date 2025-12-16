@@ -14,18 +14,13 @@ const AddRule: React.FC = () => {
 	const [form] = Form.useForm();
 	const navigate = useNavigate();
 	const [currentStep, setCurrentStep] = useState(0);
-	const [conditionType, setConditionType] = useState<ConditionType>('device');
 	const [controlType, setControlType] = useState<ConditionType>('device');
 
 	const handleNext = async () => {
 		try {
 			if (currentStep === 0) {
 				// Validate condition fields
-				if (conditionType === 'device') {
-					await form.validateFields(['name', 'severity', 'conditions', 'conditionLogic']);
-				} else {
-					await form.validateFields(['name', 'severity', 'conditions', 'conditionLogic']);
-				}
+				await form.validateFields(['name', 'severity', 'conditions']);
 			} else if (currentStep === 1) {
 				// Validate action fields
 				await form.validateFields(['actionName', 'controls', 'controlType', 'report', 'log']);
@@ -53,7 +48,6 @@ const AddRule: React.FC = () => {
 	const handleReset = () => {
 		form.resetFields();
 		setCurrentStep(0);
-		setConditionType('device');
 		setControlType('device');
 	};
 
@@ -87,20 +81,16 @@ const AddRule: React.FC = () => {
 						form={form}
 						layout="vertical"
 						initialValues={{
-							conditionLogic: 'AND',
-							conditionType: 'device',
 							controlType: 'device',
 							report: 1,
 							log: 1,
-							conditions: [{ operator: '>=', logic: 'NONE', mode: 1 }],
+							conditions: [{ type: 'device', operator: '>=', logic: 'AND', mode: 1 }],
 							controls: [{ mode: 1 }],
 						}}
 					>
 						{currentStep === 0 && (
 							<AddRuleCondition
 								form={form}
-								conditionType={conditionType}
-								setConditionType={setConditionType}
 								onNext={handleNext}
 								onReset={handleReset}
 							/>
@@ -120,7 +110,6 @@ const AddRule: React.FC = () => {
 							<AddRuleSummary
 								form={form}
 								currentStep={currentStep}
-								conditionType={conditionType}
 								controlType={controlType}
 								onPrevious={handlePrevious}
 								onSubmit={handleSubmit}

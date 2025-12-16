@@ -15,3 +15,9 @@
 .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
   background-color: rgba(140, 198, 63, 0.05) !important;
 }
+
+/* Compact table header for Sensor List */
+.sensor-list-table .ant-table-thead > tr > th {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}

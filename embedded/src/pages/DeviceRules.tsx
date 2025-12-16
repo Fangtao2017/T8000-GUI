@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Space, Badge, Row, Col, Typography, Progress, Input, Select, Switch, message } from 'antd';
+import { Card, Table, Button, Space, Badge, Typography, Input, Select, Switch, message } from 'antd';
 import { EyeOutlined, EditOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined, FireOutlined, WarningOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnType } from 'antd/es/table';
@@ -131,8 +131,9 @@ const DeviceRules: React.FC = () => {
 	const criticalRules = filteredRules.filter(r => r.severity === 'critical').length;
 	const warningRules = filteredRules.filter(r => r.severity === 'warning').length;
 	const infoRules = filteredRules.filter(r => r.severity === 'info').length;
-
-	const handleToggleStatus = (key: string) => {
+  // const lastUpdatedTime = 'Just now';
+  
+  const handleToggleStatus = (key: string) => {
 		console.log('Toggle status for rule:', key);
 		// Implement toggle logic here
 	};
@@ -221,6 +222,7 @@ const DeviceRules: React.FC = () => {
 			key: 'actions',
 			width: 200,
 			align: 'right',
+			fixed: 'right',
 			render: (_: unknown, record: RuleData) => (
 				<Space size="small">
 					<Button size="small" icon={<EyeOutlined />} onClick={() => handleViewRule(record)} style={{ backgroundColor: '#003A70', borderColor: '#003A70', color: '#fff' }}>View Data</Button>
@@ -232,125 +234,113 @@ const DeviceRules: React.FC = () => {
 	];
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%', overflow: 'hidden' }}>
-			{/* Statistics Cards */}
-			<Row gutter={16}>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Enabled</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#003A70' }}>{enabledRules}</Typography.Title>
-							<Progress percent={totalRules > 0 ? (enabledRules / totalRules) * 100 : 0} showInfo={false} strokeColor="#003A70" />
+		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+				
+				{/* Layer 1: Info Bar */}
+				<div style={{ 
+					backgroundColor: '#fff', 
+					border: '1px solid #d9d9d9',
+					borderRadius: 8,
+					padding: '8px 24px',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					flexWrap: 'wrap',
+					gap: 12,
+					flexShrink: 0
+				}}>
+					<Space size={24} style={{ flexWrap: 'wrap' }}>
+						<Typography.Text strong style={{ fontSize: 16 }}>Rule Statistics</Typography.Text>
+						
+						<Space split={<Typography.Text type="secondary">|</Typography.Text>} size={16}>
+							<Typography.Text>Total Rules: <strong>{totalRules}</strong></Typography.Text>
+							<Typography.Text>Enabled: <strong>{enabledRules}</strong></Typography.Text>
+							<Typography.Text>Critical: <strong style={{ color: '#ff4d4f' }}>{criticalRules}</strong></Typography.Text>
+							<Typography.Text>Warning: <strong style={{ color: '#faad14' }}>{warningRules}</strong></Typography.Text>
+							<Typography.Text>Info: <strong style={{ color: '#52c41a' }}>{infoRules}</strong></Typography.Text>
 						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Critical</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#ff4d4f' }}>{criticalRules}</Typography.Title>
-							<Progress percent={totalRules > 0 ? (criticalRules / totalRules) * 100 : 0} showInfo={false} strokeColor="#ff4d4f" />
-						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Warning</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#faad14' }}>{warningRules}</Typography.Title>
-							<Progress percent={totalRules > 0 ? (warningRules / totalRules) * 100 : 0} showInfo={false} strokeColor="#faad14" />
-						</Space>
-					</Card>
-				</Col>
-				<Col span={6}>
-					<Card bordered bodyStyle={{ padding: '16px' }}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Typography.Text type="secondary" style={{ fontSize: 12 }}>Info</Typography.Text>
-							<Typography.Title level={2} style={{ margin: 0, color: '#52c41a' }}>{infoRules}</Typography.Title>
-							<Progress percent={totalRules > 0 ? (infoRules / totalRules) * 100 : 0} showInfo={false} strokeColor="#52c41a" />
-						</Space>
-					</Card>
-				</Col>
-			</Row>
-
-			{/* Search and Filter Bar */}
-			<Card bordered bodyStyle={{ padding: '12px 16px' }}>
-				<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-					<Space size={12}>
-						<Input
-							placeholder="Search rules..."
-							allowClear
-							style={{ width: 300 }}
-							value={searchText}
-							onChange={(e) => setSearchText(e.target.value)}
-						/>
-						<Select
-							placeholder="Please Select"
-							style={{ width: 150 }}
-							value={filterStatus}
-							onChange={setFilterStatus}
-						>
-							<Select.Option value="all">All Status</Select.Option>
-							<Select.Option value="enabled">Enabled</Select.Option>
-							<Select.Option value="disabled">Disabled</Select.Option>
-						</Select>
 					</Space>
-					<Space size={8}>
-						<Button 
-							icon={<ReloadOutlined />} 
-							onClick={() => {
-								setSearchText('');
-								setFilterStatus('all');
-							}}
-						>
-							Reset All Filters
-						</Button>
-						<Button 
-							type="primary" 
-							icon={<ReloadOutlined />} 
-							loading={refreshing} 
-							onClick={handleRefresh}
-							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
-						>
-							Refresh Data
-						</Button>
-						<Button
-							type="primary"
-							icon={<PlusOutlined />}
-							onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-rule` : '/configuration/add-rule')}
-							style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
-						>
-							Add Rule
-						</Button>
-					</Space>
-				</Space>
-			</Card>
+				</div>
 
-			{/* Rules Table */}
-			<Card 
-				title={`Rule List (${totalRules})`} 
-				bordered
-				style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-				bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-			>
-				<Table
-					columns={columns}
-					dataSource={filteredRules}
-					pagination={false}
-					scroll={{ y: 'calc(100vh - 400px)', x: 'max-content' }}
-					size="small"
+				{/* Layer 2: Toolbar */}
+				<Card bordered bodyStyle={{ padding: '12px' }} style={{ flexShrink: 0 }}>
+					<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+						<Space size={12}>
+							<Input
+								placeholder="Search rules..."
+								allowClear
+								style={{ width: 300 }}
+								value={searchText}
+								onChange={(e) => setSearchText(e.target.value)}
+							/>
+							<Select
+								placeholder="Please Select"
+								style={{ width: 150 }}
+								value={filterStatus}
+								onChange={setFilterStatus}
+							>
+								<Select.Option value="all">All Status</Select.Option>
+								<Select.Option value="enabled">Enabled</Select.Option>
+								<Select.Option value="disabled">Disabled</Select.Option>
+							</Select>
+						</Space>
+						<Space size={8}>
+							<Button 
+								icon={<ReloadOutlined />} 
+								onClick={() => {
+									setSearchText('');
+									setFilterStatus('all');
+								}}
+							>
+								Reset All Filters
+							</Button>
+							<Button 
+								type="primary" 
+								icon={<ReloadOutlined />} 
+								loading={refreshing} 
+								onClick={handleRefresh}
+								style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+							>
+								Refresh Data
+							</Button>
+							<Button
+								type="primary"
+								icon={<PlusOutlined />}
+								onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-rule` : '/configuration/add-rule')}
+								style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+							>
+								Add Rule
+							</Button>
+						</Space>
+					</Space>
+				</Card>
+
+				{/* Layer 3: Table */}
+				<Card 
+					bordered 
+					style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+					bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+				>
+					<Table
+						columns={columns}
+						dataSource={filteredRules}
+						pagination={false}
+						scroll={{ y: 'calc(100vh - 380px)', x: 'max-content' }}
+						size="small"
+					/>
+				</Card>
+
+				{/* Rule View Data Modal */}
+				<RuleViewData
+					visible={isViewDataModalVisible}
+					ruleData={selectedRule}
+					onClose={() => {
+						setIsViewDataModalVisible(false);
+						setSelectedRule(null);
+					}}
 				/>
-			</Card>
-
-			{/* Rule View Data Modal */}
-			<RuleViewData
-				visible={isViewDataModalVisible}
-				ruleData={selectedRule}
-				onClose={() => {
-					setIsViewDataModalVisible(false);
-					setSelectedRule(null);
-				}}
-			/>
+			</div>
 		</div>
 	);
 };

@@ -1,14 +1,22 @@
 
 export interface DeviceData {
-	key: string;
-	name: string;
-	model: string;
-	serialNumber: string;
-	location: string;
-	status: 'online' | 'offline';
-	alarm_state: 'Not alarm' | 'Active Alarm';
-	err_state: 'No error' | 'Error';
-	lastReport: string;
+    id: number | string;
+    name: string; // device_id
+    modelName: string; // node_id
+    location: string; // loc_name
+    priAddr: string; // pri_addr
+    nwkStatus: number; // 1 or 0
+    enabled: number; // 1 or 0
+    lastSeen?: number; // unix timestamp
+    
+    // Legacy fields (optional, kept for compatibility if needed, but should be phased out)
+	key?: string;
+	model?: string;
+	serialNumber?: string;
+	status?: 'online' | 'offline';
+	alarm_state?: 'Not alarm' | 'Active Alarm';
+	err_state?: 'No error' | 'Error';
+	lastReport?: string;
 	parameters?: Record<string, number | string>; // Dynamic parameters
 	// Extra fields for View Data
 	pri_addr?: string | number;
@@ -28,7 +36,17 @@ export interface DeviceData {
 	y?: number | string;
 	h?: number | string;
 	fw_ver?: string;
-	enabled?: boolean;
+    liveData?: DeviceParameterData[];
+}
+
+export interface DeviceParameterData {
+    id: number;
+    name: string;
+    value: number | string | null;
+    unit?: string;
+    timestamp?: number;
+    alarm?: boolean;
+    rw?: number; // 0: Read Only, 1: Read/Write
 }
 
 // Parameter unit mapping
@@ -81,60 +99,6 @@ export const writableConfigs: Record<string, { type: 'number' | 'select' | 'swit
 	output4: { type: 'switch' },
 };
 
-// Mock data with models from image
-export const allDevices: DeviceData[] = [
-	{ 
-		key: '1', 
-		name: 'Gateway Main', 
-		model: 'T8000', 
-		serialNumber: '200310000092', 
-		location: 'Main Office Area', 
-		status: 'online', 
-		alarm_state: 'Not alarm', 
-		err_state: 'No error', 
-		lastReport: 'Just now', 
-		parameters: { voltage: 220, current: 2.5, power: 550, frequency: 50, uptime: 72, connectionCount: 12 },
-		pri_addr: 15,
-		sec_addr: 'NULL',
-		ter_addr: 'NULL',
-		log_intvl: 4,
-		report_intvl: 5,
-		health_intvl: 2,
-		loc_id: 'PS0001',
-		loc_name: 'TOWNSVILLE PRIMARY SCHOOL',
-		loc_subname: 'Admin Room',
-		loc_blk: '5A',
-		loc_unit: '03-24',
-		postal_code: '569730',
-		loc_addr: '3, Ang Mo Kio Avenue 10',
-		x: 1.348299,
-		y: 103.936847,
-		h: 1.5,
-		fw_ver: '1.32.3.1',
-		enabled: true
-	},
-	{ key: '2', name: 'Occupancy Sensor A1', model: 'T-OCC-01', serialNumber: '200310000093', location: 'Main Office Area', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '1 min ago', parameters: { humidity: 65, temperature: 23.5 }, pri_addr: 1, sec_addr: 'NULL', ter_addr: 'NULL', enabled: true },
-	{ key: '3', name: 'Dimmer Control 1', model: 'T-DIM-01', serialNumber: '200310000094', location: 'Utility & Storage', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '2 min ago', parameters: { brightness: 75, power: 120, voltage: 220 } },
-	{ key: '4', name: 'Occupancy Sensor B2', model: 'T-OCC-01', serialNumber: '200310000095', location: 'Main Office Area', status: 'offline', alarm_state: 'Active Alarm', err_state: 'Error', lastReport: '10 min ago', parameters: { temperature: 22.1, humidity: 58 } },
-	{ key: '5', name: 'Air Conditioning Panel', model: 'T-ACP-01', serialNumber: '200310000096', location: 'Meeting Rooms', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '3 min ago', parameters: { setTemp: 24, currentTemp: 23.8, fanSpeed: 3, mode: 'cool', power: 1200 } },
-	{ key: '6', name: 'Tank Level Sensor', model: 'T-TK-01', serialNumber: '200310000097', location: 'Outdoor Facilities', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '5 min ago', parameters: { level: 85, pressure: 2.3, temperature: 18.5 } },
-	{ key: '7', name: 'Electric Meter Main', model: 'T-EMS-01', serialNumber: '200310000098', location: 'Technical Rooms', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: 'Just now', parameters: { voltage: 220, current: 15.2, power: 3344, energy: 1250.5, powerFactor: 0.98 } },
-	{ key: '8', name: 'Energy Meter 3-Phase', model: 'T-EMS-02', serialNumber: '200310000099', location: 'Outdoor Facilities', status: 'offline', alarm_state: 'Active Alarm', err_state: 'Error', lastReport: '25 min ago', parameters: { voltageL1: 220, voltageL2: 221, voltageL3: 219, currentL1: 8.5, currentL2: 8.7, currentL3: 8.3, power: 5650, energy: 3200.8, frequency: 50, powerFactor: 0.95 } },
-	{ key: '9', name: 'Aircon Control Panel', model: 'T-ACP-01', serialNumber: '200310000100', location: 'Main Office Area', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '2 min ago', parameters: { temperature: 23.2, setpoint: 24, fanSpeed: 2, mode: 'auto' } },
-	{ key: '10', name: 'Digital I/O Module', model: 'T-DIDO-01', serialNumber: '200310000101', location: 'Technical Rooms', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '4 min ago', parameters: { input1: 1, input2: 0, input3: 1, input4: 0, output1: 1, output2: 1, output3: 0, output4: 1 } },
-	{ key: '11', name: 'Temperature Sensor 1', model: 'T-TEM-01', serialNumber: '200310000102', location: 'Technical Rooms', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '1 min ago', parameters: { temperature: 21.5 } },
-	{ key: '12', name: 'Multi Interface Unit', model: 'T-MIU-001', serialNumber: '200310000103', location: 'Workshop', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '3 min ago', parameters: { voltage: 220, current: 5.2, temperature: 45.3, humidity: 52, signalStrength: -65 } },
-	{ key: '13', name: 'Temperature Sensor 4', model: 'T-TEM-01', serialNumber: '200310000104', location: 'Meeting Rooms', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '2 min ago', parameters: { temperature: 22.8 } },
-	{ key: '14', name: 'Humidity Sensor C1', model: 'T-OCC-01', serialNumber: '200310000105', location: 'Utility & Storage', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '4 min ago', parameters: { humidity: 58, temperature: 21.5 } },
-	{ key: '15', name: 'Pressure Sensor A5', model: 'T-TK-01', serialNumber: '200310000106', location: 'Outdoor Facilities', status: 'offline', alarm_state: 'Active Alarm', err_state: 'Error', lastReport: '15 min ago', parameters: { level: 72, pressure: 1.8, temperature: 19.2 } },
-	{ key: '16', name: 'Gateway G2', model: 'T8000', serialNumber: '200310000107', location: 'Main Office Area', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: 'Just now', parameters: { voltage: 220, current: 2.8, power: 616, frequency: 50, uptime: 120, connectionCount: 8 } },
-	{ key: '17', name: 'Dimmer Control 2', model: 'T-DIM-01', serialNumber: '200310000108', location: 'Main Office Area', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '1 min ago', parameters: { brightness: 60, power: 95, voltage: 220 } },
-	{ key: '18', name: 'AC Panel Meeting Room B', model: 'T-ACP-01', serialNumber: '200310000109', location: 'Meeting Rooms', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '5 min ago', parameters: { setTemp: 23, currentTemp: 22.9, fanSpeed: 2, mode: 'cool', power: 1100 } },
-	{ key: '19', name: 'Flow Meter Main', model: 'T-FM-01', serialNumber: '200310000110', location: 'Outdoor Facilities', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '3 min ago', parameters: { level: 90, pressure: 2.5, temperature: 17.8 } },
-	{ key: '20', name: 'Temperature Sensor 5', model: 'T-TEM-01', serialNumber: '200310000111', location: 'Technical Rooms', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '1 min ago', parameters: { temperature: 19.5 } },
-	{ key: '21', name: 'Energy Meter Building 2', model: 'T-EMS-02', serialNumber: '200310000112', location: 'Technical Rooms', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '2 min ago', parameters: { voltageL1: 221, voltageL2: 220, voltageL3: 222, currentL1: 9.2, currentL2: 9.5, currentL3: 9.1, power: 6100, energy: 4500.2, frequency: 50, powerFactor: 0.96 } },
-	{ key: '22', name: 'Occupancy Sensor C3', model: 'T-OCC-01', serialNumber: '200310000113', location: 'Utility & Storage', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '6 min ago', parameters: { temperature: 24.5, humidity: 62 } },
-	{ key: '23', name: 'Digital I/O Module 2', model: 'T-DIDO-01', serialNumber: '200310000114', location: 'Technical Rooms', status: 'offline', alarm_state: 'Active Alarm', err_state: 'Error', lastReport: '20 min ago', parameters: { input1: 0, input2: 1, input3: 0, input4: 1, output1: 0, output2: 1, output3: 1, output4: 0 } },
-	{ key: '24', name: 'Humidity Sensor D4', model: 'T-OCC-01', serialNumber: '200310000115', location: 'Utility & Storage', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: '7 min ago', parameters: { humidity: 45, temperature: 20.2 } },
-	{ key: '25', name: 'Gateway G3', model: 'T8000', serialNumber: '200310000116', location: 'Main Office Area', status: 'online', alarm_state: 'Not alarm', err_state: 'No error', lastReport: 'Just now', parameters: { voltage: 220, current: 3.1, power: 682, frequency: 50, uptime: 96, connectionCount: 15 } },
-];
+// Export empty array to prevent import errors in other files
+export const allDevices: DeviceData[] = [];
+

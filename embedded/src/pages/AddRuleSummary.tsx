@@ -2,18 +2,21 @@ import React from 'react';
 import { Card, Button, Space, Typography, Descriptions } from 'antd';
 import { CheckCircleOutlined } from '@ant-design/icons';
 import type { FormInstance } from 'antd/es/form';
-import { timerStateOptions } from '../data/mockData';
+import { timerStateOptions, mockRules, ruleStateOptions } from '../data/mockData';
 
 const { Title, Paragraph } = Typography;
 
-type ConditionType = 'device' | 'timer';
+type ConditionType = 'device' | 'timer' | 'rule';
 
 interface Condition {
 	itemMode?: 'new' | 'existing';
 	existingId?: string;
+	type?: 'device' | 'timer' | 'rule';
 	device?: string;
 	parameter?: string;
 	timerState?: number;
+	rule?: string;
+	ruleState?: number;
 	operator: string;
 	value?: number;
 	logic?: 'NONE' | 'AND' | 'OR' | 'NOT';
@@ -38,7 +41,6 @@ interface Control {
 interface AddRuleSummaryProps {
 	form: FormInstance;
 	currentStep: number;
-	conditionType: ConditionType;
 	controlType: ConditionType;
 	onPrevious: () => void;
 	onSubmit: () => void;
@@ -48,7 +50,6 @@ interface AddRuleSummaryProps {
 const AddRuleSummary: React.FC<AddRuleSummaryProps> = ({
 	form,
 	currentStep,
-	conditionType,
 	controlType,
 	onPrevious,
 	onSubmit,
@@ -65,15 +66,16 @@ const AddRuleSummary: React.FC<AddRuleSummaryProps> = ({
 						<Descriptions title="Rule Summary" bordered column={2}>
 							<Descriptions.Item label="Rule Name">{form.getFieldValue('name')}</Descriptions.Item>
 							<Descriptions.Item label="Severity">{form.getFieldValue('severity')}</Descriptions.Item>
-							<Descriptions.Item label="Condition Type">{conditionType === 'device' ? 'Device' : 'Timer'}</Descriptions.Item>
-							<Descriptions.Item label="Condition Logic">{form.getFieldValue('conditionLogic')}</Descriptions.Item>
 
 							<Descriptions.Item label="Conditions" span={2}>
 								{(form.getFieldValue('conditions') || []).map((cond: Condition, idx: number) => (
 									<div key={idx}>
-										{idx + 1}. {conditionType === 'device' 
-											? `${cond.device || 'N/A'} - ${cond.parameter} ${cond.operator} ${cond.mode === 1 ? cond.value : cond.mode === 2 ? 'Ref Param' : 'Previous'}`
-											: `Timer State ${cond.operator} ${timerStateOptions.find(t => t.value === cond.timerState)?.label}`
+										{idx + 1}. [{cond.type === 'timer' ? 'Timer' : cond.type === 'rule' ? 'Rule' : 'Device'}] {cond.logic} - {
+											cond.type === 'timer' 
+												? `Timer State ${cond.operator} ${timerStateOptions.find(t => t.value === cond.timerState)?.label}`
+												: cond.type === 'rule'
+													? `${mockRules.find(r => r.id === cond.rule)?.name || 'Unknown Rule'} State ${cond.operator} ${ruleStateOptions.find(r => r.value === cond.ruleState)?.label}`
+													: `${cond.device || 'N/A'} - ${cond.parameter} ${cond.operator} ${cond.mode === 1 ? cond.value : cond.mode === 2 ? 'Ref Param' : 'Previous'}`
 										}
 									</div>
 								))}

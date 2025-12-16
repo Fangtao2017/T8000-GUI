@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Divider, Typography, Row, Col, Switch, message, Tag } from 'antd';
+import { Card, Form, Input, Button, Space, Typography, Row, Col, Switch, message, Tag } from 'antd';
 import { SaveOutlined, ReloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
@@ -111,24 +111,22 @@ const SettingsNetwork: React.FC = () => {
           onFinish={handleSave}
           initialValues={currentConfig}
         >
-          {/* DHCP Toggle */}
-          <Form.Item 
-            label="DHCP (Automatic IP Configuration)" 
-            name="dhcp"
-            valuePropName="checked"
-          >
-            <Switch 
-              checked={dhcpEnabled}
-              onChange={setDhcpEnabled}
-              checkedChildren="Enabled"
-              unCheckedChildren="Disabled"
-            />
-          </Form.Item>
-
-          <Divider orientation="left">IP Configuration</Divider>
-
-          <Row gutter={16}>
-            <Col span={12}>
+          <Row gutter={[16, 0]}>
+            <Col span={8}>
+              <Form.Item 
+                label="DHCP" 
+                name="dhcp"
+                valuePropName="checked"
+              >
+                <Switch 
+                  checked={dhcpEnabled}
+                  onChange={setDhcpEnabled}
+                  checkedChildren="Enabled"
+                  unCheckedChildren="Disabled"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
               <Form.Item
                 label="IP Address"
                 name="ipAddress"
@@ -140,11 +138,10 @@ const SettingsNetwork: React.FC = () => {
                 <Input 
                   placeholder="192.168.1.100" 
                   disabled={dhcpEnabled}
-                  size="large"
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="Subnet Mask"
                 name="subnetMask"
@@ -156,14 +153,11 @@ const SettingsNetwork: React.FC = () => {
                 <Input 
                   placeholder="255.255.255.0" 
                   disabled={dhcpEnabled}
-                  size="large"
                 />
               </Form.Item>
             </Col>
-          </Row>
 
-          <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="Default Gateway"
                 name="gateway"
@@ -175,30 +169,23 @@ const SettingsNetwork: React.FC = () => {
                 <Input 
                   placeholder="192.168.1.1" 
                   disabled={dhcpEnabled}
-                  size="large"
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="MAC Address"
                 name="macAddress"
               >
                 <Input 
                   disabled 
-                  size="large"
                   style={{ color: '#000' }}
                 />
               </Form.Item>
             </Col>
-          </Row>
-
-          <Divider orientation="left">DNS Configuration</Divider>
-
-          <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
-                label="Primary DNS Server"
+                label="Primary DNS"
                 name="primaryDNS"
                 rules={[
                   { pattern: /^(\d{1,3}\.){3}\d{1,3}$/, message: 'Invalid DNS format' }
@@ -207,13 +194,13 @@ const SettingsNetwork: React.FC = () => {
                 <Input 
                   placeholder="8.8.8.8" 
                   disabled={dhcpEnabled}
-                  size="large"
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+
+            <Col span={8}>
               <Form.Item
-                label="Secondary DNS Server"
+                label="Secondary DNS"
                 name="secondaryDNS"
                 rules={[
                   { pattern: /^(\d{1,3}\.){3}\d{1,3}$/, message: 'Invalid DNS format' }
@@ -222,19 +209,10 @@ const SettingsNetwork: React.FC = () => {
                 <Input 
                   placeholder="8.8.4.4" 
                   disabled={dhcpEnabled}
-                  size="large"
                 />
               </Form.Item>
             </Col>
           </Row>
-
-          <Divider />
-
-          <Space>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              Changes will take effect after saving and may require device restart
-            </Text>
-          </Space>
         </Form>
       </Card>
     </div>

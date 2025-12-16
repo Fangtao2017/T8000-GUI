@@ -1,282 +1,297 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Card, Row, Col, Space, Typography, Select, Empty, Statistic, theme, DatePicker, Alert } from 'antd';
-import { Line } from '@ant-design/plots';
+import React, { useState } from 'react';
 import { 
-	DashboardOutlined, 
-	LineChartOutlined,
-	ArrowUpOutlined,
-	ArrowDownOutlined
+  Card, Row, Col, Select, DatePicker, Button, Space, Typography, 
+  Statistic, Badge, ConfigProvider 
+} from 'antd';
+import { 
+  FilterOutlined, ReloadOutlined, 
+  LineChartOutlined, InfoCircleOutlined,
+  DownOutlined
 } from '@ant-design/icons';
+import { Line } from '@ant-design/plots';
 import dayjs from 'dayjs';
-import type { Dayjs } from 'dayjs';
-import { allDevices, parameterUnits } from '../data/devicesData';
 
+const { RangePicker } = DatePicker;
 const { Text } = Typography;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
+
+// --- Mock Data ---
+
+// KPI Data
+const kpiData = {
+  current: 24.5,
+  avg: 23.8,
+  max: 28.2,
+  min: 19.5,
+  stdDev: 1.2,
+  unit: '°C'
+};
+
+// Data Quality Data
+const qualityData = {
+  total: 1440,
+  missing: 12,
+  outOfRange: 5,
+  duplicates: 0,
+  interval: '1 min'
+};
+
+// Chart Data (Time Series)
+const generateChartData = () => {
+  const data = [];
+  const start = dayjs().startOf('day');
+  // Generate exactly 24 hours of data (96 * 15min) to avoid overlap/wrap-around lines
+  for (let i = 0; i < 96; i++) {
+    const time = start.add(i * 15, 'minute');
+    let value = 20 + Math.random() * 10;
+    // Inject anomalies
+    if (i === 20) value = 35; // Spike
+    if (i === 50) value = 15; // Drop
+    
+    data.push({
+      time: time.format('HH:mm'),
+      value: parseFloat(value.toFixed(1)),
+      type: 'Temperature'
+    });
+  }
+  return data;
+};
+
+const chartData = generateChartData();
 
 const Analysis: React.FC = () => {
-	const { token } = theme.useToken();
-	
-	// State
-	const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(allDevices[0]?.key);
-	const [selectedParameter, setSelectedParameter] = useState<string | undefined>(
-		allDevices[0]?.parameters ? Object.keys(allDevices[0].parameters)[0] : undefined
-	);
-	const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
-		dayjs().subtract(24, 'hour'),
-		dayjs()
-	]);
+  const [loading, setLoading] = useState(false);
+  const [dates, setDates] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>([dayjs().subtract(24, 'hour'), dayjs()]);
+  const [filterLabel, setFilterLabel] = useState('Last 24 Hours');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-	// Get selected device object
-	const selectedDevice = useMemo(() => 
-		allDevices.find(d => d.key === selectedDeviceId), 
-	[selectedDeviceId]);
+  const handleApply = () => {
+    setLoading(true);
+    setTimeout(() => setLoading(false), 1000);
+  };
 
-	// Update available parameters when device changes
-	useEffect(() => {
-		if (selectedDevice?.parameters) {
-			const params = Object.keys(selectedDevice.parameters);
-			if (params.length > 0 && (!selectedParameter || !params.includes(selectedParameter))) {
-				setSelectedParameter(params[0]);
-			}
-		} else {
-			setSelectedParameter(undefined);
-		}
-	}, [selectedDevice, selectedParameter]);
+  const presetOptions = [
+    { label: 'Today', value: [dayjs().startOf('day'), dayjs().endOf('day')] },
+    { label: 'Yesterday', value: [dayjs().subtract(1, 'day').startOf('day'), dayjs().subtract(1, 'day').endOf('day')] },
+    { label: 'This Week', value: [dayjs().startOf('week'), dayjs().endOf('week')] },
+    { label: 'This Month', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
+    { label: 'Last 7 Days', value: [dayjs().subtract(7, 'day'), dayjs()] },
+    { label: 'Last 30 Days', value: [dayjs().subtract(30, 'day'), dayjs()] },
+    { label: 'Last 90 Days', value: [dayjs().subtract(90, 'day'), dayjs()] },
+  ];
 
-	// Generate mock chart data
-	const chartData = useMemo(() => {
-		if (!selectedDevice || !selectedParameter || !selectedDevice.parameters) return [];
+  const handlePresetSelect = (preset: any) => {
+    setDates(preset.value as [dayjs.Dayjs, dayjs.Dayjs]);
+    setFilterLabel(preset.label);
+    setPickerOpen(false);
+    handleApply();
+  };
 
-		const currentValue = Number(selectedDevice.parameters[selectedParameter]) || 0;
-		const data = [];
-		const start = dateRange[0];
-		const end = dateRange[1];
-		const diffMinutes = end.diff(start, 'minute');
-		
-		// Determine interval based on range duration to keep point count reasonable
-		let interval = 1; // minutes
-		if (diffMinutes <= 60) interval = 1; // 1 hour -> 1 min interval (60 points)
-		else if (diffMinutes <= 360) interval = 5; // 6 hours -> 5 min interval (72 points)
-		else if (diffMinutes <= 1440) interval = 30; // 24 hours -> 30 min interval (48 points)
-		else if (diffMinutes <= 10080) interval = 180; // 7 days -> 3 hours (56 points)
-		else interval = Math.ceil(diffMinutes / 100); // > 7 days -> approx 100 points
+  const handleRangeChange = (values: any) => {
+    setDates(values);
+    if (values && values[0] && values[1]) {
+      setFilterLabel(`${values[0].format('MMM D')} - ${values[1].format('MMM D')}`);
+    }
+  };
 
-		let currentTime = start;
-		while (currentTime.isBefore(end) || currentTime.isSame(end)) {
-			// Simulate data pattern
-			const minutesFromStart = currentTime.diff(start, 'minute');
-			
-			// Generate some random variation around the current value
-			const randomFactor = (Math.random() - 0.5) * (currentValue * 0.2); 
-			// Add some trend
-			const trend = Math.sin(minutesFromStart / (diffMinutes / 10 || 1)) * (currentValue * 0.1);
-			
-			let value = currentValue + randomFactor + trend;
-			if (value < 0) value = 0; // Assume no negative values for most physical params
+  // Chart Config
+  const config = {
+    data: chartData,
+    xField: 'time',
+    yField: 'value',
+    seriesField: 'type',
+    smooth: true,
+    animation: {
+      appear: {
+        animation: 'path-in',
+        duration: 1000,
+      },
+    },
+    color: '#003A70',
+    point: {
+      size: 3,
+      shape: 'circle',
+    },
+    interactions: [{ type: 'marker-active' }, { type: 'brush' }],
+    slider: {
+      start: 0,
+      end: 1,
+      height: 20,
+    },
+    xAxis: {
+      tickCount: 12, // Reduce label density
+    },
+    tooltip: {
+      showMarkers: true,
+      showCrosshairs: true,
+      shared: true,
+    },
+  };
 
-			data.push({
-				time: currentTime.format(diffMinutes <= 1440 ? 'HH:mm' : 'MM-DD HH:mm'),
-				value: Number(value.toFixed(2)),
-				category: selectedParameter
-			});
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '16px', backgroundColor: '#ffffff', overflow: 'hidden' }}>
+      <div style={{ maxWidth: 1600, margin: '0 auto', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          
+          {/* 1. Filter Bar */}
+          <Card bordered={false} bodyStyle={{ padding: '12px 24px' }} style={{ flexShrink: 0, border: '1px solid #f0f0f0' }}>
+            <Row gutter={[16, 16]} align="middle">
+              <Col xs={24} md={5}>
+                <Select placeholder="Select Device" style={{ width: '100%' }} defaultValue="sensor-01">
+                  <Option value="sensor-01">Temp Sensor 01</Option>
+                  <Option value="meter-02">Energy Meter 3P</Option>
+                </Select>
+              </Col>
+              <Col xs={24} md={5}>
+                <Select placeholder="Select Parameter" style={{ width: '100%' }} defaultValue="temp">
+                  <Option value="temp">Temperature</Option>
+                  <Option value="humidity">Humidity</Option>
+                </Select>
+              </Col>
+              <Col xs={24} md={14}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+                  
+                  {/* Custom Time Filter Dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <Button 
+                      onClick={() => setPickerOpen(!pickerOpen)} 
+                      style={{ minWidth: 180, textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    >
+                      {filterLabel} <DownOutlined style={{ fontSize: 12, color: '#bfbfbf' }} />
+                    </Button>
+                    
+                    <ConfigProvider theme={{ token: { colorPrimary: '#faad14' } }}>
+                      <RangePicker 
+                        open={pickerOpen}
+                        onOpenChange={setPickerOpen}
+                        value={dates}
+                        onChange={handleRangeChange}
+                        showTime
+                        style={{ width: 0, height: 0, padding: 0, border: 0, position: 'absolute', top: '100%', left: 0, opacity: 0, pointerEvents: 'none' }}
+                        panelRender={(menu) => (
+                          <div style={{ display: 'flex', backgroundColor: '#fff', overflow: 'hidden' }} onMouseDown={e => e.preventDefault()}>
+                            {/* Sidebar Presets */}
+                            <div style={{ width: 160, borderRight: '1px solid #f0f0f0', padding: '8px 0', display: 'flex', flexDirection: 'column' }}>
+                              {presetOptions.map(option => (
+                                <div 
+                                  key={option.label}
+                                  onClick={() => handlePresetSelect(option)}
+                                  style={{ 
+                                    padding: '8px 16px', 
+                                    cursor: 'pointer', 
+                                    backgroundColor: filterLabel === option.label ? '#fff7e6' : 'transparent',
+                                    color: filterLabel === option.label ? '#faad14' : 'rgba(0,0,0,0.85)',
+                                    transition: 'all 0.3s',
+                                    fontSize: 14
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (filterLabel !== option.label) e.currentTarget.style.backgroundColor = '#f5f5f5';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (filterLabel !== option.label) e.currentTarget.style.backgroundColor = 'transparent';
+                                  }}
+                                >
+                                  {option.label}
+                                </div>
+                              ))}
+                              <div style={{ height: 1, backgroundColor: '#f0f0f0', margin: '8px 0' }} />
+                              <div style={{ padding: '8px 16px', color: '#999', fontSize: 12 }}>Custom Range</div>
+                            </div>
+                            
+                            {/* Calendar Panel */}
+                            <div style={{ padding: 0 }}>
+                              {menu}
+                            </div>
+                          </div>
+                        )}
+                      />
+                    </ConfigProvider>
+                  </div>
 
-			currentTime = currentTime.add(interval, 'minute');
-		}
-		return data;
-	}, [selectedDevice, selectedParameter, dateRange]);
+                  <Space>
+                    <Button type="primary" icon={<FilterOutlined />} onClick={handleApply} loading={loading} style={{ backgroundColor: '#003A70' }}>
+                      Apply
+                    </Button>
+                    <Button icon={<ReloadOutlined />} onClick={handleApply} />
+                  </Space>
+                </div>
+              </Col>
+            </Row>
+          </Card>
 
-	// Calculate statistics
-	const stats = useMemo(() => {
-		if (chartData.length === 0) return { min: 0, max: 0, avg: 0, current: 0 };
-		const values = chartData.map(d => d.value);
-		const sum = values.reduce((a, b) => a + b, 0);
-		return {
-			min: Math.min(...values),
-			max: Math.max(...values),
-			avg: sum / values.length,
-			current: values[values.length - 1]
-		};
-	}, [chartData]);
+          {/* 2. KPI Summary & Data Quality */}
+          <Card bordered={false} bodyStyle={{ padding: '16px 24px' }} style={{ flexShrink: 0, border: '1px solid #f0f0f0' }}>
+            <Row gutter={[24, 16]} align="middle">
+              <Col xs={12} sm={6} lg={4}>
+                <Statistic 
+                  title="Current" 
+                  value={kpiData.current} 
+                  precision={1} 
+                  suffix={kpiData.unit}
+                  valueStyle={{ fontSize: 20, fontWeight: 600 }}
+                />
+              </Col>
+              <Col xs={12} sm={6} lg={4}>
+                <Statistic 
+                  title="Average" 
+                  value={kpiData.avg} 
+                  precision={1} 
+                  suffix={kpiData.unit} 
+                  valueStyle={{ fontSize: 20, fontWeight: 600 }}
+                />
+              </Col>
+              <Col xs={12} sm={6} lg={4}>
+                <Statistic 
+                  title="Max" 
+                  value={kpiData.max} 
+                  precision={1} 
+                  suffix={kpiData.unit}
+                  valueStyle={{ color: '#cf1322', fontSize: 20, fontWeight: 600 }}
+                />
+              </Col>
+              <Col xs={12} sm={6} lg={4}>
+                <Statistic 
+                  title="Min" 
+                  value={kpiData.min} 
+                  precision={1} 
+                  suffix={kpiData.unit}
+                  valueStyle={{ color: '#3f8600', fontSize: 20, fontWeight: 600 }}
+                />
+              </Col>
+              
+              {/* Divider or Spacer */}
+              <Col xs={0} lg={1} style={{ display: 'flex', justifyContent: 'center' }}>
+                <div style={{ width: 1, height: 40, backgroundColor: '#f0f0f0' }} />
+              </Col>
 
-	// Chart config
-	const config = {
-		data: chartData,
-		xField: 'time',
-		yField: 'value',
-		seriesField: 'category',
-		smooth: true,
-		animation: {
-			appear: {
-				animation: 'path-in',
-				duration: 1000,
-			},
-		},
-		color: '#8CC63F',
-		point: {
-			size: 2,
-			shape: 'circle',
-		},
-		yAxis: {
-			label: {
-				formatter: (v: string) => `${v} ${selectedParameter ? (parameterUnits[selectedParameter] || '') : ''}`,
-			},
-		},
-		tooltip: {
-			formatter: (datum: { category: string; value: number }) => {
-				return { name: datum.category, value: `${datum.value} ${selectedParameter ? (parameterUnits[selectedParameter] || '') : ''}` };
-			},
-		},
-	};
+              {/* Data Quality Compact */}
+              <Col xs={24} lg={7}>
+                <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                  <Space><InfoCircleOutlined /><Text strong>Data Quality</Text></Space>
+                  <Space size={16} wrap>
+                    <Badge color="blue" text={`Total: ${qualityData.total}`} />
+                    <Badge color="red" text={`Missing: ${qualityData.missing}`} />
+                    <Badge color="orange" text={`Out: ${qualityData.outOfRange}`} />
+                  </Space>
+                </Space>
+              </Col>
+            </Row>
+          </Card>
 
-	return (
-		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
-			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
-			<Alert
-				message="Under Development"
-				description="This page is currently under development. Features may be incomplete or subject to change."
-				type="warning"
-				showIcon
-				style={{ marginBottom: 16 }}
-			/>
-			{/* Header / Controls Area */}
-			<Card bordered={false} bodyStyle={{ padding: '16px 24px' }}>
-				<Row gutter={[24, 16]} align="middle">
-					<Col xs={24} md={6}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Text type="secondary" style={{ fontSize: 12 }}>Select Device</Text>
-							<Select
-								showSearch
-								style={{ width: '100%' }}
-								placeholder="Select a device"
-								optionFilterProp="children"
-								value={selectedDeviceId}
-								onChange={setSelectedDeviceId}
-								filterOption={(input, option) =>
-									(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-								}
-								options={allDevices.map(d => ({ value: d.key, label: d.name }))}
-							/>
-						</Space>
-					</Col>
-					<Col xs={24} md={6}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Text type="secondary" style={{ fontSize: 12 }}>Select Parameter</Text>
-							<Select
-								style={{ width: '100%' }}
-								placeholder="Select parameter"
-								value={selectedParameter}
-								onChange={setSelectedParameter}
-								disabled={!selectedDevice}
-							>
-								{selectedDevice?.parameters && Object.keys(selectedDevice.parameters).map(key => (
-									<Option key={key} value={key}>
-										{key.replace(/([A-Z])/g, ' $1').trim()} {parameterUnits[key] ? `(${parameterUnits[key]})` : ''}
-									</Option>
-								))}
-							</Select>
-						</Space>
-					</Col>
-					<Col xs={24} md={8}>
-						<Space direction="vertical" size={4} style={{ width: '100%' }}>
-							<Text type="secondary" style={{ fontSize: 12 }}>Time Range</Text>
-							<RangePicker 
-								showTime 
-								value={dateRange}
-								onChange={(dates) => {
-									if (dates && dates[0] && dates[1]) {
-										setDateRange([dates[0], dates[1]]);
-									}
-								}}
-								style={{ width: '100%' }}
-							/>
-						</Space>
-					</Col>
-				</Row>
-			</Card>
+          {/* 3. Main Trend Chart */}
+          <Card 
+            title={<Space><LineChartOutlined /> Trend Analysis</Space>} 
+            bordered={false} 
+            style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', border: '1px solid #f0f0f0' }}
+            bodyStyle={{ padding: '0 24px 24px 24px', minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+          >
+            <div style={{ height: 320, width: '100%' }}>
+              <Line {...config} />
+            </div>
+          </Card>
 
-			{/* Main Content */}
-			{selectedDevice && selectedParameter ? (
-				<div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
-					{/* Statistics Cards */}
-					<Row gutter={16}>
-						<Col span={6}>
-							<Card bordered={false} bodyStyle={{ padding: 16 }}>
-								<Statistic
-									title="Current Value"
-									value={stats.current}
-									precision={2}
-									valueStyle={{ color: token.colorTextHeading }}
-									prefix={<DashboardOutlined />}
-									suffix={parameterUnits[selectedParameter] || ''}
-								/>
-							</Card>
-						</Col>
-						<Col span={6}>
-							<Card bordered={false} bodyStyle={{ padding: 16 }}>
-								<Statistic
-									title="Average"
-									value={stats.avg}
-									precision={2}
-									valueStyle={{ color: '#1890ff' }}
-									prefix={<LineChartOutlined />}
-									suffix={parameterUnits[selectedParameter] || ''}
-								/>
-							</Card>
-						</Col>
-						<Col span={6}>
-							<Card bordered={false} bodyStyle={{ padding: 16 }}>
-								<Statistic
-									title="Maximum"
-									value={stats.max}
-									precision={2}
-									valueStyle={{ color: '#cf1322' }}
-									prefix={<ArrowUpOutlined />}
-									suffix={parameterUnits[selectedParameter] || ''}
-								/>
-							</Card>
-						</Col>
-						<Col span={6}>
-							<Card bordered={false} bodyStyle={{ padding: 16 }}>
-								<Statistic
-									title="Minimum"
-									value={stats.min}
-									precision={2}
-									valueStyle={{ color: '#3f8600' }}
-									prefix={<ArrowDownOutlined />}
-									suffix={parameterUnits[selectedParameter] || ''}
-								/>
-							</Card>
-						</Col>
-					</Row>
-
-					{/* Chart Card */}
-					<Card 
-						title={
-							<Space>
-								<LineChartOutlined />
-								<span>{selectedParameter.replace(/([A-Z])/g, ' $1').trim()} Trend</span>
-								<Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}>
-									({selectedDevice.name})
-								</Text>
-							</Space>
-						}
-						bordered={false}
-						style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
-						bodyStyle={{ flex: 1, minHeight: 300, padding: '24px' }}
-					>
-						<Line {...config} />
-					</Card>
-				</div>
-			) : (
-				<Card bordered={false} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-					<Empty description="Please select a device and parameter to view analysis" />
-				</Card>
-			)}
-			</div>
-		</div>
-	);
+      </div>
+    </div>
+  );
 };
 
 export default Analysis;

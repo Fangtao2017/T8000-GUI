@@ -1,28 +1,20 @@
-import React, { useState } from 'react';
-import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select, Spin } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { fetchParameters, type ParameterApiData } from '../api/parameterApi';
 
 dayjs.extend(relativeTime);
 
 const { Option } = Select;
 const { Search } = Input;
 
-interface ParameterData {
-	key: string;
-	name: string;
-	device: string;
-	dataType: string;
-	unit: string;
-	access: string;
-	sourceInterface: string;
-	bit: string;
-	description: string;
-	createdAt: string;
-	updatedAt: string;
+// Use the interface from API or extend it if needed
+interface ParameterData extends ParameterApiData {
+	parameter?: string; // Add optional parameter field in case backend sends it
 }
 
 const AllParameters: React.FC = () => {
@@ -31,93 +23,39 @@ const AllParameters: React.FC = () => {
 	const [searchText, setSearchText] = useState('');
 	const [filterAccess, setFilterAccess] = useState<string>('all');
 	const [refreshing, setRefreshing] = useState(false);
+	const [parameters, setParameters] = useState<ParameterData[]>([]);
 
-	// Mock data
-	const [parameters] = useState<ParameterData[]>([
-		{
-			key: '1',
-			name: 'Occupancy',
-			device: 'T-OCC-01',
-			dataType: 'Boolean',
-			unit: '-',
-			access: 'Read Only',
-			sourceInterface: 'DI',
-			bit: '0',
-			description: 'Room occupancy status',
-			createdAt: '2024-01-15',
-			updatedAt: '2025-11-25 10:00:00',
-		},
-		{
-			key: '2',
-			name: 'Light Level',
-			device: 'T-OCC-01',
-			dataType: 'Integer',
-			unit: 'lux',
-			access: 'Read Only',
-			sourceInterface: 'AI',
-			bit: '99',
-			description: 'Ambient light level',
-			createdAt: '2024-01-15',
-			updatedAt: '2025-11-24 14:30:00',
-		},
-		{
-			key: '3',
-			name: 'Temperature',
-			device: 'T-TEM-01',
-			dataType: 'Float',
-			unit: '°C',
-			access: 'Read Only',
-			sourceInterface: 'Modbus',
-			bit: '99',
-			description: 'Current temperature',
-			createdAt: '2024-01-20',
-			updatedAt: '2025-11-23 09:15:00',
-		},
-		{
-			key: '4',
-			name: 'Temperature Setpoint',
-			device: 'T-TEM-01',
-			dataType: 'Float',
-			unit: '°C',
-			access: 'Read/Write',
-			sourceInterface: 'Modbus',
-			bit: '99',
-			description: 'Target temperature setpoint',
-			createdAt: '2024-01-20',
-			updatedAt: '2025-11-22 16:45:00',
-		},
-		{
-			key: '5',
-			name: 'Humidity',
-			device: 'T-OCC-01',
-			dataType: 'Float',
-			unit: '%',
-			access: 'Read Only',
-			sourceInterface: 'AI',
-			bit: '99',
-			description: 'Relative humidity',
-			createdAt: '2024-02-01',
-			updatedAt: '2025-11-21 11:20:00',
-		},
-		{
-			key: '6',
-			name: 'Fan Status',
-			device: 'T-FAN-01',
-			dataType: 'Boolean',
-			unit: '-',
-			access: 'Read Only',
-			sourceInterface: 'DI',
-			bit: '1',
-			description: '', // Missing description
-			createdAt: '2024-02-05',
-			updatedAt: '2025-11-20 13:00:00',
-		},
-	]);
+	const loadParameters = async () => {
+		setRefreshing(true);
+		try {
+			const data = await fetchParameters();
+			console.log('Loaded parameters:', data); // Debug log
+			if (Array.isArray(data)) {
+				// Ensure keys are strings for Ant Design Table
+				const formattedData = data.map(item => ({
+					...item,
+					key: String(item.key)
+				}));
+				setParameters(formattedData);
+			} else {
+				console.error('Invalid data format received:', data);
+				message.error('Invalid data format received');
+			}
+		} catch (error) {
+			console.error('Failed to load parameters:', error);
+			message.error('Failed to load parameters');
+		} finally {
+			setRefreshing(false);
+		}
+	};
+
+	useEffect(() => {
+		loadParameters();
+	}, []);
 
 	const handleRefresh = () => {
-		setRefreshing(true);
+		loadParameters();
 		message.success('Data refreshed successfully');
-		setTimeout(() => setRefreshing(false), 1000);
 	};
 
 	const handleDelete = (record: ParameterData) => {
@@ -137,21 +75,25 @@ const AllParameters: React.FC = () => {
 			title: 'Parameter Name',
 			dataIndex: 'name',
 			key: 'name',
-			sorter: (a, b) => a.name.localeCompare(b.name),
-			render: (text: string) => <strong>{text}</strong>,
+			sorter: (a, b) => (a.name || a.parameter || '').localeCompare(b.name || b.parameter || ''),
+			render: (text: string, record: ParameterData) => {
+				const val = text || record.parameter;
+				return val ? <strong>{val}</strong> : <span style={{ color: '#ccc' }}>null</span>;
+			},
 		},
 		{
 			title: 'Device Model',
 			dataIndex: 'device',
 			key: 'device',
-			sorter: (a, b) => a.device.localeCompare(b.device),
+			sorter: (a, b) => (a.device || '').localeCompare(b.device || ''),
+			render: (text: string) => text || <span style={{ color: '#ccc' }}>null</span>,
 		},
 		{
 			title: 'Data Type',
 			dataIndex: 'dataType',
 			key: 'dataType',
-			render: (type: string) => (
-				<Tag>{type}</Tag>
+			render: (type: string | number) => (
+				type !== null && type !== undefined ? <Tag>{type}</Tag> : <span style={{ color: '#ccc' }}>null</span>
 			),
 		},
 		{
@@ -159,6 +101,7 @@ const AllParameters: React.FC = () => {
 			dataIndex: 'unit',
 			key: 'unit',
 			width: 80,
+			render: (text: string) => text || <span style={{ color: '#ccc' }}>null</span>,
 		},
 		{
 			title: 'Access',
@@ -166,7 +109,7 @@ const AllParameters: React.FC = () => {
 			key: 'access',
 			width: 120,
 			render: (access: string) => (
-				<Tag color={access === 'Read/Write' ? 'blue' : 'default'}>{access}</Tag>
+				access ? <Tag color={access === 'Read/Write' ? 'blue' : 'default'}>{access}</Tag> : <span style={{ color: '#ccc' }}>null</span>
 			),
 		},
 		{
@@ -174,28 +117,43 @@ const AllParameters: React.FC = () => {
 			dataIndex: 'sourceInterface',
 			key: 'sourceInterface',
 			width: 140,
-			render: (text: string) => <Tag>{text}</Tag>,
+			render: (text: string) => text ? <Tag>{text}</Tag> : <span style={{ color: '#ccc' }}>null</span>,
+		},
+		{
+			title: 'Channel',
+			dataIndex: 'channel',
+			key: 'channel',
+			width: 100,
+			render: (text: string | number) => (
+				text !== null && text !== undefined ? <Tag>{text}</Tag> : <span style={{ color: '#ccc' }}>null</span>
+			),
+		},
+		{
+			title: 'Lower Limit',
+			dataIndex: 'lowerLimit',
+			key: 'lowerLimit',
+			width: 100,
+			render: (text: string | number) => (
+				text !== null && text !== undefined ? text : <span style={{ color: '#ccc' }}>null</span>
+			),
+		},
+		{
+			title: 'Upper Limit',
+			dataIndex: 'upperLimit',
+			key: 'upperLimit',
+			width: 100,
+			render: (text: string | number) => (
+				text !== null && text !== undefined ? text : <span style={{ color: '#ccc' }}>null</span>
+			),
 		},
 		{
 			title: 'BIT',
 			dataIndex: 'bit',
 			key: 'bit',
 			width: 80,
-			render: (text: string) => text === '99' ? <span style={{ color: '#999' }}>NA</span> : <Tag>{text}</Tag>,
-		},
-		{
-			title: 'Description',
-			dataIndex: 'description',
-			key: 'description',
-			ellipsis: true,
-		},
-		{
-			title: 'Last Updated',
-			dataIndex: 'updatedAt',
-			key: 'updatedAt',
-			width: 150,
-			sorter: (a, b) => a.updatedAt.localeCompare(b.updatedAt),
-			render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
+			render: (text: string | number) => (
+				text !== null && text !== undefined ? <Tag>{text}</Tag> : <span style={{ color: '#ccc' }}>null</span>
+			),
 		},
 		{
 			title: 'Action',
@@ -228,10 +186,12 @@ const AllParameters: React.FC = () => {
 	];
 
 	const filteredData = parameters.filter((item) => {
+		const searchLower = searchText.toLowerCase();
+		const name = item.name || item.parameter || ''; // Check both name and parameter
 		const matchesSearch =
-			item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-			item.device.toLowerCase().includes(searchText.toLowerCase()) ||
-			item.description.toLowerCase().includes(searchText.toLowerCase());
+			name.toLowerCase().includes(searchLower) ||
+			(item.device || '').toLowerCase().includes(searchLower) ||
+			(item.description || '').toLowerCase().includes(searchLower);
 		
 		const matchesAccess = filterAccess === 'all' || item.access === filterAccess;
 		
@@ -246,10 +206,6 @@ const AllParameters: React.FC = () => {
 	// or we could define it as missing any optional field if we had them. 
 	// Let's say description is required for a "complete" parameter.
 	const missingFieldsCount = parameters.filter(p => !p.description || !p.unit).length;
-
-	// Find latest updated time
-	const sortedByDate = [...parameters].sort((a, b) => dayjs(b.updatedAt).valueOf() - dayjs(a.updatedAt).valueOf());
-	const lastUpdatedTime = sortedByDate.length > 0 ? dayjs(sortedByDate[0].updatedAt).fromNow() : 'N/A';
 
 	return (
 		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
@@ -280,10 +236,6 @@ const AllParameters: React.FC = () => {
 							</Typography.Text>
 						</Space>
 					</Space>
-
-					<Typography.Text type="secondary">
-						Last Updated: {lastUpdatedTime}
-					</Typography.Text>
 				</div>
 
 				{/* Layer 2: Toolbar */}
@@ -333,13 +285,17 @@ const AllParameters: React.FC = () => {
 					style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
 					bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
 				>
-					<Table
-						columns={columns}
-						dataSource={filteredData}
-						pagination={false}
-						size="small"
-						scroll={{ y: 'calc(100vh - 350px)' }}
-					/>
+					{refreshing && parameters.length === 0 ? (
+						<div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>
+					) : (
+						<Table
+							columns={columns}
+							dataSource={filteredData}
+							pagination={false}
+							size="small"
+							scroll={{ y: 'calc(100vh - 350px)' }}
+						/>
+					)}
 				</Card>
 			</div>
 		</div>

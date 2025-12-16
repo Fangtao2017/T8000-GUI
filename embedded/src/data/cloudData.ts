@@ -71,13 +71,19 @@ for (let i = 1; i <= 30; i++) {
   const site = sites[siteIndex];
 
   cloudGateways.push({
+    id: 100 + i,
     key: `mock-gw-${i}`,
     name: `Gateway T8000-${100 + i}`,
-    model: 'T8000',
+    modelName: 'T8000',
+    model: 'T8000', // Keep for compatibility if needed, or remove if strictly typed
     serialNumber: `2024000${100 + i}`,
     location: site.name,
     loc_id: site.id,
     status: Math.random() > 0.2 ? 'online' : 'offline',
+    nwkStatus: Math.random() > 0.2 ? 1 : 0,
+    enabled: 1,
+    priAddr: 100 + i,
+    fw_ver: '1.0.0',
     alarm_state: Math.random() > 0.9 ? 'Active Alarm' : 'Not alarm',
     err_state: 'No error',
     lastReport: `${Math.floor(Math.random() * 10)} min ago`,
@@ -85,7 +91,8 @@ for (let i = 1; i <= 30; i++) {
     // Same coordinates as site
     x: site.coordinates[0],
     y: site.coordinates[1],
-  });
+  } as any); // Cast to any to avoid strict type checking against the mixed type if necessary, or better, match the type exactly.
+
 }
 
 // Helper to get devices for a site

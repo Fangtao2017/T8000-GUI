@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select, Tooltip } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select, Tooltip, Spin } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import t8000Icon from '../assets/T8000 outlined.png';
+import { fetchModels } from '../api/modelApi';
 
 dayjs.extend(relativeTime);
 
@@ -34,248 +34,40 @@ const AllModels: React.FC = () => {
 	const [brandFilter, setBrandFilter] = useState('all');
 	const [refreshing, setRefreshing] = useState(false);
 
-	// Mock data
-	const [models] = useState<ModelData[]>([
-		{
-			key: '1',
-			model: 'T8000',
-			type: 'Gateway',
-			brand: 'TCAM',
-			icon: t8000Icon,
-			description: 'Modbus',
-			parameterCount: 0,
-			parameters: [],
-			createdAt: '2024-01-01',
-			updatedAt: '2025-11-20 10:00:00',
-			usageCount: 5,
-		},
-		{
-			key: '2',
-			model: 'T-AOM-01',
-			type: 'Module',
-			brand: 'TCAM',
-			icon: '🎛️',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Dimmable Light Control'],
-			createdAt: '2024-01-02',
-			updatedAt: '2025-10-15 14:30:00',
-			usageCount: 12,
-		},
-		{
-			key: '3',
-			model: 'T-DIM-01',
-			type: 'Dimmer',
-			brand: 'TCAM',
-			icon: '💡',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Dimming Level'],
-			createdAt: '2024-01-03',
-			updatedAt: '2025-09-01 09:15:00',
-			usageCount: 8,
-		},
-		{
-			key: '4',
-			model: 'T-OCC-01',
-			type: 'Sensor',
-			brand: 'TCAM',
-			icon: '🚶',
-			description: 'Modbus',
-			parameterCount: 2,
-			parameters: ['Occupancy', 'Lux'],
-			createdAt: '2024-01-04',
-			updatedAt: '2025-11-24 16:45:00',
-			usageCount: 20,
-		},
-		{
-			key: '5',
-			model: 'T-FM-01',
-			type: 'Meter',
-			brand: 'TCAM',
-			icon: '💧',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Flow Rate'],
-			createdAt: '2024-01-05',
-			updatedAt: '2025-08-20 11:20:00',
-			usageCount: 3,
-		},
-		{
-			key: '6',
-			model: 'T-TK-01',
-			type: 'Tank',
-			brand: 'TCAM',
-			icon: '🛢️',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Level'],
-			createdAt: '2024-01-06',
-			updatedAt: '2025-07-10 13:00:00',
-			usageCount: 0,
-		},
-		{
-			key: '7',
-			model: 'T-PP-01',
-			type: 'Pump',
-			brand: 'TCAM',
-			icon: '⛽',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Status'],
-			createdAt: '2024-01-07',
-			updatedAt: '2025-06-05 15:40:00',
-			usageCount: 2,
-		},
-		{
-			key: '8',
-			model: 'T-TEM-01',
-			type: 'Sensor',
-			brand: 'TCAM',
-			icon: '🌡️',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Temperature'],
-			createdAt: '2024-01-08',
-			updatedAt: '2025-11-22 08:30:00',
-			usageCount: 15,
-		},
-		{
-			key: '9',
-			model: 'T-TEM-02',
-			type: 'Sensor',
-			brand: 'TCAM',
-			icon: '🌡️',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Temperature'],
-			createdAt: '2024-01-09',
-			updatedAt: '2025-11-10 12:10:00',
-			usageCount: 0,
-		},
-		{
-			key: '10',
-			model: 'T-EMS-01',
-			type: 'Meter',
-			brand: 'TCAM',
-			icon: '⚡',
-			description: 'Modbus',
-			parameterCount: 3,
-			parameters: ['Voltage', 'Current', 'Power'],
-			createdAt: '2024-01-10',
-			updatedAt: '2025-10-01 10:00:00',
-			usageCount: 7,
-		},
-		{
-			key: '11',
-			model: 'T-EMS-02',
-			type: 'Meter',
-			brand: 'TCAM',
-			icon: '⚡',
-			description: 'Modbus',
-			parameterCount: 3,
-			parameters: ['Voltage', 'Current', 'Power'],
-			createdAt: '2024-01-11',
-			updatedAt: '2025-09-15 14:20:00',
-			usageCount: 4,
-		},
-		{
-			key: '12',
-			model: 'T-EMS-03',
-			type: 'Meter',
-			brand: 'TCAM',
-			icon: '⚡',
-			description: 'Modbus',
-			parameterCount: 3,
-			parameters: ['Voltage', 'Current', 'Power'],
-			createdAt: '2024-01-12',
-			updatedAt: '2025-08-05 09:50:00',
-			usageCount: 0,
-		},
-		{
-			key: '13',
-			model: 'T-ACP-01',
-			type: 'Panel',
-			brand: 'TCAM',
-			icon: '❄️',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Status'],
-			createdAt: '2024-01-13',
-			updatedAt: '2025-07-20 16:10:00',
-			usageCount: 6,
-		},
-		{
-			key: '14',
-			model: 'T-AIS-001',
-			type: 'Interface',
-			brand: 'TCAM',
-			icon: '🔌',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Status'],
-			createdAt: '2024-01-14',
-			updatedAt: '2025-06-30 11:00:00',
-			usageCount: 0,
-		},
-		{
-			key: '15',
-			model: 'T-FP-001',
-			type: 'Alarm',
-			brand: 'TCAM',
-			icon: '🔥',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Status'],
-			createdAt: '2024-01-15',
-			updatedAt: '2025-05-15 13:40:00',
-			usageCount: 1,
-		},
-		{
-			key: '16',
-			model: 'T-DIDO-01',
-			type: 'Module',
-			brand: 'TCAM',
-			icon: '🔌',
-			description: 'DI',
-			parameterCount: 2,
-			parameters: ['Input Status', 'Output Control'],
-			createdAt: '2024-01-16',
-			updatedAt: '2025-04-10 10:30:00',
-			usageCount: 9,
-		},
-		{
-			key: '17',
-			model: 'T-AIR-001',
-			type: 'Module',
-			brand: 'TCAM',
-			icon: '📡',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['IR Command'],
-			createdAt: '2024-01-17',
-			updatedAt: '2025-03-20 15:15:00',
-			usageCount: 0,
-		},
-		{
-			key: '18',
-			model: 'T-MIU-001',
-			type: 'Interface',
-			brand: 'TCAM',
-			icon: '🔌',
-			description: 'Modbus',
-			parameterCount: 1,
-			parameters: ['Status'],
-			createdAt: '2024-01-18',
-			updatedAt: '2025-02-15 09:00:00',
-			usageCount: 2,
-		},
-	]);
+	const [models, setModels] = useState<ModelData[]>([]);
+
+	const loadModels = async () => {
+		setRefreshing(true);
+		try {
+			const apiData = await fetchModels();
+			const mappedData: ModelData[] = apiData.map((item) => ({
+				key: item.model,
+				model: item.model,
+				type: item.type || 'Unknown',
+				brand: item.brand || 'Unknown',
+				icon: '📦', // Default icon
+				description: 'Modbus', // Default description
+				parameterCount: 0, // Default
+				parameters: [], // Default
+				createdAt: '2024-01-01', // Default
+				updatedAt: item.last_updated ? dayjs(item.last_updated * 1000).format('YYYY-MM-DD HH:mm:ss') : 'N/A',
+				usageCount: item.usage,
+			}));
+			setModels(mappedData);
+		} catch (error) {
+			message.error('Failed to load models');
+		} finally {
+			setRefreshing(false);
+		}
+	};
+
+	useEffect(() => {
+		loadModels();
+	}, []);
 
 	const handleRefresh = () => {
-		setRefreshing(true);
+		loadModels();
 		message.success('Data refreshed successfully');
-		setTimeout(() => setRefreshing(false), 1000);
 	};
 
 	const handleDelete = (record: ModelData) => {
@@ -403,10 +195,10 @@ const AllModels: React.FC = () => {
 	const noParamModels = models.filter(m => m.parameterCount === 0).length;
 	
 	// Find latest updated time
-	const sortedByDate = [...models].sort((a, b) => dayjs(b.updatedAt).valueOf() - dayjs(a.updatedAt).valueOf());
-	const lastUpdatedTime = sortedByDate.length > 0 ? dayjs(sortedByDate[0].updatedAt).fromNow() : 'N/A';
-
-	const uniqueTypes = Array.from(new Set(models.map(m => m.type))).sort();
+	// const sortedByDate = [...models].sort((a, b) => dayjs(b.updatedAt).valueOf() - dayjs(a.updatedAt).valueOf());
+  // const lastUpdatedTime = sortedByDate.length > 0 ? dayjs(sortedByDate[0].updatedAt).fromNow() : 'N/A';
+  
+  const uniqueTypes = Array.from(new Set(models.map(m => m.type))).sort();
 	const uniqueBrands = Array.from(new Set(models.map(m => m.brand))).sort();
 
 	return (
@@ -418,12 +210,12 @@ const AllModels: React.FC = () => {
 					backgroundColor: '#fff', 
 					border: '1px solid #d9d9d9',
 					borderRadius: 8,
-					padding: '12px 24px',
+					padding: '8px 24px',
 					display: 'flex',
 					alignItems: 'center',
 					justifyContent: 'space-between',
 					flexWrap: 'wrap',
-					gap: 16,
+					gap: 12,
 					flexShrink: 0
 				}}>
 					<Space size={24} style={{ flexWrap: 'wrap' }}>
@@ -436,14 +228,10 @@ const AllModels: React.FC = () => {
 							<Typography.Text>No Parameters: <strong>{noParamModels}</strong></Typography.Text>
 						</Space>
 					</Space>
-
-					<Typography.Text type="secondary">
-						Last Updated: {lastUpdatedTime}
-					</Typography.Text>
 				</div>
 
 				{/* Layer 2: Toolbar */}
-				<Card bordered bodyStyle={{ padding: '16px' }} style={{ flexShrink: 0 }}>
+				<Card bordered bodyStyle={{ padding: '12px' }} style={{ flexShrink: 0 }}>
 					<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
 						<Space size={12}>
 							<Search
@@ -475,9 +263,6 @@ const AllModels: React.FC = () => {
 									<Option key={brand} value={brand}>{brand}</Option>
 								))}
 							</Select>
-							<Typography.Text type="secondary" style={{ fontSize: 12, alignSelf: 'center' }}>
-								{filteredData.length} of {totalModels} models
-							</Typography.Text>
 						</Space>
 						<Space size={8}>
 							<Button icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
@@ -501,13 +286,17 @@ const AllModels: React.FC = () => {
 					style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
 					bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
 				>
-					<Table
-						columns={columns}
-						dataSource={filteredData}
-						pagination={false}
-						size="small"
-						scroll={{ y: 'calc(100vh - 350px)' }}
-					/>
+					{refreshing && models.length === 0 ? (
+						<div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>
+					) : (
+						<Table
+							columns={columns}
+							dataSource={filteredData}
+							pagination={false}
+							size="small"
+							scroll={{ y: 'calc(100vh - 380px)' }}
+						/>
+					)}
 				</Card>
 			</div>
 		</div>

@@ -1,264 +1,71 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Layout, 
-  Card, 
-  Row, 
-  Col, 
-  Typography, 
-  Tag, 
-  Space, 
-  Empty,
-  Button,
-  Input,
-  Drawer,
-  Descriptions,
-  Switch,
-  Slider,
-  message,
-  Checkbox,
-  Radio,
-  Collapse,
-  Badge
+  Layout, Card, Input, Button, Row, Col, Typography, 
+  Space, Tag, Badge, Drawer, List, Table, Collapse, Checkbox, 
+  Radio, Empty, Spin, Statistic, InputNumber, message 
 } from 'antd';
 import { 
-  ReloadOutlined,
-  BulbOutlined,
-  FilterOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  DisconnectOutlined
+  ReloadOutlined, FilterOutlined, 
+  AppstoreOutlined, BarsOutlined, WifiOutlined, 
+  DisconnectOutlined, AlertOutlined, CheckCircleOutlined,
+  EnvironmentOutlined,
+  ClockCircleOutlined
 } from '@ant-design/icons';
-import { allDevices, parameterUnits } from '../data/devicesData';
-import type { DeviceData } from '../data/devicesData';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { fetchDevices } from '../api/deviceApi';
+import type { DeviceData, DeviceParameterData } from '../data/devicesData';
 
-const { Title, Text } = Typography;
+dayjs.extend(relativeTime);
+
 const { Sider, Content } = Layout;
+const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
 // --- Types ---
 interface FilterState {
+  status: ('online' | 'offline')[];
+  alarm: ('active' | 'normal')[];
   locations: string[];
   types: string[];
-  status: 'all' | 'online' | 'offline';
-  alarm: 'all' | 'alarm' | 'normal';
+  freshness: 'all' | '1min' | '5min' | 'stale';
   search: string;
 }
 
-// --- Styles ---
-const cardStyle = {
-  borderRadius: '8px',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-  border: '1px solid #f0f0f0',
-  transition: 'all 0.3s ease',
-  height: '100%',
-  overflow: 'hidden',
-  background: '#FFFFFF'
-};
-
-const cardHoverStyle = {
-  transform: 'translateY(-2px)',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-  borderColor: '#d9d9d9',
-  cursor: 'pointer'
-};
-
 // --- Helper Functions ---
-
-const getUniqueLocations = (devices: DeviceData[]) => {
-  const locations = new Set(devices.map(d => d.location));
-  return Array.from(locations).sort();
-};
-
 const getDeviceType = (device: DeviceData): string => {
-  if (device.model.includes('OCC')) return 'Occupancy';
-  if (device.model.includes('DIM')) return 'Lux'; // Assuming Dimmer relates to Lux/Light
-  if (device.model.includes('EMS')) return 'Power Meter';
-  if (device.model.includes('TK') || device.model.includes('FM')) return 'Water Meter';
-  if (device.parameters?.temperature !== undefined && !device.parameters?.humidity) return 'Temperature';
-  if (device.parameters?.humidity !== undefined) return 'Humidity';
-  if (device.parameters?.power !== undefined || device.parameters?.voltage !== undefined) return 'Power';
-  if (device.parameters?.level !== undefined || device.parameters?.pressure !== undefined) return 'Water/Pressure';
-  if (device.parameters?.input1 !== undefined) return 'I/O Module';
+  if (device.modelName?.includes('OCC')) return 'Occupancy';
+  if (device.modelName?.includes('DIM')) return 'Lighting';
+  if (device.modelName?.includes('EMS')) return 'Power Meter';
+  if (device.modelName?.includes('TK') || device.modelName?.includes('FM')) return 'Water Meter';
+  // Fallback based on parameters if model name is generic
+  if (device.liveData) {
+      if (device.liveData.some(p => p.name.toLowerCase().includes('temp'))) return 'Temperature';
+      if (device.liveData.some(p => p.name.toLowerCase().includes('power'))) return 'Power';
+  }
   return 'Other';
 };
 
-const getPrimaryValue = (device: DeviceData) => {
-  if (!device.parameters) return { label: 'Status', value: device.status };
-  
-  const type = getDeviceType(device);
-  
-  switch (type) {
-    case 'Temperature':
-      if (device.parameters.temperature !== undefined) return { label: 'Temp', value: `${device.parameters.temperature}°C` };
-      break;
-    case 'Humidity':
-      if (device.parameters.humidity !== undefined) return { label: 'Humidity', value: `${device.parameters.humidity}%` };
-      break;
-    case 'Occupancy':
-      // Mocking occupancy based on some logic or existing field if available, else default
-      // The mock data doesn't have explicit 'occupancy' field, but let's assume it's derived or use a placeholder
-      return { label: 'Occupancy', value: 'Occupied' }; 
-    case 'Lux':
-      if (device.parameters.brightness !== undefined) return { label: 'Lux', value: `${device.parameters.brightness} lx` }; // Mapping brightness to Lux for demo
-      break;
-    case 'Power Meter':
-      if (device.parameters.power !== undefined) return { label: 'Power', value: `${device.parameters.power} W` };
-      break;
-    case 'Water Meter':
-      if (device.parameters.level !== undefined) return { label: 'Level', value: `${device.parameters.level}%` };
-      if (device.parameters.pressure !== undefined) return { label: 'Pressure', value: `${device.parameters.pressure} bar` };
-      break;
-  }
-
-  // Fallbacks
-  if (device.parameters.temperature !== undefined) return { label: 'Temp', value: `${device.parameters.temperature}°C` };
-  if (device.parameters.power !== undefined) return { label: 'Power', value: `${device.parameters.power}W` };
-  if (device.parameters.level !== undefined) return { label: 'Level', value: `${device.parameters.level}%` };
-  if (device.parameters.input1 !== undefined) return { label: 'Input 1', value: device.parameters.input1 };
-  
-  const firstKey = Object.keys(device.parameters)[0];
-  return { label: firstKey, value: device.parameters[firstKey] };
+const getFreshnessStatus = (timestamp?: number) => {
+    if (!timestamp) return 'stale';
+    const diff = dayjs().unix() - timestamp;
+    if (diff < 60) return 'fresh';
+    if (diff < 300) return 'recent';
+    return 'stale';
 };
 
-const getSecondaryValues = (device: DeviceData) => {
-  if (!device.parameters) return [];
-  const type = getDeviceType(device);
-  const secondaries = [];
-
-  // Common secondaries
-  if (device.parameters.humidity !== undefined && type !== 'Humidity') {
-    secondaries.push({ label: 'Humidity', value: `${device.parameters.humidity}%` });
-  }
-  if (device.parameters.temperature !== undefined && type !== 'Temperature') {
-    secondaries.push({ label: 'Temp', value: `${device.parameters.temperature}°C` });
-  }
-  if (device.parameters.energy !== undefined) {
-    secondaries.push({ label: 'Energy', value: `${device.parameters.energy} kWh` });
-  }
-  if (device.parameters.voltage !== undefined && type !== 'Power Meter') {
-    secondaries.push({ label: 'Voltage', value: `${device.parameters.voltage} V` });
-  }
-  
-  // Limit to 2
-  return secondaries.slice(0, 2);
-};
-
-const getUniqueTypes = (devices: DeviceData[]) => {
-  const types = new Set(devices.map(d => getDeviceType(d)));
-  return Array.from(types).sort();
+const getFreshnessColor = (status: string) => {
+    switch (status) {
+        case 'fresh': return '#52c41a'; // Green
+        case 'recent': return '#faad14'; // Yellow
+        case 'stale': return '#d9d9d9'; // Grey
+        default: return '#d9d9d9';
+    }
 };
 
 // --- Components ---
 
-// Device Card Component
-const DeviceCard: React.FC<{ device: DeviceData; onClick: () => void }> = ({ device, onClick }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const primary = getPrimaryValue(device);
-  const secondaries = getSecondaryValues(device);
-  const isAlarm = device.alarm_state === 'Active Alarm';
-  const isOffline = device.status === 'offline';
-
-  const renderQuickActions = () => {
-    if (device.model === 'T-DIM-01') {
-      const brightness = device.parameters?.brightness !== undefined ? Number(device.parameters.brightness) : 50;
-      return (
-        <div style={{ marginTop: 12 }} onClick={e => e.stopPropagation()}>
-          <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-            <BulbOutlined style={{ color: isOffline ? '#ccc' : '#faad14' }} />
-            <Slider 
-              style={{ flex: 1, margin: '0 12px' }} 
-              defaultValue={brightness} 
-              disabled={isOffline} 
-              trackStyle={{ backgroundColor: '#faad14' }}
-              handleStyle={{ borderColor: '#faad14' }}
-            />
-            <Switch size="small" defaultChecked disabled={isOffline} style={{ backgroundColor: isOffline ? undefined : '#52c41a' }} />
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const getStatusColor = () => {
-    if (isOffline) return '#d9d9d9';
-    if (isAlarm) return '#ff4d4f';
-    return '#52c41a';
-  };
-
-  return (
-    <Card
-      style={{ 
-        ...cardStyle,
-        ...(isHovered ? cardHoverStyle : {}),
-        borderLeft: `4px solid ${getStatusColor()}`,
-      }}
-      bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column' }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={onClick}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          <Text strong style={{ fontSize: 15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
-            {device.name}
-          </Text>
-          <Text type="secondary" style={{ fontSize: 11 }}>
-            {device.model} • {device.location}
-          </Text>
-        </div>
-        {isAlarm && <Badge status="error" />}
-      </div>
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-          <Text style={{ 
-            fontSize: 24, 
-            fontWeight: 600, 
-            color: isAlarm ? '#ff4d4f' : isOffline ? '#999' : '#1f1f1f',
-          }}>
-            {String(primary.value).replace(/[^\d.-]/g, '')}
-          </Text>
-          <Text style={{ fontSize: 12, fontWeight: 500, color: '#8c8c8c' }}>
-            {String(primary.value).replace(/[\d.-]/g, '')}
-          </Text>
-        </div>
-        <Text type="secondary" style={{ fontSize: 11 }}>
-          {primary.label}
-        </Text>
-        
-        {/* Secondary Values */}
-        {secondaries.length > 0 && (
-          <div style={{ marginTop: 12, display: 'flex', gap: 12 }}>
-            {secondaries.map((sec, idx) => (
-              <div key={idx}>
-                <Text strong style={{ fontSize: 12, display: 'block' }}>{sec.value}</Text>
-                <Text type="secondary" style={{ fontSize: 10 }}>{sec.label}</Text>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid #f5f5f5' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Tag 
-            color={isAlarm ? 'error' : isOffline ? 'default' : 'success'} 
-            style={{ margin: 0, fontSize: 10, lineHeight: '18px' }}
-          >
-            {isOffline ? 'OFFLINE' : isAlarm ? 'ALARM' : 'NORMAL'}
-          </Tag>
-          <Text type="secondary" style={{ fontSize: 10 }}>
-            {device.lastReport}
-          </Text>
-        </div>
-        {renderQuickActions()}
-      </div>
-    </Card>
-  );
-};
-
-// Filter Panel Component
+// 1. Filter Panel
 const FilterPanel: React.FC<{
   filters: FilterState;
   onChange: (newFilters: FilterState) => void;
@@ -267,366 +74,496 @@ const FilterPanel: React.FC<{
   counts: { locations: Record<string, number>; types: Record<string, number> };
 }> = ({ filters, onChange, locations, types, counts }) => {
   
-  const handleLocationChange = (checkedValues: string[]) => {
-    onChange({ ...filters, locations: checkedValues });
-  };
-
-  const handleTypeChange = (checkedValues: string[]) => {
-    onChange({ ...filters, types: checkedValues });
-  };
-
   return (
-    <div style={{ paddingRight: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Title level={5} style={{ margin: 0 }}>Filters</Title>
-        {(filters.locations.length > 0 || filters.types.length > 0 || filters.status !== 'all' || filters.alarm !== 'all') && (
-          <Button 
-            type="link" 
-            size="small" 
-            onClick={() => onChange({ locations: [], types: [], status: 'all', alarm: 'all', search: filters.search })}
-            style={{ padding: 0, color: '#003a8c' }}
-          >
-            Clear All
-          </Button>
-        )}
+    <div style={{ padding: '16px' }}>
+      <div style={{ marginBottom: 24 }}>
+        <Title level={5}><FilterOutlined /> Filters</Title>
       </div>
 
-      <Collapse defaultActiveKey={['status', 'alarm', 'location', 'type']} ghost expandIconPosition="end">
+      <Collapse defaultActiveKey={['status', 'alarm', 'freshness']} ghost expandIconPosition="end">
         <Panel header="Sensor Status" key="status">
-          <Radio.Group 
-            value={filters.status} 
-            onChange={e => onChange({ ...filters, status: e.target.value })}
+          <Checkbox.Group 
             style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            value={filters.status}
+            onChange={(vals) => onChange({ ...filters, status: vals as any[] })}
           >
-            <Radio value="all">All Status</Radio>
-            <Radio value="online"><Space><CheckCircleOutlined style={{ color: '#52c41a' }}/> Online</Space></Radio>
-            <Radio value="offline"><Space><DisconnectOutlined style={{ color: '#d9d9d9' }}/> Offline</Space></Radio>
-          </Radio.Group>
+            <Checkbox value="online"><Badge status="success" text="Online" /></Checkbox>
+            <Checkbox value="offline"><Badge status="error" text="Offline" /></Checkbox>
+          </Checkbox.Group>
         </Panel>
 
         <Panel header="Alarm Status" key="alarm">
-          <Radio.Group 
-            value={filters.alarm} 
-            onChange={e => onChange({ ...filters, alarm: e.target.value })}
+           <Checkbox.Group 
             style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            value={filters.alarm}
+            onChange={(vals) => onChange({ ...filters, alarm: vals as any[] })}
           >
-            <Radio value="all">All</Radio>
-            <Radio value="alarm"><Space><ExclamationCircleOutlined style={{ color: '#ff4d4f' }}/> Active Alarm</Space></Radio>
-            <Radio value="normal"><Space><CheckCircleOutlined style={{ color: '#52c41a' }}/> Normal</Space></Radio>
-          </Radio.Group>
+            <Checkbox value="active"><Text type="danger"><AlertOutlined /> Active Alarm</Text></Checkbox>
+            <Checkbox value="normal"><Text type="success"><CheckCircleOutlined /> Normal</Text></Checkbox>
+          </Checkbox.Group>
+        </Panel>
+
+        <Panel header="Data Freshness" key="freshness">
+            <Radio.Group 
+                value={filters.freshness} 
+                onChange={e => onChange({ ...filters, freshness: e.target.value })}
+                style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            >
+                <Radio value="all">All Data</Radio>
+                <Radio value="1min"><Text type="success">Updated &lt; 1 min</Text></Radio>
+                <Radio value="5min"><Text type="warning">Updated &lt; 5 min</Text></Radio>
+                <Radio value="stale"><Text type="secondary">Stale / No Data</Text></Radio>
+            </Radio.Group>
         </Panel>
 
         <Panel header="Location" key="location">
-          <Checkbox.Group 
-            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-            value={filters.locations}
-            onChange={handleLocationChange}
-          >
-            {locations.map(loc => (
-              <Checkbox key={loc} value={loc}>
-                <span style={{ fontSize: 13 }}>{loc} <Text type="secondary" style={{ fontSize: 11 }}>({counts.locations[loc] || 0})</Text></span>
-              </Checkbox>
-            ))}
-          </Checkbox.Group>
+            <Checkbox.Group 
+                style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+                value={filters.locations}
+                onChange={(vals) => onChange({ ...filters, locations: vals as string[] })}
+            >
+                {locations.map(loc => (
+                    <Checkbox key={loc} value={loc}>
+                        {loc || 'Unknown'} <Text type="secondary" style={{ fontSize: 12 }}>({counts.locations[loc] || 0})</Text>
+                    </Checkbox>
+                ))}
+            </Checkbox.Group>
         </Panel>
 
-        <Panel header="Sensor Type" key="type">
-          <Checkbox.Group 
-            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-            value={filters.types}
-            onChange={handleTypeChange}
-          >
-            {types.map(type => (
-              <Checkbox key={type} value={type}>
-                <span style={{ fontSize: 13 }}>{type} <Text type="secondary" style={{ fontSize: 11 }}>({counts.types[type] || 0})</Text></span>
-              </Checkbox>
-            ))}
-          </Checkbox.Group>
+        <Panel header="Device Type" key="type">
+             <Checkbox.Group 
+                style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+                value={filters.types}
+                onChange={(vals) => onChange({ ...filters, types: vals as string[] })}
+            >
+                {types.map(type => (
+                    <Checkbox key={type} value={type}>
+                        {type} <Text type="secondary" style={{ fontSize: 12 }}>({counts.types[type] || 0})</Text>
+                    </Checkbox>
+                ))}
+            </Checkbox.Group>
         </Panel>
       </Collapse>
+      
+      <Button type="link" onClick={() => onChange({
+          status: [], alarm: [], locations: [], types: [], freshness: 'all', search: ''
+      })}>
+          Clear All Filters
+      </Button>
     </div>
   );
 };
 
-// Main Component
-const RealTimeMonitor: React.FC = () => {
-  const [filters, setFilters] = useState<FilterState>({
-    locations: [],
-    types: [],
-    status: 'all',
-    alarm: 'all',
-    search: ''
-  });
-  
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null);
-  const [mobileFilterVisible, setMobileFilterVisible] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  // Derived Data
-  const uniqueLocations = useMemo(() => getUniqueLocations(allDevices), []);
-  const uniqueTypes = useMemo(() => getUniqueTypes(allDevices), []);
-
-  // Calculate counts for facets
-  const facetCounts = useMemo(() => {
-    const locCounts: Record<string, number> = {};
-    const typeCounts: Record<string, number> = {};
+// 2. Device Card
+const DeviceCard: React.FC<{ device: DeviceData; onClick: () => void }> = ({ device, onClick }) => {
+    const isOnline = device.nwkStatus === 1;
+    const isAlarm = device.liveData?.some(p => p.alarm);
     
-    allDevices.forEach(d => {
-      locCounts[d.location] = (locCounts[d.location] || 0) + 1;
-      const t = getDeviceType(d);
-      typeCounts[t] = (typeCounts[t] || 0) + 1;
-    });
-    return { locations: locCounts, types: typeCounts };
-  }, []);
+    // Find latest timestamp among parameters
+    const lastUpdate = device.liveData?.reduce((max, p) => Math.max(max, p.timestamp || 0), 0) || device.lastSeen || 0;
+    const freshness = getFreshnessStatus(lastUpdate);
+    
+    // Get top 2 parameters
+    const keyParams = device.liveData?.slice(0, 2) || [];
 
-  // Filter Logic
-  const filteredDevices = useMemo(() => {
-    return allDevices.filter(d => {
-      // Search
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        const match = d.name.toLowerCase().includes(q) || 
-                      d.model.toLowerCase().includes(q) || 
-                      d.location.toLowerCase().includes(q);
-        if (!match) return false;
-      }
-      // Status
-      if (filters.status === 'online' && d.status !== 'online') return false;
-      if (filters.status === 'offline' && d.status !== 'offline') return false;
-      // Alarm
-      if (filters.alarm === 'alarm' && d.alarm_state !== 'Active Alarm') return false;
-      if (filters.alarm === 'normal' && d.alarm_state === 'Active Alarm') return false;
-      // Location
-      if (filters.locations.length > 0 && !filters.locations.includes(d.location)) return false;
-      // Type
-      if (filters.types.length > 0 && !filters.types.includes(getDeviceType(d))) return false;
-
-      return true;
-    });
-  }, [filters]);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-      message.success('Data refreshed');
-    }, 800);
-  };
-
-  const removeFilter = (key: keyof FilterState, value?: string) => {
-    if (key === 'locations' && value) {
-      setFilters(prev => ({ ...prev, locations: prev.locations.filter(l => l !== value) }));
-    } else if (key === 'types' && value) {
-      setFilters(prev => ({ ...prev, types: prev.types.filter(t => t !== value) }));
-    } else if (key === 'status') {
-      setFilters(prev => ({ ...prev, status: 'all' }));
-    } else if (key === 'alarm') {
-      setFilters(prev => ({ ...prev, alarm: 'all' }));
-    } else if (key === 'search') {
-      setFilters(prev => ({ ...prev, search: '' }));
-    }
-  };
-
-  return (
-    <Layout style={{ height: '100%', background: '#ffffff' }}>
-      {/* Mobile Filter Drawer */}
-      <Drawer
-        title="Filters"
-        placement="left"
-        onClose={() => setMobileFilterVisible(false)}
-        open={mobileFilterVisible}
-        width={280}
-      >
-        <FilterPanel 
-          filters={filters} 
-          onChange={setFilters} 
-          locations={uniqueLocations} 
-          types={uniqueTypes}
-          counts={facetCounts}
-        />
-      </Drawer>
-
-      {/* Desktop Sidebar */}
-      <Sider 
-        width={280} 
-        theme="light" 
-        breakpoint="lg" 
-        collapsedWidth="0"
-        onBreakpoint={() => {
-          // Could handle layout changes here
-        }}
-        trigger={null}
-        style={{ 
-          overflowY: 'auto', 
-          height: '100%', 
-          position: 'sticky', 
-          top: 0, 
-          left: 0,
-          borderRight: '1px solid #e8e8e8',
-          padding: '24px 16px',
-          display: 'none' // Hidden by default, shown via media query usually, but AntD Sider handles it.
-                          // Actually, let's just use standard Sider behavior.
-        }}
-        className="desktop-sider" // We can use CSS to hide on mobile if needed, but breakpoint does it.
-      >
-        <FilterPanel 
-          filters={filters} 
-          onChange={setFilters} 
-          locations={uniqueLocations} 
-          types={uniqueTypes}
-          counts={facetCounts}
-        />
-      </Sider>
-
-      <Content style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Fixed Header Section */}
-        <div style={{ padding: '24px 24px 0 24px', flexShrink: 0, background: '#ffffff', zIndex: 1 }}>
-          <div style={{ maxWidth: 1600, margin: '0 auto' }}>
-            {/* Header & Toolbar */}
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 16 }}>
+    return (
+        <Card
+            hoverable
+            onClick={onClick}
+            style={{ 
+                height: '100%', 
+                borderTop: `3px solid ${isAlarm ? '#ff4d4f' : isOnline ? '#52c41a' : '#ff4d4f'}`,
+                opacity: isOnline ? 1 : 0.7
+            }}
+            bodyStyle={{ padding: '12px 16px', height: '100%', display: 'flex', flexDirection: 'column' }}
+        >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
                 <div>
-                  <Title level={2} style={{ margin: 0 }}>Sensor Monitoring</Title>
-                  <Text type="secondary">Real-time data from {allDevices.length} connected sensors</Text>
+                    <Text strong style={{ fontSize: 16, display: 'block' }}>{device.name}</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{device.location || 'No Location'}</Text>
                 </div>
-                <Space>
-                  <Button 
-                    icon={<FilterOutlined />} 
-                    onClick={() => setMobileFilterVisible(true)}
-                    className="mobile-filter-btn" // Hide on desktop via CSS if possible, or just leave it
-                    style={{ display: 'none' }} // We'll rely on Sider for desktop
-                  >
-                    Filters
-                  </Button>
-                  <Input.Search 
-                    placeholder="Search sensors, locations..." 
-                    style={{ width: 300 }} 
-                    allowClear
-                    value={filters.search}
-                    onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  />
-                  <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={refreshing} />
+                {isAlarm && <AlertOutlined style={{ color: '#ff4d4f', fontSize: 18 }} />}
+            </div>
+
+            <div style={{ flex: 1, marginBottom: 12 }}>
+                {keyParams.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        {keyParams.map(p => (
+                            <div key={p.id} style={{ background: '#f5f5f5', padding: '4px 8px', borderRadius: 4 }}>
+                                <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>{p.name}</Text>
+                                <Text strong>{p.value !== null ? p.value : '--'} <span style={{ fontSize: 10 }}>{p.unit}</span></Text>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div style={{ textAlign: 'center', padding: '12px 0', color: '#ccc' }}>
+                        No Parameters
+                    </div>
+                )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
+                <Space size={4}>
+                    <ClockCircleOutlined style={{ fontSize: 12, color: getFreshnessColor(freshness) }} />
+                    <Text type="secondary" style={{ fontSize: 11 }}>
+                        {lastUpdate ? dayjs.unix(lastUpdate).fromNow() : 'Never'}
+                    </Text>
                 </Space>
-              </div>
-
-              {/* Active Filters Chips */}
-              <div style={{ minHeight: 32 }}>
-                {filters.search && (
-                  <Tag closable onClose={() => removeFilter('search')} color="blue">
-                    Search: {filters.search}
-                  </Tag>
-                )}
-                {filters.status !== 'all' && (
-                  <Tag closable onClose={() => removeFilter('status')} color={filters.status === 'online' ? 'green' : 'default'}>
-                    Status: {filters.status.toUpperCase()}
-                  </Tag>
-                )}
-                {filters.alarm !== 'all' && (
-                  <Tag closable onClose={() => removeFilter('alarm')} color={filters.alarm === 'alarm' ? 'red' : 'green'}>
-                    Alarm: {filters.alarm === 'alarm' ? 'ACTIVE' : 'NORMAL'}
-                  </Tag>
-                )}
-                {filters.locations.map(loc => (
-                  <Tag key={loc} closable onClose={() => removeFilter('locations', loc)}>
-                    Loc: {loc}
-                  </Tag>
-                ))}
-                {filters.types.map(t => (
-                  <Tag key={t} closable onClose={() => removeFilter('types', t)}>
-                    Type: {t}
-                  </Tag>
-                ))}
-                {(filters.locations.length > 0 || filters.types.length > 0 || filters.status !== 'all' || filters.alarm !== 'all' || filters.search) && (
-                  <Button type="link" size="small" onClick={() => setFilters({ locations: [], types: [], status: 'all', alarm: 'all', search: '' })} style={{ color: '#003a8c' }}>
-                    Clear All
-                  </Button>
-                )}
-              </div>
+                <Button size="small" onClick={(e) => { e.stopPropagation(); onClick(); }}>Details</Button>
             </div>
-          </div>
-        </div>
+        </Card>
+    );
+};
 
-        {/* Scrollable Content Section */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px 24px' }}>
-          <div style={{ maxWidth: 1600, margin: '0 auto' }}>
-            {/* Results Grid */}
-            {filteredDevices.length > 0 ? (
-              <Row gutter={[16, 16]}>
-                {filteredDevices.map(device => (
-                  <Col xs={24} sm={12} md={8} lg={6} xl={6} xxl={4} key={device.key}>
-                    <DeviceCard device={device} onClick={() => {
-                      setSelectedDevice(device);
-                      setDrawerVisible(true);
-                    }} />
-                  </Col>
-                ))}
-              </Row>
-            ) : (
-              <Empty description="No sensors match your filters" style={{ marginTop: 64 }} />
-            )}
-          </div>
-        </div>
-      </Content>
+// 3. Main Page
+const RealTimeMonitor: React.FC = () => {
+    const [devices, setDevices] = useState<DeviceData[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+    const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null);
+    const [drawerVisible, setDrawerVisible] = useState(false);
+    const [mobileFilterVisible, setMobileFilterVisible] = useState(false);
+    
+    const [filters, setFilters] = useState<FilterState>({
+        status: [],
+        alarm: [],
+        locations: [],
+        types: [],
+        freshness: 'all',
+        search: ''
+    });
 
-      {/* Detail Drawer */}
-      <Drawer
-        title={selectedDevice?.name}
-        placement="right"
-        onClose={() => setDrawerVisible(false)}
-        open={drawerVisible}
-        width={400}
-      >
-        {selectedDevice && (
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
-            <div style={{ textAlign: 'center', padding: '24px 0', background: '#f9f9f9', borderRadius: 8, border: '1px solid #f0f0f0' }}>
-              <Text type="secondary">Current Reading</Text>
-              <div style={{ fontSize: 42, fontWeight: 'bold', color: '#003a8c', lineHeight: 1.2 }}>
-                {getPrimaryValue(selectedDevice).value}
-              </div>
-              <Tag color={selectedDevice.status === 'online' ? 'green' : 'red'}>
-                {selectedDevice.status.toUpperCase()}
-              </Tag>
-            </div>
-
-            <Descriptions title="Device Info" column={1} bordered size="small">
-              <Descriptions.Item label="Model">{selectedDevice.model}</Descriptions.Item>
-              <Descriptions.Item label="Location">{selectedDevice.location}</Descriptions.Item>
-              <Descriptions.Item label="Serial No">{selectedDevice.serialNumber}</Descriptions.Item>
-              <Descriptions.Item label="Last Report">{selectedDevice.lastReport}</Descriptions.Item>
-            </Descriptions>
-
-            {selectedDevice.parameters && (
-              <Descriptions title="All Parameters" column={1} bordered size="small">
-                {Object.entries(selectedDevice.parameters).map(([key, val]) => (
-                  <Descriptions.Item label={key} key={key}>
-                    {val} {parameterUnits[key] || ''}
-                  </Descriptions.Item>
-                ))}
-              </Descriptions>
-            )}
-          </Space>
-        )}
-      </Drawer>
-
-      {/* CSS for responsive Sider visibility */}
-      <style>{`
-        @media (max-width: 992px) {
-          .desktop-sider {
-            display: none !important;
-          }
-          .mobile-filter-btn {
-            display: inline-flex !important;
-          }
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const data = await fetchDevices();
+            setDevices(data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
         }
-        @media (min-width: 993px) {
-          .desktop-sider {
-            display: block !important;
-          }
+    };
+
+    useEffect(() => {
+        loadData();
+        const interval = setInterval(loadData, 30000); // Auto refresh every 30s
+        return () => clearInterval(interval);
+    }, []);
+
+    // Derived Data
+    const uniqueLocations = useMemo(() => Array.from(new Set(devices.map(d => d.location || 'Unknown'))).sort(), [devices]);
+    const uniqueTypes = useMemo(() => Array.from(new Set(devices.map(d => getDeviceType(d)))).sort(), [devices]);
+    
+    const facetCounts = useMemo(() => {
+        const locs: Record<string, number> = {};
+        const typs: Record<string, number> = {};
+        devices.forEach(d => {
+            const l = d.location || 'Unknown';
+            locs[l] = (locs[l] || 0) + 1;
+            const t = getDeviceType(d);
+            typs[t] = (typs[t] || 0) + 1;
+        });
+        return { locations: locs, types: typs };
+    }, [devices]);
+
+    const filteredDevices = useMemo(() => {
+        return devices.filter(d => {
+            // Search
+            if (filters.search) {
+                const q = filters.search.toLowerCase();
+                const matchName = d.name.toLowerCase().includes(q);
+                const matchLoc = d.location?.toLowerCase().includes(q);
+                const matchParam = d.liveData?.some(p => p.name.toLowerCase().includes(q));
+                if (!matchName && !matchLoc && !matchParam) return false;
+            }
+            // Status
+            if (filters.status.length > 0) {
+                const status = d.nwkStatus === 1 ? 'online' : 'offline';
+                if (!filters.status.includes(status)) return false;
+            }
+            // Alarm
+            if (filters.alarm.length > 0) {
+                const hasAlarm = d.liveData?.some(p => p.alarm);
+                const status = hasAlarm ? 'active' : 'normal';
+                if (!filters.alarm.includes(status)) return false;
+            }
+            // Location
+            if (filters.locations.length > 0 && !filters.locations.includes(d.location || 'Unknown')) return false;
+            // Type
+            if (filters.types.length > 0 && !filters.types.includes(getDeviceType(d))) return false;
+            // Freshness
+            if (filters.freshness !== 'all') {
+                const lastUpdate = d.liveData?.reduce((max, p) => Math.max(max, p.timestamp || 0), 0) || d.lastSeen || 0;
+                const status = getFreshnessStatus(lastUpdate);
+                if (filters.freshness === '1min' && status !== 'fresh') return false;
+                if (filters.freshness === '5min' && (status === 'stale')) return false; // fresh or recent
+                if (filters.freshness === 'stale' && status !== 'stale') return false;
+            }
+            return true;
+        });
+    }, [devices, filters]);
+
+    // Table Columns
+    const tableColumns: any = [
+        {
+            title: 'Device',
+            dataIndex: 'name',
+            key: 'name',
+            width: 220,
+            render: (text: string, record: DeviceData) => (
+                <Space>
+                    <Badge status={record.nwkStatus === 1 ? 'success' : 'error'} />
+                    <Text strong style={{ whiteSpace: 'nowrap' }}>{text}</Text>
+                </Space>
+            )
+        },
+        {
+            title: 'Location',
+            dataIndex: 'location',
+            key: 'location',
+            width: 180,
+            ellipsis: true,
+        },
+        {
+            title: 'Parameters',
+            key: 'parameters',
+            render: (_: any, record: DeviceData) => {
+                // Sort parameters by timestamp descending (newest first)
+                const params = [...(record.liveData || [])].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                const displayParams = params.slice(0, 2);
+                const moreCount = params.length - 2;
+                
+                return (
+                    <Space size={8} wrap>
+                        {displayParams.map(p => (
+                            <div key={p.id} style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                background: p.alarm ? '#fff2f0' : '#f0f5ff', 
+                                border: `1px solid ${p.alarm ? '#ffccc7' : '#adc6ff'}`,
+                                borderRadius: 4,
+                                padding: '2px 8px',
+                                fontSize: 13
+                            }} onClick={e => e.stopPropagation()}>
+                                <span style={{ color: '#595959', marginRight: 6 }}>{p.name}:</span>
+                                <span style={{ fontWeight: 600, color: p.alarm ? '#cf1322' : '#1d39c4' }}>
+                                    {p.value} <span style={{ fontSize: 11, fontWeight: 400 }}>{p.unit}</span>
+                                </span>
+                            </div>
+                        ))}
+                        {moreCount > 0 && (
+                            <Tag style={{ margin: 0, borderRadius: 10 }}>+{moreCount} more</Tag>
+                        )}
+                    </Space>
+                );
+            }
+        },
+        {
+            title: 'Last Updated',
+            key: 'lastSeen',
+            width: 180,
+            render: (_: any, record: DeviceData) => {
+                const lastUpdate = record.liveData?.reduce((max, p) => Math.max(max, p.timestamp || 0), 0) || record.lastSeen || 0;
+                return <Text type="secondary" style={{ whiteSpace: 'nowrap' }}>{lastUpdate ? dayjs.unix(lastUpdate).fromNow() : '-'}</Text>;
+            }
+        },
+        {
+            title: 'Action',
+            key: 'action',
+            width: 100,
+            align: 'center',
+            render: (_: any, record: DeviceData) => (
+                <Button size="small" onClick={() => { setSelectedDevice(record); setDrawerVisible(true); }}>
+                    Details
+                </Button>
+            )
         }
-      `}</style>
-    </Layout>
-  );
+    ];
+
+    return (
+        <Layout style={{ height: 'calc(100vh - 140px)', background: '#ffffff' }}>
+            <Drawer
+                title="Filters"
+                placement="left"
+                onClose={() => setMobileFilterVisible(false)}
+                open={mobileFilterVisible}
+                width={280}
+            >
+                <FilterPanel 
+                    filters={filters} 
+                    onChange={setFilters} 
+                    locations={uniqueLocations} 
+                    types={uniqueTypes}
+                    counts={facetCounts}
+                />
+            </Drawer>
+
+            <Sider 
+                width={280} 
+                theme="light" 
+                style={{ overflowY: 'auto', borderRight: '1px solid #e8e8e8' }}
+                className="desktop-sider"
+                breakpoint="lg"
+                collapsedWidth="0"
+                trigger={null}
+            >
+                <FilterPanel 
+                    filters={filters} 
+                    onChange={setFilters} 
+                    locations={uniqueLocations} 
+                    types={uniqueTypes}
+                    counts={facetCounts}
+                />
+            </Sider>
+            
+            <Content style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                {/* Header */}
+                <div style={{ flex: '0 0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                    <div>
+                        <Title level={3} style={{ margin: 0 }}>Sensor Monitoring</Title>
+                        <Text type="secondary">Real-time data from {filteredDevices.length} sensors</Text>
+                    </div>
+                    <Space>
+                        <Button 
+                            icon={<FilterOutlined />} 
+                            onClick={() => setMobileFilterVisible(true)}
+                            className="mobile-filter-btn"
+                            style={{ display: 'none' }}
+                        >
+                            Filters
+                        </Button>
+                        <Input.Search 
+                            placeholder="Search sensors..." 
+                            style={{ width: 250 }} 
+                            onSearch={val => setFilters({...filters, search: val})}
+                            onChange={e => setFilters({...filters, search: e.target.value})}
+                        />
+                        <Radio.Group value={viewMode} onChange={e => setViewMode(e.target.value)}>
+                            <Radio.Button value="card"><AppstoreOutlined /></Radio.Button>
+                            <Radio.Button value="table"><BarsOutlined /></Radio.Button>
+                        </Radio.Group>
+                        <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>Refresh</Button>
+                    </Space>
+                </div>
+
+                {/* Content */}
+                <div style={{ flex: '1 1 auto', overflowY: 'auto', overflowX: 'hidden', paddingRight: 4 }}>
+                {loading && devices.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>
+                ) : filteredDevices.length === 0 ? (
+                    <Empty description="No sensors match your filters" />
+                ) : viewMode === 'card' ? (
+                    <div className="device-grid">
+                        {filteredDevices.map(device => (
+                            <DeviceCard key={device.id} device={device} onClick={() => { setSelectedDevice(device); setDrawerVisible(true); }} />
+                        ))}
+                    </div>
+                ) : (
+                    <Table 
+                        columns={tableColumns} 
+                        dataSource={filteredDevices} 
+                        rowKey="id" 
+                        pagination={false}
+                        size="small"
+                    />
+                )}
+                </div>
+            </Content>
+
+            {/* Detail Drawer */}
+            <Drawer
+                title={selectedDevice?.name}
+                placement="right"
+                width={500}
+                onClose={() => setDrawerVisible(false)}
+                open={drawerVisible}
+            >
+                {selectedDevice && (
+                    <div>
+                        <Card bordered={false} style={{ background: '#fafafa', marginBottom: 24 }}>
+                            <Row gutter={[16, 16]}>
+                                <Col span={12}>
+                                    <Statistic 
+                                        title="Status" 
+                                        value={selectedDevice.nwkStatus === 1 ? 'Online' : 'Offline'} 
+                                        valueStyle={{ color: selectedDevice.nwkStatus === 1 ? '#52c41a' : '#ff4d4f' }}
+                                        prefix={selectedDevice.nwkStatus === 1 ? <WifiOutlined /> : <DisconnectOutlined />}
+                                    />
+                                </Col>
+                                <Col span={12}>
+                                    <Statistic 
+                                        title="Location" 
+                                        value={selectedDevice.location || 'N/A'} 
+                                        prefix={<EnvironmentOutlined />}
+                                    />
+                                </Col>
+                            </Row>
+                        </Card>
+
+                        <Title level={5}>Parameters</Title>
+                        <List
+                            itemLayout="horizontal"
+                            dataSource={selectedDevice.liveData || []}
+                            renderItem={(item: DeviceParameterData) => (
+                                <List.Item>
+                                    <List.Item.Meta
+                                        title={item.name}
+                                        description={
+                                            <Space direction="vertical" size={0}>
+                                                <Text type="secondary">ID: {item.id}</Text>
+                                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                                    Updated: {item.timestamp ? dayjs.unix(item.timestamp).format('YYYY-MM-DD HH:mm:ss') : 'Never'}
+                                                </Text>
+                                            </Space>
+                                        }
+                                    />
+                                    <div style={{ textAlign: 'right' }}>
+                                        {item.rw === 1 ? (
+                                            <InputNumber 
+                                                defaultValue={Number(item.value)}
+                                                onPressEnter={(e) => {
+                                                    message.success(`Parameter ${item.id} updated to ${(e.target as HTMLInputElement).value}`);
+                                                }}
+                                                onBlur={(e) => {
+                                                    message.success(`Parameter ${item.id} updated to ${e.target.value}`);
+                                                }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <Text strong style={{ fontSize: 18 }}>{item.value !== null ? item.value : '--'}</Text>
+                                                <Text type="secondary" style={{ marginLeft: 4 }}>{item.unit}</Text>
+                                            </>
+                                        )}
+                                        {item.alarm && <Tag color="red" style={{ display: 'block', marginTop: 4 }}>Alarm</Tag>}
+                                    </div>
+                                </List.Item>
+                            )}
+                        />
+                        {(!selectedDevice.liveData || selectedDevice.liveData.length === 0) && (
+                            <Empty description="No parameters available" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                        )}
+                    </div>
+                )}
+            </Drawer>
+            <style>{`
+                .device-grid {
+                    display: grid;
+                    gap: 16px;
+                    grid-template-columns: repeat(1, 1fr);
+                }
+                @media (min-width: 576px) { .device-grid { grid-template-columns: repeat(2, 1fr); } }
+                @media (min-width: 768px) { .device-grid { grid-template-columns: repeat(3, 1fr); } }
+                @media (min-width: 992px) { .device-grid { grid-template-columns: repeat(4, 1fr); } }
+                @media (min-width: 1300px) { .device-grid { grid-template-columns: repeat(5, 1fr); } }
+
+                @media (max-width: 992px) {
+                    .desktop-sider { display: none !important; }
+                    .mobile-filter-btn { display: inline-flex !important; }
+                }
+            `}</style>
+        </Layout>
+    );
 };
 
 export default RealTimeMonitor;

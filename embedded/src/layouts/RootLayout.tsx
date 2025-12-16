@@ -46,8 +46,10 @@ const RootLayout: React.FC = () => {
 				overflow: 'auto',
 				position: 'relative'
 			}}>
-				{/* Outlet 渲染 <Route path="/"> 的子路由页面 */}
-				<Outlet />
+				<div style={{ maxWidth: 1600, margin: '0 auto', width: '100%' }}>
+					{/* Outlet 渲染 <Route path="/"> 的子路由页面 */}
+					<Outlet />
+				</div>
 			</Content>
 		</Layout>
 	);

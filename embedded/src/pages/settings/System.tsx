@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Form, Button, Space, Divider, Typography, Row, Col, message, InputNumber, Progress, Upload, Tag } from 'antd';
-import { SaveOutlined, ReloadOutlined, CloudUploadOutlined, RocketOutlined } from '@ant-design/icons';
+import { Card, Form, Button, Space, Typography, Row, Col, message, InputNumber, Progress, Upload, Tag } from 'antd';
+import { SaveOutlined, ReloadOutlined, CloudUploadOutlined, RocketOutlined, PoweroffOutlined, RedoOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 
 const { Text } = Typography;
@@ -54,6 +54,14 @@ const SettingsSystem: React.FC = () => {
       max_pkt_size: 1024
     });
     message.info('Settings reset to current values');
+  };
+
+  const handleRestartT8000 = () => {
+    message.warning('Restart T8000 - This feature will be implemented');
+  };
+
+  const handleShutdown = () => {
+    message.warning('Shutdown - This feature will be implemented');
   };
 
   const uploadProps: UploadProps = {
@@ -149,17 +157,35 @@ const SettingsSystem: React.FC = () => {
             </Space>
           </Col>
           <Col span={12} style={{ textAlign: 'right' }}>
-            <Upload {...uploadProps} showUploadList={false}>
+            <Space>
               <Button 
-                type="primary" 
-                icon={<CloudUploadOutlined />} 
-                size="middle"
-                loading={uploading}
+                type="primary"
+                icon={<PoweroffOutlined />}
+                onClick={handleShutdown}
                 style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
               >
-                Update Firmware
+                Shutdown
               </Button>
-            </Upload>
+              <Button 
+                type="primary"
+                icon={<RedoOutlined />}
+                onClick={handleRestartT8000}
+                style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+              >
+                Restart T8000
+              </Button>
+              <Upload {...uploadProps} showUploadList={false}>
+                <Button 
+                  type="primary" 
+                  icon={<CloudUploadOutlined />} 
+                  size="middle"
+                  loading={uploading}
+                  style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
+                >
+                  Update Firmware
+                </Button>
+              </Upload>
+            </Space>
             {uploadProgress > 0 && (
               <div style={{ marginTop: 12 }}>
                 <Progress 
@@ -191,10 +217,8 @@ const SettingsSystem: React.FC = () => {
           onFinish={handleSave}
           initialValues={currentConfig}
         >
-          <Divider orientation="left">Timeout Configuration</Divider>
-
-          <Row gutter={16}>
-            <Col span={12}>
+          <Row gutter={[16, 0]}>
+            <Col span={8}>
               <Form.Item
                 label="Network Timeout (nwk_timeout)"
                 name="nwk_timeout"
@@ -204,14 +228,13 @@ const SettingsSystem: React.FC = () => {
                 <InputNumber 
                   addonAfter="seconds"
                   placeholder="3600" 
-                  size="large"
                   style={{ width: '100%' }}
                   min={1}
                   max={86400}
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="ACK Timeout (ack_timeout)"
                 name="ack_timeout"
@@ -221,58 +244,13 @@ const SettingsSystem: React.FC = () => {
                 <InputNumber 
                   addonAfter="seconds"
                   placeholder="60" 
-                  size="large"
                   style={{ width: '100%' }}
                   min={0}
                   max={255}
                 />
               </Form.Item>
             </Col>
-          </Row>
-
-          <Divider orientation="left">Reporting Configuration</Divider>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Report Offset (report_offset)"
-                name="report_offset"
-                tooltip="Offset time for reporting (reporting time = report_intvl + reporting_offset)"
-                rules={[{ required: true, message: 'Please input report offset' }]}
-              >
-                <InputNumber 
-                  addonAfter="minutes"
-                  placeholder="5" 
-                  size="large"
-                  style={{ width: '100%' }}
-                  min={0}
-                  max={60}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Logs Per Reporting (log_per_reporting)"
-                name="log_per_reporting"
-                tooltip="Number of logs (scheduled/health) to send per reporting"
-                rules={[{ required: true, message: 'Please input logs per reporting' }]}
-              >
-                <InputNumber 
-                  addonAfter="logs"
-                  placeholder="18" 
-                  size="large"
-                  style={{ width: '100%' }}
-                  min={1}
-                  max={100}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Divider orientation="left">Packet Configuration</Divider>
-
-          <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="Max Packet Size (max_pkt_size)"
                 name="max_pkt_size"
@@ -282,22 +260,45 @@ const SettingsSystem: React.FC = () => {
                 <InputNumber 
                   addonAfter="bytes"
                   placeholder="1024" 
-                  size="large"
                   style={{ width: '100%' }}
                   min={256}
                   max={4096}
                 />
               </Form.Item>
             </Col>
+            <Col span={8}>
+              <Form.Item
+                label="Report Offset (report_offset)"
+                name="report_offset"
+                tooltip="Offset time for reporting (reporting time = report_intvl + reporting_offset)"
+                rules={[{ required: true, message: 'Please input report offset' }]}
+              >
+                <InputNumber 
+                  addonAfter="minutes"
+                  placeholder="5" 
+                  style={{ width: '100%' }}
+                  min={0}
+                  max={60}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                label="Logs Per Reporting (log_per_reporting)"
+                name="log_per_reporting"
+                tooltip="Number of logs (scheduled/health) to send per reporting"
+                rules={[{ required: true, message: 'Please input logs per reporting' }]}
+              >
+                <InputNumber 
+                  addonAfter="logs"
+                  placeholder="18" 
+                  style={{ width: '100%' }}
+                  min={1}
+                  max={100}
+                />
+              </Form.Item>
+            </Col>
           </Row>
-
-          <Divider />
-
-          <Space>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              💡 Changes will take effect after saving. Some settings may require device restart.
-            </Text>
-          </Space>
         </Form>
       </Card>
     </div>

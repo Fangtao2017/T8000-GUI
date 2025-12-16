@@ -3,24 +3,18 @@ import { Form, Input, Button, Space, Row, Col, Typography, Select, AutoComplete,
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { FormInstance } from 'antd/es/form';
-import { mockDevices, mockParameters, timerStateOptions, operatorOptions, mockSavedConditions } from '../data/mockData';
+import { mockDevices, mockParameters, timerStateOptions, operatorOptions, mockSavedConditions, mockRules, ruleStateOptions } from '../data/mockData';
 
 const { Title, Text } = Typography;
 
-type ConditionType = 'device' | 'timer';
-
 interface AddRuleConditionProps {
 	form: FormInstance;
-	conditionType: ConditionType;
-	setConditionType: (type: ConditionType) => void;
 	onNext: () => void;
 	onReset: () => void;
 }
 
 const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 	form,
-	conditionType,
-	setConditionType,
 	onNext,
 	onReset
 }) => {
@@ -59,47 +53,6 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 						/>
 					</Form.Item>
 				</Col>
-				<Col span={6}>
-					<Form.Item
-						label="Condition Type"
-						name="conditionType"
-						rules={[{ required: true, message: 'Please select condition type' }]}
-						tooltip="Select the type of trigger for this rule"
-					>
-						<Select
-							size="large"
-							value={conditionType}
-							onChange={(value) => {
-								setConditionType(value);
-								form.setFieldsValue({ 
-									conditionType: value,
-									conditions: [{ operator: '>=', logic: 'NONE', mode: 1 }]
-								});
-							}}
-							options={[
-								{ label: 'Device Parameter', value: 'device' },
-								{ label: 'Timer', value: 'timer' },
-							]}
-						/>
-					</Form.Item>
-				</Col>
-				<Col span={6}>
-					<Form.Item
-						label="Condition Logic"
-						name="conditionLogic"
-						rules={[{ required: true, message: 'Please select logic' }]}
-						tooltip="How conditions are combined"
-					>
-						<Select
-							size="large"
-							placeholder="Select logic"
-							options={[
-								{ label: 'All conditions (AND)', value: 'AND' },
-								{ label: 'Any condition (OR)', value: 'OR' },
-							]}
-						/>
-					</Form.Item>
-				</Col>
 			</Row>
 
 			<Divider style={{ margin: '16px 0' }} />
@@ -125,6 +78,7 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 								const itemMode = currentConditions[index]?.itemMode || 'new';
 								const currentConditionDevice = currentConditions[index]?.device;
 								const currentRefDevice = currentConditions[index]?.refDevice;
+								const currentType = currentConditions[index]?.type || 'device';
 
 								return (
 									<div 
@@ -142,6 +96,58 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 												<Text strong style={{ fontSize: '13px' }}>Condition {index + 1}</Text>
 											</Col>
 
+											<Col flex="none" style={{ width: '160px' }}>
+												<Form.Item
+													{...field}
+													name={[field.name, 'type']}
+													style={{ marginBottom: 0 }}
+													initialValue="device"
+												>
+													<Select
+														size="small"
+														placeholder="Type"
+														options={[
+															{ label: 'Device Parameter', value: 'device' },
+															{ label: 'Timer', value: 'timer' },
+															{ label: 'Rule Status', value: 'rule' },
+														]}
+														onChange={(value) => {
+															const conditions = form.getFieldValue('conditions');
+															conditions[index] = {
+																...conditions[index],
+																type: value,
+																device: undefined,
+																parameter: undefined,
+																timerState: undefined,
+																rule: undefined,
+																ruleState: undefined,
+																operator: '>=',
+																mode: 1,
+																value: undefined
+															};
+															form.setFieldsValue({ conditions });
+														}}
+													/>
+												</Form.Item>
+											</Col>
+											<Col flex="none" style={{ width: '100px' }}>
+												<Form.Item
+													{...field}
+													name={[field.name, 'logic']}
+													style={{ marginBottom: 0 }}
+													initialValue="AND"
+												>
+													<Select
+														size="small"
+														placeholder="Logic"
+														options={[
+															{ label: 'AND', value: 'AND' },
+															{ label: 'OR', value: 'OR' },
+														]}
+													/>
+												</Form.Item>
+											</Col>
+
 											{itemMode === 'existing' ? (
 												<>
 													<Col flex="auto">
@@ -157,7 +163,7 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 																showSearch
 																optionFilterProp="label"
 																options={mockSavedConditions
-																	.filter(c => c.type === conditionType)
+																	.filter(c => c.type === currentType)
 																	.map(c => ({
 																		label: `${c.name} - ${c.description}`,
 																		value: c.id
@@ -179,7 +185,7 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 												</>
 											) : (
 												<>
-													{conditionType === 'device' && (
+													{currentType === 'device' && (
 														<>
 															<Col flex="none" style={{ width: '180px' }}>
 																<Form.Item
@@ -227,7 +233,7 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 														</>
 													)}
 
-													{conditionType === 'timer' && (
+													{currentType === 'timer' && (
 														<Col flex="none" style={{ width: '200px' }}>
 															<Form.Item
 																{...field}
@@ -243,6 +249,39 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 														</Col>
 													)}
 
+													{currentType === 'rule' && (
+														<>
+															<Col flex="none" style={{ width: '180px' }}>
+																<Form.Item
+																	{...field}
+																	name={[field.name, 'rule']}
+																	style={{ marginBottom: 0 }}
+																>
+																	<Select
+																		placeholder="Select Rule"
+																		size="small"
+																		showSearch
+																		optionFilterProp="label"
+																		options={mockRules.map(r => ({ value: r.id, label: r.name }))}
+																	/>
+																</Form.Item>
+															</Col>
+															<Col flex="none" style={{ width: '200px' }}>
+																<Form.Item
+																	{...field}
+																	name={[field.name, 'ruleState']}
+																	style={{ marginBottom: 0 }}
+																>
+																	<Select
+																		placeholder="Rule State"
+																		size="small"
+																		options={ruleStateOptions}
+																	/>
+																</Form.Item>
+															</Col>
+														</>
+													)}
+
 													<Col flex="none" style={{ width: '90px' }}>
 														<Form.Item
 															{...field}
@@ -251,7 +290,7 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 														>
 															<Select
 																size="small"
-																options={conditionType === 'timer' 
+																options={(currentType === 'timer' || currentType === 'rule')
 																	? operatorOptions.filter(op => op.value === '==' || op.value === '!=')
 																	: operatorOptions
 																}
@@ -259,7 +298,7 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 														</Form.Item>
 													</Col>
 
-													{conditionType === 'device' ? (
+													{currentType === 'device' ? (
 														<>
 															<Col flex="none" style={{ width: '120px' }}>
 																<Form.Item
@@ -389,23 +428,33 @@ const AddRuleCondition: React.FC<AddRuleConditionProps> = ({
 						<Space.Compact block style={{ marginTop: 16 }}>
 							<Button
 								type="dashed"
-								onClick={() => add({ itemMode: 'new', operator: '>=', logic: 'NONE', mode: 1 })}
+								onClick={() => add({ itemMode: 'new', type: 'device', operator: '>=', logic: 'AND', mode: 1 })}
 								block
 								icon={<PlusOutlined />}
 								size="middle"
-								style={{ width: '50%' }}
+								style={{ width: '33%' }}
 							>
 								Add New Condition
 							</Button>
 							<Button
 								type="dashed"
-								onClick={() => add({ itemMode: 'existing', operator: '>=', logic: 'NONE', mode: 1 })}
+								onClick={() => add({ itemMode: 'existing', type: 'device', operator: '>=', logic: 'AND', mode: 1 })}
 								block
 								icon={<PlusOutlined />}
 								size="middle"
-								style={{ width: '50%' }}
+								style={{ width: '33%' }}
 							>
 								Add Existing Condition
+							</Button>
+							<Button
+								type="dashed"
+								onClick={() => add({ itemMode: 'new', type: 'rule', operator: '==', logic: 'AND', mode: 1 })}
+								block
+								icon={<PlusOutlined />}
+								size="middle"
+								style={{ width: '34%' }}
+							>
+								Add Rule Condition
 							</Button>
 						</Space.Compact>
 					</>

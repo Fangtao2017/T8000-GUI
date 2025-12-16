@@ -167,23 +167,41 @@ export const mockUsers = [
 		username: 'admin',
 		password: 'password123',
 		fullName: 'System Administrator',
+		companyName: 'TCAM Technology',
 		role: 'admin',
-		permissions: ['all']
+		permissions: ['all'],
+		lastLoginTime: '2025-12-02 09:30:00'
 	},
 	{
 		id: 'user-002',
 		username: 'operator1',
 		password: 'password123',
 		fullName: 'Operator One',
+		companyName: 'TCAM Technology',
 		role: 'operator',
-		permissions: ['read', 'control']
+		permissions: ['read', 'control'],
+		lastLoginTime: '2025-12-01 14:15:00'
 	},
 	{
 		id: 'user-003',
 		username: 'viewer1',
 		password: 'password123',
 		fullName: 'Viewer One',
+		companyName: 'TCAM Technology',
 		role: 'readonly',
-		permissions: ['read']
+		permissions: ['read'],
+		lastLoginTime: '2025-11-30 10:00:00'
 	}
+];
+
+export const mockRules = [
+	{ id: 'rule-001', name: 'High Temp Alert', severity: 'Critical' },
+	{ id: 'rule-002', name: 'Night Mode', severity: 'Info' },
+	{ id: 'rule-003', name: 'Security Breach', severity: 'Critical' },
+	{ id: 'rule-004', name: 'Energy Saving', severity: 'Warning' },
+];
+
+export const ruleStateOptions = [
+	{ label: 'Active', value: 1 },
+	{ label: 'Inactive', value: 0 },
 ];
