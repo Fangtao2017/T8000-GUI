@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Card, Table, Button, Space, Tag, Badge, Row, Col, Typography, Input, Select, Modal, message, List, Descriptions, Collapse, Spin } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, ArrowRightOutlined, FilterOutlined, ExportOutlined, SearchOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Tag, Badge, Row, Col, Typography, Input, Select, Modal, message, List, Descriptions, Collapse, Spin, Popover } from 'antd';
+import { EyeOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SaveOutlined, CloseCircleOutlined, PlusOutlined, ArrowRightOutlined, FilterOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 import { type DeviceData } from '../data/devicesData';
 import { fetchDevices, fetchDeviceParameters, unbindDeviceParameter, updateDevice, type DeviceParameter } from '../api/deviceApi';
+import { deleteDevice } from '../api/deleteDeviceApi';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Option } = Select;
@@ -14,6 +15,7 @@ const { Option } = Select;
 const { Search } = Input;
 
 const Devices: React.FC = () => {
+	const [modal, contextHolder] = Modal.useModal();
 	const location = useLocation();
 	const navigate = useNavigate();
 	const { deviceId } = useParams<{ deviceId: string }>();
@@ -234,6 +236,27 @@ const Devices: React.FC = () => {
             setSaveLoading(false);
         }
     };
+
+    // Delete device handler
+    const handleDeleteDevice = (device: DeviceData) => {
+        console.log('Delete button clicked for:', device);
+        modal.confirm({
+            title: 'Are you sure you want to delete this device?',
+            content: `Sensor Name: ${device.name}`,
+            okText: 'Yes',
+            okType: 'danger',
+            cancelText: 'No',
+            onOk: async () => {
+                try {
+                    await deleteDevice(Number(device.id));
+                    message.success('Sensor deleted successfully');
+                    handleRefresh();
+                } catch (error) {
+                    message.error('Failed to delete sensor');
+                }
+            },
+        });
+    };
 	
 	// Parameter binding handlers
 	const handleUnbindParameter = (mapId: string) => {
@@ -405,17 +428,72 @@ const Devices: React.FC = () => {
 			key: 'actions',
 			width: 160,
 			render: (_: unknown, record: DeviceData) => (
-				<Space size={2}>
-					<Button size="small" icon={<EyeOutlined />} onClick={() => handleViewDevice(record)} style={{ borderColor: '#003A70', color: '#003A70' }}>DATA</Button>
-					<Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditDevice(record)} style={{ color: '#003A70' }}>Edit</Button>
-					<Button type="link" size="small" danger icon={<DeleteOutlined />}>Delete</Button>
+				<Space size={4}>
+					<Button 
+						size="small" 
+						icon={<EyeOutlined />} 
+						onClick={() => handleViewDevice(record)} 
+						style={{ borderColor: '#003A70', color: '#003A70' }}
+					>
+						DATA
+					</Button>
+					<Button 
+						size="small" 
+						icon={<EditOutlined />} 
+						onClick={() => handleEditDevice(record)}
+					>
+						Edit
+					</Button>
+					<Button 
+						size="small" 
+						danger 
+						icon={<DeleteOutlined />} 
+						onClick={() => handleDeleteDevice(record)}
+					>
+						Delete
+					</Button>
 				</Space>
 			),
 		},
 	];
 
+	const filterContent = (
+		<div style={{ padding: 8 }}>
+			<Space size={24} align="start">
+				<div style={{ width: 150 }}>
+					<Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>Status</Typography.Text>
+					<Select 
+						defaultValue="all" 
+						style={{ width: '100%' }}
+						value={filterStatus}
+						onChange={val => setFilterStatus(val)}
+					>
+						<Option value="all">All Status</Option>
+						<Option value="online">Online</Option>
+						<Option value="offline">Offline</Option>
+					</Select>
+				</div>
+				<div style={{ width: 200 }}>
+					<Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>Model</Typography.Text>
+					<Select 
+						defaultValue="all" 
+						style={{ width: '100%' }}
+						value={filterModel}
+						onChange={val => setFilterModel(val)}
+					>
+						<Option value="all">All Models</Option>
+						{uniqueModels.map(model => (
+							<Option key={model} value={model}>{model}</Option>
+						))}
+					</Select>
+				</div>
+			</Space>
+		</div>
+	);
+
 	return (
 		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			{contextHolder}
 			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
 				
 				{/* Layer 1: Info Bar */}
@@ -432,7 +510,7 @@ const Devices: React.FC = () => {
 					flexShrink: 0
 				}}>
 					<Space size={24} style={{ flexWrap: 'wrap' }}>
-						<Typography.Text strong style={{ fontSize: 16 }}>Device Statistics</Typography.Text>
+						<Typography.Text strong style={{ fontSize: 16 }}>Sensor Statistics</Typography.Text>
 						
 						<Space split={<Typography.Text type="secondary">|</Typography.Text>} size={16}>
 							<Typography.Text>Total: <strong>{totalDevices}</strong></Typography.Text>
@@ -445,7 +523,6 @@ const Devices: React.FC = () => {
 
 					<Space>
 						<Typography.Text type="secondary">Last Updated: {dayjs().format('YYYY-MM-DD HH:mm:ss')}</Typography.Text>
-						<Button icon={<ReloadOutlined />} type="text" onClick={handleRefresh} loading={refreshing} />
 					</Space>
 				</div>
 
@@ -460,38 +537,20 @@ const Devices: React.FC = () => {
 								value={searchText}
 								onChange={e => setSearchText(e.target.value)}
 							/>
-							<Select 
-								defaultValue="all" 
-								style={{ width: 120 }}
-								value={filterStatus}
-								onChange={val => setFilterStatus(val)}
-							>
-								<Option value="all">All Status</Option>
-								<Option value="online">Online</Option>
-								<Option value="offline">Offline</Option>
-							</Select>
-							<Select 
-								defaultValue="all" 
-								style={{ width: 150 }}
-								value={filterModel}
-								onChange={val => setFilterModel(val)}
-							>
-								<Option value="all">All Models</Option>
-								{uniqueModels.map(model => (
-									<Option key={model} value={model}>{model}</Option>
-								))}
-							</Select>
+							<Popover content={filterContent} trigger="click" placement="bottomLeft">
+								<Button icon={<FilterOutlined />}>Filters</Button>
+							</Popover>
 						</Space>
 						<Space>
-							<Button icon={<FilterOutlined />}>Filters</Button>
-							<Button icon={<ExportOutlined />}>Export</Button>
+							<Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={refreshing}>Refresh</Button>
 							<Button 
 								type="primary" 
 								icon={<PlusOutlined />} 
+								className="add-button-hover"
 								onClick={() => navigate(deviceId ? `/device/${deviceId}/devices/add` : '/devices/add')}
 								style={{ backgroundColor: '#003A70' }}
 							>
-								Add Device
+								Add Sensor
 							</Button>
 						</Space>
 					</div>
@@ -504,7 +563,7 @@ const Devices: React.FC = () => {
 					bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
 				>
 					{refreshing && devices.length === 0 ? (
-						<div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>
+						<div style={{ height: 'calc(100vh - 350px)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><Spin size="large" /></div>
 					) : (
 						<Table 
 							columns={columns} 
@@ -519,7 +578,7 @@ const Devices: React.FC = () => {
 
 				{/* Device Detail Modal */}
 				<Modal
-					title="Device Details"
+					title="Sensor Details"
 					open={isModalVisible}
 					onCancel={() => setIsModalVisible(false)}
 					footer={null}
@@ -534,7 +593,7 @@ const Devices: React.FC = () => {
 						<Card bordered={false} style={{ marginBottom: 16 }} bodyStyle={{ padding: '16px' }}>
 							<Row gutter={[24, 16]}>
 								<Col flex="20%">
-									<Typography.Text style={{ fontSize: 14, color: '#666' }}>Device Name</Typography.Text>
+									<Typography.Text style={{ fontSize: 14, color: '#666' }}>Sensor Name</Typography.Text>
 										<div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.name || 'null'}</div>
 								</Col>
 								<Col flex="20%">
@@ -693,7 +752,7 @@ const Devices: React.FC = () => {
 						<Card bordered={false} style={{ marginBottom: 16 }} bodyStyle={{ padding: '24px' }}>
 							<Row gutter={[24, 16]}>
 								<Col flex="20%">
-									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Device Name</Typography.Text>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>Sensor Name</Typography.Text>
 									<Input 
 										value={editForm.name} 
 										onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -728,6 +787,7 @@ const Devices: React.FC = () => {
 									<Input 
 										value={editForm.priAddr} 
 										onChange={(e) => setEditForm({ ...editForm, priAddr: e.target.value })}
+										status={editForm.priAddr && !/^-?\d+$/.test(editForm.priAddr) ? 'error' : undefined}
 										style={{ marginTop: 4, borderColor: isDirty('priAddr') ? '#003A70' : undefined }} 
 									/>
 								</Col>
@@ -736,6 +796,7 @@ const Devices: React.FC = () => {
 									<Input 
 										value={editForm.sec_addr} 
 										onChange={(e) => setEditForm({ ...editForm, sec_addr: e.target.value })}
+										status={editForm.sec_addr && !/^-?\d+$/.test(editForm.sec_addr) ? 'error' : undefined}
 										style={{ marginTop: 4, borderColor: isDirty('sec_addr') ? '#003A70' : undefined }}
 									/>
 								</Col>
@@ -744,6 +805,7 @@ const Devices: React.FC = () => {
 									<Input 
 										value={editForm.ter_addr} 
 										onChange={(e) => setEditForm({ ...editForm, ter_addr: e.target.value })}
+										status={editForm.ter_addr && !/^-?\d+$/.test(editForm.ter_addr) ? 'error' : undefined}
 										style={{ marginTop: 4, borderColor: isDirty('ter_addr') ? '#003A70' : undefined }}
 									/>
 								</Col>

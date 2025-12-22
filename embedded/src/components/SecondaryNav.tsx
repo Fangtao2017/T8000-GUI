@@ -137,18 +137,18 @@ const SecondaryNav: React.FC = () => {
 		if (effectivePath.startsWith('/analysis')) return 'Report / Analysis';
 		if (effectivePath.startsWith('/log')) return 'Report / Log';
 		
-		// Sensor Setting
-		if (effectivePath === '/devices') return 'Sensor Setting / Sensor';
-		if (effectivePath === '/devices/models') return 'Sensor Setting / Model';
-		if (effectivePath === '/devices/parameters') return 'Sensor Setting / Parameter';
-		if (effectivePath === '/settings/modbus') return 'Sensor Setting / Source Interface';
-		if (effectivePath === '/devices/add') return 'Sensor Setting / Add Device';
-		if (effectivePath === '/configuration/add-model') return 'Sensor Setting / Add Model';
-		if (effectivePath === '/configuration/add-parameter') return 'Sensor Setting / Add Parameter';
-		if (effectivePath === '/alarms') return 'Sensor Setting / Alarm';
-		if (effectivePath === '/rules') return 'Sensor Setting / Rules';
-		if (effectivePath === '/configuration/add-rule') return 'Sensor Setting / Add Rule';
-		if (effectivePath === '/configuration/add-alarm') return 'Sensor Setting / Add Alarm';
+		// Configuration
+		if (effectivePath === '/devices') return 'Configuration / Sensor';
+		if (effectivePath === '/devices/models') return 'Configuration / Model';
+		if (effectivePath === '/devices/parameters') return 'Configuration / Parameter';
+		if (effectivePath === '/settings/modbus') return 'Configuration / Source Interface';
+		if (effectivePath === '/devices/add') return 'Configuration / Add Sensor';
+		if (effectivePath === '/configuration/add-model') return 'Configuration / Add Model';
+		if (effectivePath === '/configuration/add-parameter') return 'Configuration / Add Parameter';
+		if (effectivePath === '/alarms') return 'Configuration / Alarm';
+		if (effectivePath === '/rules') return 'Configuration / Rules';
+		if (effectivePath === '/configuration/add-rule') return 'Configuration / Add Rule';
+		if (effectivePath === '/configuration/add-alarm') return 'Configuration / Add Alarm';
 		
 		// Monitor & Control
 		if (effectivePath === '/realtime') return 'Monitor & Control / Sensor Monitoring';

@@ -17,13 +17,7 @@ export interface ParameterApiData {
 
 export const fetchParameters = async (): Promise<ParameterApiData[]> => {
   try {
-    // Determine API URL based on environment
-    // FORCE HARDWARE IP: 192.168.10.189
-    const baseUrl = import.meta.env.DEV 
-      ? 'http://192.168.10.189:9000' 
-      : `http://${window.location.hostname}:9000`;
-      
-    const apiUrl = `${baseUrl}/api/parameters`;
+    const apiUrl = '/api/parameters';
     
     console.log('Fetching parameters from (Hardware IP):', apiUrl);
     const response = await fetch(apiUrl);

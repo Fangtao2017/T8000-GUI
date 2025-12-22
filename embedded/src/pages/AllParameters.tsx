@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select, Spin } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select, Spin, Popover } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, FilterOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -10,7 +10,6 @@ import { fetchParameters, type ParameterApiData } from '../api/parameterApi';
 dayjs.extend(relativeTime);
 
 const { Option } = Select;
-const { Search } = Input;
 
 // Use the interface from API or extend it if needed
 interface ParameterData extends ParameterApiData {
@@ -18,6 +17,7 @@ interface ParameterData extends ParameterApiData {
 }
 
 const AllParameters: React.FC = () => {
+	const [modal, contextHolder] = Modal.useModal();
 	const navigate = useNavigate();
 	const { deviceId } = useParams<{ deviceId: string }>();
 	const [searchText, setSearchText] = useState('');
@@ -59,7 +59,7 @@ const AllParameters: React.FC = () => {
 	};
 
 	const handleDelete = (record: ParameterData) => {
-		Modal.confirm({
+		modal.confirm({
 			title: 'Delete Parameter',
 			content: `Are you sure you want to delete parameter "${record.name}"? This action cannot be undone.`,
 			okText: 'Delete',
@@ -161,18 +161,15 @@ const AllParameters: React.FC = () => {
 			width: 180,
 			fixed: 'right',
 			render: (_, record) => (
-				<Space size="middle">
+				<Space size={4}>
 					<Button
-						type="link"
 						icon={<EditOutlined />}
 						size="small"
 						onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-parameter?edit=${record.key}` : `/configuration/add-parameter?edit=${record.key}`)}
-						style={{ color: '#003A70' }}
 					>
 						Edit
 					</Button>
 					<Button
-						type="link"
 						danger
 						icon={<DeleteOutlined />}
 						size="small"
@@ -207,8 +204,28 @@ const AllParameters: React.FC = () => {
 	// Let's say description is required for a "complete" parameter.
 	const missingFieldsCount = parameters.filter(p => !p.description || !p.unit).length;
 
+	const filterContent = (
+		<div style={{ padding: 8 }}>
+			<Space size={24} align="start">
+				<div style={{ width: 150 }}>
+					<Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>Access</Typography.Text>
+					<Select
+						value={filterAccess}
+						onChange={setFilterAccess}
+						style={{ width: '100%' }}
+					>
+						<Option value="all">All Access</Option>
+						<Option value="Read Only">Read Only</Option>
+						<Option value="Read/Write">Read/Write</Option>
+					</Select>
+				</div>
+			</Space>
+		</div>
+	);
+
 	return (
 		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			{contextHolder}
 			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
 				
 				{/* Layer 1: Info Bar */}
@@ -240,25 +257,18 @@ const AllParameters: React.FC = () => {
 
 				{/* Layer 2: Toolbar */}
 				<Card bordered bodyStyle={{ padding: '16px' }} style={{ flexShrink: 0 }}>
-					<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-						<Space size={12}>
-							<Search
+					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+						<Space size="middle">
+							<Input
 								placeholder="Search parameters..."
-								allowClear
-								style={{ width: 300 }}
+								prefix={<SearchOutlined />}
+								style={{ width: 240 }}
 								value={searchText}
 								onChange={(e) => setSearchText(e.target.value)}
 							/>
-							<Select
-								value={filterAccess}
-								onChange={setFilterAccess}
-								style={{ width: 150 }}
-								suffixIcon={<FilterOutlined />}
-							>
-								<Option value="all">All Access</Option>
-								<Option value="Read Only">Read Only</Option>
-								<Option value="Read/Write">Read/Write</Option>
-							</Select>
+							<Popover content={filterContent} trigger="click" placement="bottomLeft">
+								<Button icon={<FilterOutlined />}>Filters</Button>
+							</Popover>
 							<Typography.Text type="secondary" style={{ fontSize: 12, alignSelf: 'center' }}>
 								{filteredData.length} of {totalParameters} parameters
 							</Typography.Text>
@@ -270,13 +280,14 @@ const AllParameters: React.FC = () => {
 							<Button
 								type="primary"
 								icon={<PlusOutlined />}
+								className="add-button-hover"
 								onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-parameter` : '/configuration/add-parameter')}
 								style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
 							>
 								Add New Parameter
 							</Button>
 						</Space>
-					</Space>
+					</div>
 				</Card>
 
 				{/* Layer 3: Table */}
@@ -286,7 +297,7 @@ const AllParameters: React.FC = () => {
 					bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
 				>
 					{refreshing && parameters.length === 0 ? (
-						<div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>
+						<div style={{ height: 'calc(100vh - 350px)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><Spin size="large" /></div>
 					) : (
 						<Table
 							columns={columns}

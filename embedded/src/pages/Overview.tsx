@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import './Home.css';
 import {
 	Badge,
@@ -21,7 +21,8 @@ import {
 	Descriptions,
 	InputNumber,
 	Switch,
-	Select
+	Select,
+	Spin
 } from 'antd';
 import {
 	ApiOutlined,
@@ -46,11 +47,18 @@ import { useNavigate } from 'react-router-dom';
 
 dayjs.extend(relativeTime);
 
+// Module-level cache to persist data across remounts (stale-while-revalidate)
+let cachedSystemInfo: any = null;
+let cachedDevices: DeviceData[] | null = null;
+
 // deviceColumns moved inside component
 const Overview: React.FC = () => {
 	const navigate = useNavigate();
-	const [refreshing, setRefreshing] = useState(false);
 	
+    // Initialize state from cache if available
+	const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(!cachedSystemInfo); // Full page load only if no cache
+
 	// Filter states
 	const [searchText, setSearchText] = useState('');
 	const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -60,7 +68,7 @@ const Overview: React.FC = () => {
 	const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null);
     
     // System Info State
-    const [systemInfo, setSystemInfo] = useState({
+    const [systemInfo, setSystemInfo] = useState(cachedSystemInfo || {
         device_count: 0,
         serial_number: 'Loading...',
         firmware_version: 'Loading...',
@@ -74,40 +82,83 @@ const Overview: React.FC = () => {
     });
 
     // Devices State
-    const [devices, setDevices] = useState<DeviceData[]>([]);
+    const [devices, setDevices] = useState<DeviceData[]>(cachedDevices || []);
 
-    // Fetch System Info
-    const fetchSystemInfo = async () => {
+    // Unified Fetch Function
+    const fetchData = useCallback(async (isRefresh = false) => {
+        if (isRefresh) {
+            setRefreshing(true);
+        } else if (!cachedSystemInfo) {
+            setLoading(true);
+        }
+
         try {
-            // Determine API URL based on environment (same logic as deviceApi)
-            const baseUrl = import.meta.env.DEV 
-              ? 'http://192.168.10.189:9000' 
-              : `http://${window.location.hostname}:9000`;
+            const overviewUrl = `/api/overview`;
             
-            const response = await fetch(`${baseUrl}/api/overview`);
-            if (response.ok) {
-                const data = await response.json();
-                setSystemInfo(data);
-            }
-        } catch (error) {
-            console.error("Failed to fetch system info", error);
-        }
-    };
+            // Fetch both in parallel
+            const [sysRes, devData] = await Promise.all([
+                fetch(overviewUrl, { cache: 'no-store' }).then(res => {
+                    if (!res.ok) throw new Error('System info fetch failed');
+                    return res.json();
+                }),
+                fetchDevices()
+            ]);
 
-    // Fetch Devices
-    const loadDevices = async () => {
-        try {
-            const data = await fetchDevices();
-            setDevices(data);
+            // Update Cache
+            cachedSystemInfo = sysRes;
+            cachedDevices = devData;
+
+            // Update State
+            setSystemInfo(sysRes);
+            setDevices(devData);
         } catch (error) {
-            console.error("Failed to fetch devices", error);
+            console.error("Failed to fetch data", error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
-        fetchSystemInfo();
-        loadDevices();
-    }, []);
+        let intervalId: ReturnType<typeof setInterval>;
+
+        const startPolling = () => {
+            if (intervalId) clearInterval(intervalId);
+            // 2. Auto-refetch every 10 seconds (Optimized from 5s)
+            intervalId = setInterval(() => {
+                if (!document.hidden) {
+                    fetchData(true);
+                }
+            }, 10000);
+        };
+
+        // 1. Always refetch on mount
+        fetchData(false);
+        startPolling();
+
+        // 3. Visibility change handler
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                clearInterval(intervalId);
+            } else {
+                fetchData(true); // Immediate update
+                startPolling();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(intervalId);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchData]);
+	
+    // Handle manual refresh
+	const handleRefresh = () => {
+        message.loading('Refreshing overview...', 0.5);
+		fetchData(true);
+	};
 	
 	// Mocked data – replace with real API data later
 	const device = {
@@ -287,21 +338,6 @@ const Overview: React.FC = () => {
 		};
 	}, [notifications]);
 	
-	// Handle refresh
-	const handleRefresh = () => {
-		setRefreshing(true);
-		message.loading('Refreshing overview...', 0.5);
-		
-        fetchSystemInfo();
-        loadDevices();
-
-		// Simulate API call
-		setTimeout(() => {
-			setRefreshing(false);
-			message.success('Overview refreshed successfully');
-		}, 1000);
-	};
-	
 	// Quick actions handlers
 	// Notification handlers
 	const handleNotificationClick = (item: NotificationItem) => {
@@ -387,6 +423,14 @@ const Overview: React.FC = () => {
 		if (yVal === '') return String(xVal);
 		return `${String(xVal)}, ${String(yVal)}`;
 	};
+
+	if (loading) {
+		return (
+			<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '400px' }}>
+				<Spin size="large" tip="Loading System Data..." />
+			</div>
+		);
+	}
 
 	return (
 		<>

@@ -2,17 +2,10 @@ import type { DeviceData } from '../data/devicesData';
 
 export const fetchDevices = async (): Promise<DeviceData[]> => {
   try {
-    // Determine API URL based on environment
-    // In development, we point to the specific IP where the backend is running
-    // In production, we assume the backend is on port 9000 of the same host
-    const baseUrl = import.meta.env.DEV 
-      ? 'http://192.168.10.189:9000' 
-      : `http://${window.location.hostname}:9000`;
-      
-    const apiUrl = `${baseUrl}/api/devices`;
+    const apiUrl = '/api/devices';
     
     console.log('Fetching devices from:', apiUrl);
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, { cache: 'no-store' });
     if (!response.ok) {
       console.error(`API Error: ${response.status} ${response.statusText}`);
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -38,11 +31,7 @@ export interface DeviceParameter {
 
 export const unbindDeviceParameter = async (mapId: number): Promise<void> => {
   try {
-    const baseUrl = import.meta.env.DEV 
-      ? 'http://192.168.10.189:9000' 
-      : `http://${window.location.hostname}:9000`;
-      
-    const apiUrl = `${baseUrl}/api/dev-param-maps/${mapId}`;
+    const apiUrl = `/api/dev-param-maps/${mapId}`;
     
     console.log(`Unbinding parameter map ${mapId} at:`, apiUrl);
     const response = await fetch(apiUrl, {
@@ -60,11 +49,7 @@ export const unbindDeviceParameter = async (mapId: number): Promise<void> => {
 
 export const fetchDeviceParameters = async (deviceId: number): Promise<DeviceParameter[]> => {
   try {
-    const baseUrl = import.meta.env.DEV 
-      ? 'http://192.168.10.189:9000' 
-      : `http://${window.location.hostname}:9000`;
-      
-    const apiUrl = `${baseUrl}/api/devices/${deviceId}/parameters`;
+    const apiUrl = `/api/devices/${deviceId}/parameters`;
     
     console.log(`Fetching parameters for device ${deviceId} from:`, apiUrl);
     const response = await fetch(apiUrl);
@@ -81,11 +66,7 @@ export const fetchDeviceParameters = async (deviceId: number): Promise<DevicePar
 
 export const updateDevice = async (deviceId: number, data: Partial<DeviceData>): Promise<DeviceData> => {
   try {
-    const baseUrl = import.meta.env.DEV 
-      ? 'http://192.168.10.189:9000' 
-      : `http://${window.location.hostname}:9000`;
-      
-    const apiUrl = `${baseUrl}/api/devices/${deviceId}`;
+    const apiUrl = `/api/devices/${deviceId}`;
     
     console.log(`Updating device ${deviceId} at:`, apiUrl, data);
     const response = await fetch(apiUrl, {

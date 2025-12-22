@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select, Tooltip, Spin } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Tag, Card, Typography, Input, Modal, message, Select, Tooltip, Spin, Popover } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, FilterOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -9,7 +9,6 @@ import { fetchModels } from '../api/modelApi';
 
 dayjs.extend(relativeTime);
 
-const { Search } = Input;
 const { Option } = Select;
 
 interface ModelData {
@@ -27,6 +26,7 @@ interface ModelData {
 }
 
 const AllModels: React.FC = () => {
+	const [modal, contextHolder] = Modal.useModal();
 	const navigate = useNavigate();
 	const { deviceId } = useParams<{ deviceId: string }>();
 	const [searchText, setSearchText] = useState('');
@@ -71,7 +71,7 @@ const AllModels: React.FC = () => {
 	};
 
 	const handleDelete = (record: ModelData) => {
-		Modal.confirm({
+		modal.confirm({
 			title: 'Delete Model',
 			content: `Are you sure you want to delete model "${record.model}"? This action cannot be undone.`,
 			okText: 'Delete',
@@ -154,18 +154,15 @@ const AllModels: React.FC = () => {
 			width: 180,
 			fixed: 'right',
 			render: (_, record) => (
-				<Space size="middle">
+				<Space size={4}>
 					<Button
-						type="link"
 						icon={<EditOutlined />}
 						size="small"
 						onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-model?edit=${record.key}` : `/configuration/add-model?edit=${record.key}`)}
-						style={{ color: '#003A70' }}
 					>
 						Edit
 					</Button>
 					<Button
-						type="link"
 						danger
 						icon={<DeleteOutlined />}
 						size="small"
@@ -198,11 +195,45 @@ const AllModels: React.FC = () => {
 	// const sortedByDate = [...models].sort((a, b) => dayjs(b.updatedAt).valueOf() - dayjs(a.updatedAt).valueOf());
   // const lastUpdatedTime = sortedByDate.length > 0 ? dayjs(sortedByDate[0].updatedAt).fromNow() : 'N/A';
   
-  const uniqueTypes = Array.from(new Set(models.map(m => m.type))).sort();
+	const uniqueTypes = Array.from(new Set(models.map(m => m.type))).sort();
 	const uniqueBrands = Array.from(new Set(models.map(m => m.brand))).sort();
+
+	const filterContent = (
+		<div style={{ padding: 8 }}>
+			<Space size={24} align="start">
+				<div style={{ width: 150 }}>
+					<Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>Type</Typography.Text>
+					<Select
+						value={typeFilter}
+						onChange={setTypeFilter}
+						style={{ width: '100%' }}
+					>
+						<Option value="all">All Types</Option>
+						{uniqueTypes.map(type => (
+							<Option key={type} value={type}>{type}</Option>
+						))}
+					</Select>
+				</div>
+				<div style={{ width: 150 }}>
+					<Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>Brand</Typography.Text>
+					<Select
+						value={brandFilter}
+						onChange={setBrandFilter}
+						style={{ width: '100%' }}
+					>
+						<Option value="all">All Brands</Option>
+						{uniqueBrands.map(brand => (
+							<Option key={brand} value={brand}>{brand}</Option>
+						))}
+					</Select>
+				</div>
+			</Space>
+		</div>
+	);
 
 	return (
 		<div style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+			{contextHolder}
 			<div style={{ width: '100%', maxWidth: 1600, height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
 				
 				{/* Layer 1: Info Bar */}
@@ -210,12 +241,12 @@ const AllModels: React.FC = () => {
 					backgroundColor: '#fff', 
 					border: '1px solid #d9d9d9',
 					borderRadius: 8,
-					padding: '8px 24px',
+					padding: '12px 24px',
 					display: 'flex',
 					alignItems: 'center',
 					justifyContent: 'space-between',
 					flexWrap: 'wrap',
-					gap: 12,
+					gap: 16,
 					flexShrink: 0
 				}}>
 					<Space size={24} style={{ flexWrap: 'wrap' }}>
@@ -231,38 +262,19 @@ const AllModels: React.FC = () => {
 				</div>
 
 				{/* Layer 2: Toolbar */}
-				<Card bordered bodyStyle={{ padding: '12px' }} style={{ flexShrink: 0 }}>
-					<Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-						<Space size={12}>
-							<Search
+				<Card bordered bodyStyle={{ padding: '16px' }} style={{ flexShrink: 0 }}>
+					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+						<Space size="middle">
+							<Input
 								placeholder="Search models..."
-								allowClear
+								prefix={<SearchOutlined />}
 								style={{ width: 240 }}
 								value={searchText}
 								onChange={(e) => setSearchText(e.target.value)}
 							/>
-							<Select
-								value={typeFilter}
-								onChange={setTypeFilter}
-								style={{ width: 140 }}
-								suffixIcon={<FilterOutlined />}
-							>
-								<Option value="all">All Types</Option>
-								{uniqueTypes.map(type => (
-									<Option key={type} value={type}>{type}</Option>
-								))}
-							</Select>
-							<Select
-								value={brandFilter}
-								onChange={setBrandFilter}
-								style={{ width: 140 }}
-								suffixIcon={<FilterOutlined />}
-							>
-								<Option value="all">All Brands</Option>
-								{uniqueBrands.map(brand => (
-									<Option key={brand} value={brand}>{brand}</Option>
-								))}
-							</Select>
+							<Popover content={filterContent} trigger="click" placement="bottomLeft">
+								<Button icon={<FilterOutlined />}>Filters</Button>
+							</Popover>
 						</Space>
 						<Space size={8}>
 							<Button icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
@@ -271,13 +283,14 @@ const AllModels: React.FC = () => {
 							<Button
 								type="primary"
 								icon={<PlusOutlined />}
+								className="add-button-hover"
 								onClick={() => navigate(deviceId ? `/device/${deviceId}/configuration/add-model` : '/configuration/add-model')}
 								style={{ backgroundColor: '#003A70', borderColor: '#003A70' }}
 							>
 								Add New Model
 							</Button>
 						</Space>
-					</Space>
+					</div>
 				</Card>
 
 				{/* Layer 3: Table */}
@@ -287,7 +300,7 @@ const AllModels: React.FC = () => {
 					bodyStyle={{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
 				>
 					{refreshing && models.length === 0 ? (
-						<div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>
+						<div style={{ height: 'calc(100vh - 380px)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><Spin size="large" /></div>
 					) : (
 						<Table
 							columns={columns}

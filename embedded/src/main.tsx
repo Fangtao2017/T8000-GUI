@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import 'antd/dist/reset.css'; 
 import './styles/global.css'; 
+import './table-overrides.css';
 import App from './App'; 
 import { NotificationProvider } from './context/NotificationContext';
 

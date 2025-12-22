@@ -233,8 +233,8 @@ const RealTimeMonitor: React.FC = () => {
         search: ''
     });
 
-    const loadData = async () => {
-        setLoading(true);
+    const loadData = async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
             const data = await fetchDevices();
             setDevices(data);
@@ -246,9 +246,38 @@ const RealTimeMonitor: React.FC = () => {
     };
 
     useEffect(() => {
-        loadData();
-        const interval = setInterval(loadData, 30000); // Auto refresh every 30s
-        return () => clearInterval(interval);
+        let interval: ReturnType<typeof setInterval>;
+
+        const startPolling = () => {
+            // Clear existing to be safe
+            if (interval) clearInterval(interval);
+            interval = setInterval(() => {
+                if (!document.hidden) {
+                    loadData(true);
+                }
+            }, 1000);
+        };
+
+        // Initial load
+        loadData(false);
+        startPolling();
+
+        // Visibility change handler to pause/resume polling
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                clearInterval(interval);
+            } else {
+                loadData(true); // Immediate update when becoming visible
+                startPolling();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, []);
 
     // Derived Data
@@ -443,7 +472,7 @@ const RealTimeMonitor: React.FC = () => {
                             <Radio.Button value="card"><AppstoreOutlined /></Radio.Button>
                             <Radio.Button value="table"><BarsOutlined /></Radio.Button>
                         </Radio.Group>
-                        <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>Refresh</Button>
+                        <Button icon={<ReloadOutlined />} onClick={() => loadData(false)} loading={loading}>Refresh</Button>
                     </Space>
                 </div>
 
